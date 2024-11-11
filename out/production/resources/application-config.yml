@@ -1,0 +1,22 @@
+spring:
+  servlet:
+    multipart:
+      enabled: true
+      file-size-threshold: 10485760 #메모리 대신 임시 파일에 저장
+      max-file-size: 10485760 #10mb
+      max-request-size: 10485760 #10mb
+
+server:
+  tomcat:
+    max-http-form-post-size: 10485760 # 10mb
+
+file:
+  imageSize: 2097152 # 1mb
+  videoSize: 10485760
+
+
+service:
+  secret:
+    snowflake:
+      datacenterId: 3
+      workerId: 29

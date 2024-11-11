@@ -1,0 +1,11 @@
+cloud:
+  cloudflare:
+    service:
+      contentBucket:
+        accessKey: 007ee76b652912833f11ba4d4561ebef
+        secretKey: d01d4cd2a3a06bfbdd76d6320ca63038db9f7aa3ce6a52887e3b3c95f32f92a0
+        endpoint: https://c6c90818eab3f2d2bbd249e16f8783f2.r2.cloudflarestorage.com/
+        bucketPublicUrl: https://pub-9af3169148db4fca962525cd0fc72f60.r2.dev/
+        bucketName: feelog-content-bucket
+        imageContentStoragePath: images/
+        imageCommentContentPath: comments/
