@@ -17,10 +17,6 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Set up SSH
-      env:
-        REMOTE_HOST: ${{ secrets.SERVER_HOST }}
-        REMOTE_USER: ${{ secrets.SERVER_REMOTE_USER }}
-        REMOTE_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
       run: |
         sudo apt-get update
         sudo apt-get install -y sshpass
@@ -36,7 +32,7 @@ jobs:
         DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
         SERVICE_DIR: ${{ secrets.SERVICE_DIR }}
       run: |
-        sshpass -p "${REMOTE_PASSWORD}" ssh -o StrictHostKeyChecking=no -p ${REMOTE_PORT} "${REMOTE_USER}@${REMOTE_HOST}" << EOF
+        sshpass -p ${REMOTE_PASSWORD} ssh -o StrictHostKeyChecking=no -p ${REMOTE_PORT} "${REMOTE_USER}@${REMOTE_HOST}" << EOF
           cd ${SERVICE_DIR}
           echo "Logging into Docker Hub..."
           echo "${DOCKER_HUB_ACCESS_TOKEN}" | docker login --username "${DOCKER_HUB_USERNAME}" --password-stdin
