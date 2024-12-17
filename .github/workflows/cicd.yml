@@ -83,3 +83,38 @@ jobs:
 
     - name: Push Docker image
       run: docker push ${{ secrets.DOCKER_HUB_REPOSITORY }}:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up SSH
+      env:
+        REMOTE_HOST: ${{ secrets.SERVER_HOST }}
+        REMOTE_USER: ${{ secrets.SERVER_REMOTE_USER }}
+        REMOTE_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y sshpass
+
+    - name: Deploy to server
+      env:
+        REMOTE_HOST: ${{ secrets.SERVER_HOST }}
+        REMOTE_USER: ${{ secrets.SERVER_REMOTE_USER }}
+        REMOTE_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+        DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+      run: |
+        sshpass -p "$REMOTE_PASSWORD" ssh -o StrictHostKeyChecking=no "$REMOTE_USER@$REMOTE_HOST" << EOF
+          whoami
+          hostname
+          pwd
+          cd ${{ secrets.SERVICE_DIR }}
+          echo "$REMOTE_PASSWORD" | sudo -S docker pull ${{ secrets.DOCKER_HUB_REPOSITORY }}:latest
+          echo "$REMOTE_PASSWORD" | sudo -S docker compose pull
+          echo "$REMOTE_PASSWORD" | sudo -S docker compose up -d
+        EOF
+
