@@ -4,9 +4,6 @@ on:
   pull_request:
     branches:
       - master
-  push:
-    branches:
-      - master
 
 jobs:
   build:
@@ -52,6 +49,8 @@ jobs:
         echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> src/main/resources/.env
         echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> src/main/resources/.env
         echo "DB_URL=${{ secrets.DB_URL }}" >> src/main/resources/.env
+        echo "SERVER_URL_API=${{ secrets.SERVER_URL_API }}" >> src/main/resources/.env
+        echo "SERVER_URL_ADMIN=${{ secrets.SERVER_URL_ADMIN }}" >> src/main/resources/.env
       shell: bash
 
     # 4. Gradle 캐싱 (옵션: Maven 사용 시 수정 필요)
