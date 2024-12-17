@@ -31,5 +31,5 @@ src/main/resources/application-*-local.yml
 src/main/resources/db/migration/
 
 # docker
-dockerfile
+#dockerfile
 docker-compose.yml
