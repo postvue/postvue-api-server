@@ -37,6 +37,8 @@ jobs:
         echo "username length: ${#REMOTE_USER}"
         echo "REMOTE_HOST length: ${#REMOTE_HOST}"
         sshpass -p "$REMOTE_PASSWORD" ssh -o StrictHostKeyChecking=no -p ${REMOTE_PORT} "${REMOTE_USER}@${REMOTE_HOST}" << EOF
+          echo "$REMOTE_PASSWORD" | sudo -S -s
+          sudo -s
           cd ${SERVICE_DIR}
           echo "Logging into Docker Hub..."
           echo "${DOCKER_HUB_ACCESS_TOKEN}" | docker login --username "${DOCKER_HUB_USERNAME}" --password-stdin
