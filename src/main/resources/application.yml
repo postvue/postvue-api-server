@@ -26,6 +26,7 @@ spring:
         - openapi
         - vaadin
         - config
+        - url
 
       local:
         - db-local
@@ -38,3 +39,4 @@ spring:
         - openapi
         - vaadin
         - config-local
+        - url

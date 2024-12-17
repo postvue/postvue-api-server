@@ -3,14 +3,14 @@ spring:
     enabled: true # Flyway 활성화
     locations: classpath:db/migration # 마이그레이션 파일 위치
     baseline-on-migrate: true # 이미 존재하는 DB에 baseline을 적용
-    username: feelog_postgres_master
-    password: TzBJwaxmVQR4I25Q75yhgtvSQezRxR2i
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://postgres_master:5432/feelog_db?rewriteBatchedStatements=true&profileSQL=true&logger=Slf4JLogger&maxQuerySizeToLog=999999
-    username: feelog_postgres_master
-    password: TzBJwaxmVQR4I25Q75yhgtvSQezRxR2i
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   jpa:
     hibernate:
