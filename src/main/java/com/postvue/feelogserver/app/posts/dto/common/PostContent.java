@@ -13,4 +13,6 @@ public class PostContent {
 	private PostContentType postContentType;
 	private String content;
 	private Integer ascSortNum;
+	private String previewImg;
+	private Boolean isUploaded;
 }

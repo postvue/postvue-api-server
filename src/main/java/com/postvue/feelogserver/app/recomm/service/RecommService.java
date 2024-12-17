@@ -3,6 +3,9 @@ package com.postvue.feelogserver.app.recomm.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,12 +13,17 @@ import org.springframework.transaction.annotation.Transactional;
 import com.postvue.feelogserver.app.recomm.dto.GetPostContent;
 import com.postvue.feelogserver.app.recomm.dto.rsp.GetRecommFollowRsp;
 import com.postvue.feelogserver.app.recomm.dto.rsp.GetRecommTagRsp;
+import com.postvue.feelogserver.domain.adminserviceadjustments.AdminServiceAdjustment;
+import com.postvue.feelogserver.domain.adminserviceadjustments.repository.AdminServiceAdjustmentRepository;
 import com.postvue.feelogserver.domain.snsposts.dto.SnsPostContentDao;
+import com.postvue.feelogserver.domain.snsposts.vo.PostContentType;
 import com.postvue.feelogserver.domain.snstagposts.dao.SnsRecommTagDao;
 import com.postvue.feelogserver.domain.snstagposts.respository.SnsTagPostRepository;
+import com.postvue.feelogserver.domain.snstags.repository.SnsTagRepository;
 import com.postvue.feelogserver.domain.snsuserfollows.dao.FollowRecommInfoDao;
 import com.postvue.feelogserver.domain.snsuserfollows.repository.SnsUserFollowRepository;
-import com.postvue.feelogserver.global.constant.FollowConst;
+import com.postvue.feelogserver.global.admin.service.recommfollow.RecommFollowServiceInfo;
+import com.postvue.feelogserver.global.admin.service.recommtag.RecommTagServiceInfo;
 import com.postvue.feelogserver.global.constant.PageConfigConst;
 
 import lombok.RequiredArgsConstructor;
@@ -25,24 +33,40 @@ import lombok.RequiredArgsConstructor;
 public class RecommService {
 	private final SnsUserFollowRepository snsUserFollowRepository;
 	private final SnsTagPostRepository snsTagPostRepository;
+	private final AdminServiceAdjustmentRepository adminServiceAdjustmentRepository;
+	private final SnsTagRepository snsTagRepository;
 
 	@Transactional
 	public List<GetRecommFollowRsp> findRecommFollowList(Long userId) {
-		List<Long> fixedSuggestFollowList = new ArrayList<>(FollowConst.FIXED_SUGGEST_FOLLOW_LIST).stream().filter(
-				(fixedSuggestFollow) -> !fixedSuggestFollow.equals(userId))
+		List<FollowRecommInfoDao> followRecommInfoDaos = snsUserFollowRepository.selectRecommendFollowPostList(userId, PageConfigConst.PAGE_NUM_BY_FOLLOW_RECOMM);
+
+		// 조정 팔로우 리스트
+		Set<Long> ids = followRecommInfoDaos.stream()
+			.map(FollowRecommInfoDao::getSnsUserId)
+			.collect(Collectors.toSet());
+
+		// 이미 가져온 ID와 겹치지 않는 요소 필터링
+		List<Long> recommFollowListByAdmin = adminServiceAdjustmentRepository.findAllByServiceType(
+				RecommFollowServiceInfo.SERVICE_TYPE_NAME).stream().map(AdminServiceAdjustment::getPropLong1)
+			.filter(id -> !ids.contains(id))
 			.toList();
 
-		List<FollowRecommInfoDao> followRecommInfoDaos = snsUserFollowRepository.selectRecommendFollowPostList(
-			fixedSuggestFollowList, userId);
+
+		if(!recommFollowListByAdmin.isEmpty()){
+			followRecommInfoDaos.addAll(snsUserFollowRepository.selectRecommendFollowListByAdmin(recommFollowListByAdmin, userId));
+		}
 
 		return followRecommInfoDaos.stream().map((followRecommInfoDao -> {
 			List<GetPostContent> getPostContents = followRecommInfoDao.getPostIdContents()
 				.stream()
 				.map((followPostIdContentsDao -> {
 					SnsPostContentDao snsPostContentDao = followPostIdContentsDao.getPostContents().get(0);
+
+					String content =  snsPostContentDao.getPostContentType() == PostContentType.VIDEO
+						? snsPostContentDao.getPreviewImg() : snsPostContentDao.getContent();
 					return GetPostContent.builder()
 						.postId(followPostIdContentsDao.getPostId().toString())
-						.content(snsPostContentDao.getContent())
+						.content(Objects.requireNonNullElse(snsPostContentDao.getBucketUrl(),"") + content)
 						.postContentType(snsPostContentDao.getPostContentType())
 						.build();
 				}))
@@ -62,7 +86,9 @@ public class RecommService {
 	public List<GetRecommTagRsp> findRecommTagList(Long userId) {
 		List<SnsRecommTagDao> snsRecommTagDaoList = snsTagPostRepository.findRecommTagList(userId, LocalDateTime.now(),
 			PageConfigConst.PAGE_NUM_BY_POPULAR,
-			PageConfigConst.PAGE_NUM_BY_INTEREST);
+			PageConfigConst.PAGE_NUM_BY_INTEREST,
+			PageConfigConst.PAGE_NUM_BY_TAG_RECOMM);
+
 		return snsRecommTagDaoList.stream().map((snsRecommTagDao ->
 			GetRecommTagRsp.builder()
 				.tagName(snsRecommTagDao.getTagName())
@@ -72,18 +98,54 @@ public class RecommService {
 				.build())).toList();
 	}
 
+
 	//@REFER: 잘 되는 지 확인
 	public List<GetRecommTagRsp> findRecommFavoriteTagList(Integer page) {
 		List<SnsRecommTagDao> snsRecommTagDaoList = snsTagPostRepository.findPopularTagListByPageable(
 			LocalDateTime.now(),
 			page * PageConfigConst.POPULAR_TAG_PAGE_SIZE,
 			PageConfigConst.POPULAR_TAG_PAGE_SIZE);
-		return snsRecommTagDaoList.stream().map((snsRecommTagDao ->
+
+		List<GetRecommTagRsp> recommTagRspList = new ArrayList<>(snsRecommTagDaoList.stream().map((snsRecommTagDao ->
 			GetRecommTagRsp.builder()
 				.tagName(snsRecommTagDao.getTagName())
 				.tagId(snsRecommTagDao.getTagId().toString())
 				.tagBkgdContent(snsRecommTagDao.getTagRepsBatchContent())
 				.tagBkgdContentType(snsRecommTagDao.getTagRepsBatchContentType())
-				.build())).toList();
+				.build())).toList());
+
+		if (page > 0){
+			return recommTagRspList;
+		}
+
+		// 조정 태그 리스트
+		Set<Long> tagIds =  snsRecommTagDaoList.stream()
+			.map(SnsRecommTagDao::getTagId)
+			.collect(Collectors.toSet());
+
+
+		// 이미 가져온 ID와 겹치지 않는 요소 필터링
+		List<Long> recommTagListByAdmin = adminServiceAdjustmentRepository.findAllByServiceType(
+				RecommTagServiceInfo.SERVICE_TYPE_NAME).stream().map(AdminServiceAdjustment::getPropLong1)
+			.filter(id -> !tagIds.contains(id))
+			.toList();
+
+		recommTagListByAdmin.forEach(System.out::println);
+
+		if(!recommTagListByAdmin.isEmpty()){
+			snsTagRepository.findAllByIdIn(recommTagListByAdmin).stream().forEach(value -> System.out.println(value.getId()+" : " + value.getTagName()));
+			recommTagRspList.addAll(snsTagRepository.findAllByIdIn(recommTagListByAdmin).stream().map(snsTag ->
+				GetRecommTagRsp
+					.builder()
+					.tagId(snsTag.getId().toString())
+					.tagName(snsTag.getTagName())
+					.tagBkgdContent(snsTag.getTagRepsBatchContent())
+					.tagBkgdContentType(snsTag.getTagRepsBatchContentType().toString())
+					.build()
+			).toList());
+		}
+
+		return recommTagRspList;
 	}
+
 }

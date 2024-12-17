@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.postvue.feelogserver.domain.snspostreports.SnsPostReport;
 import com.postvue.feelogserver.domain.snspostreports.repository.SnsPostReportRepository;
@@ -36,6 +37,7 @@ public class SnsPostReportEndpoint implements CrudService<SnsPostReportEndpointD
 
 
 	@Override
+	@Transactional
 	public @Nullable SnsPostReportEndpointDto save(SnsPostReportEndpointDto value) {
 		SnsPostReport snsBlockUser = value.id() != null && Long.parseLong(value.id()) > 0
 			? snsPostReportRepository.getReferenceById(Long.parseLong(value.id()))
@@ -44,6 +46,7 @@ public class SnsPostReportEndpoint implements CrudService<SnsPostReportEndpointD
 	}
 
 	@Override
+	@Transactional
 	public void delete(Long id) {
 		snsPostReportRepository.deleteById(id);
 	}

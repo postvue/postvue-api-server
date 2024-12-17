@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.postvue.feelogserver.domain.snstagposts.SnsTagPost;
 import com.postvue.feelogserver.domain.snstags.SnsTag;
@@ -38,6 +39,7 @@ public class SnsUserEndpoint implements CrudService<SnsUserEndpointDto, Long> {
 	}
 
 	@Override
+	@Transactional
 	public @Nullable SnsUserEndpointDto save(SnsUserEndpointDto value) {
 		SnsUser snsUser = value.id() != null && Long.parseLong(value.id()) > 0
 			? snsUserRepository.getReferenceById(Long.parseLong(value.id()))
@@ -58,6 +60,7 @@ public class SnsUserEndpoint implements CrudService<SnsUserEndpointDto, Long> {
 	}
 
 	@Override
+	@Transactional
 	public void delete(Long snsUserId) {
 		snsUserRepository.deleteById(snsUserId);
 	}

@@ -1,9 +1,11 @@
 package com.postvue.feelogserver.endpoint;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.postvue.feelogserver.domain.snsblockusers.SnsBlockUser;
 import com.postvue.feelogserver.domain.snsnotifications.SnsNotification;
@@ -38,17 +40,19 @@ public class SnsNotificationEndpoint implements CrudService<SnsNotificationEndpo
 	}
 
 	@Override
+	@Transactional
 	public @Nullable SnsNotificationEndpointDto save(SnsNotificationEndpointDto value) {
 		SnsNotification snsNotification = value.id() != null && Long.parseLong(value.id()) > 0
 			? snsNotificationRepository.getReferenceById(Long.parseLong(value.id()))
 			: new SnsNotification();
 
 		snsNotification.setSnsNotificationType(value.snsNotificationType());
-		snsNotification.setSnsNotificationContents(JsonConverter.convertToList(value.snsNotificationContents(),SnsNotificationContent.class));
+		snsNotification.setSnsNotificationContents(Arrays.asList(JsonConverter.convertToList(value.snsNotificationContents(),SnsNotificationContent.class)));
 		return SnsNotificationEndpointDto.fromEntity(snsNotificationRepository.save(snsNotification));
 	}
 
 	@Override
+	@Transactional
 	public void delete(Long id) {
 		snsNotificationRepository.deleteById(id);
 	}

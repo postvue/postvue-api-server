@@ -7,15 +7,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 
 import com.postvue.feelogserver.domain.snsposts.SnsPost;
+import com.postvue.feelogserver.domain.snsposts.dto.SnsPostDao;
 import com.postvue.feelogserver.domain.snspostuserreactions.SnsPostUserReaction;
 import com.postvue.feelogserver.domain.snspostuserreactions.dao.PostClipNumDao;
 import com.postvue.feelogserver.domain.snspostuserreactions.dao.PostIsRepostedDao;
 import com.postvue.feelogserver.domain.snspostuserreactions.dao.PostLikeDao;
 import com.postvue.feelogserver.domain.snspostuserreactions.dao.PostLikeNumDao;
-import com.postvue.feelogserver.domain.snspostuserreactions.dao.ProfilePostListDao;
 
 import org.springframework.data.repository.query.Param;
 
@@ -76,20 +77,58 @@ public interface SnsPostUserReactionRepository extends JpaRepository<SnsPostUser
 
 	void deleteBySnsPostAndSnsUser_Id(SnsPost snsPost, Long snsUserId);
 
-	@Query(value =
-		"SELECT "
-			+ "SNS_PUR.id AS cursorId, SNS_P.id AS postId, SNS_P.latitude AS latitude, "
-			+ "SNS_P.longitude AS longitude, SNS_P.address AS address, SNS_U.username AS username, SNS_U.id AS userId, "
-			+ "SNS_P.snsPostContents AS postContents, SNS_P.createdAt AS postedAt "
-			+ "FROM SnsPostUserReaction AS SNS_PUR "
-			+ "INNER JOIN FETCH SnsPost AS SNS_P ON SNS_PUR.snsPost = SNS_P "
-			+ "INNER JOIN FETCH SnsUser AS SNS_U ON SNS_PUR.snsUser = SNS_U "
-			+ "LEFT OUTER JOIN SnsBlockUser AS SNS_BU ON SNS_BU.snsBlockerUser.id = :snsUserId AND SNS_PUR.snsPost.snsUser = SNS_BU.snsBlockedUser "
-			+ "WHERE SNS_PUR.snsUser.id = :snsUserId AND SNS_PUR.isClipped = true AND SNS_PUR.id < :cursorId AND SNS_BU.snsBlockedUser IS NULL "
-			+ "ORDER BY SNS_PUR.createdAt DESC ")
-	List<ProfilePostListDao> findAllBySnsUser_snsUserIdAndIsClippedIsTrue(
+
+	String MY_CLIP_QUERY =
+		"select "
+		+ "        SNS_PUR.sns_post_user_reaction_id AS cursorId, "
+		+ "        SNS_P.sns_post_id AS postId, "
+		+ "        SNS_P.is_repost AS isReposted, "
+		+ "        FALSE AS followable, "
+		+ "        :snsUserId AS followingId, "
+		+ "        SNS_P.latitude AS latitude, "
+		+ "        SNS_P.longitude AS longitude, "
+		+ "        SNS_P.address AS address, "
+		+ "        SNS_U.username AS username, "
+		+ "        SNS_U.profile_path AS profilePath, "
+		+ "        SNS_PUR.is_liked AS isLiked, "
+		+ "        SNS_PUR.is_clipped AS isClipped, "
+		+ "        SNS_U.sns_user_id AS snsUserId, "
+		+ "        SNS_P.post_title AS postTitle, "
+		+ "        SNS_P.post_body_text AS postBodyTest, "
+		+ "        SNS_P.sns_post_contents AS snsPostContents, "
+		+ "        SNS_P.tags AS tags, "
+		+ "        SNS_P.created_at AS postedAt "
+		+ "    from "
+		+ "        sns_post_user_reactions_tb SNS_PUR  "
+		+ "    join "
+		+ "        sns_posts_tb SNS_P  "
+		+ "            on SNS_PUR.sns_post_id=SNS_P.sns_post_id  "
+		+ "    join "
+		+ "        sns_users_tb SNS_U  "
+		+ "            on SNS_PUR.sns_user_id=SNS_U.sns_user_id  "
+		+ "    where "
+		+ "        SNS_PUR.sns_user_id=:snsUserId  "
+		+ "        and SNS_PUR.is_clipped=true  "
+		+ "        and SNS_PUR.sns_post_user_reaction_id<:cursorId  "
+		+ "        AND SNS_P.deleted_at IS NULL "
+		+ "    order by "
+		+ "        SNS_PUR.created_at desc  "
+		+ "    offset "
+		+ "        0 rows  "
+		+ "    fetch "
+		+ "        first :pageSize rows only";
+	@Query(value = MY_CLIP_QUERY, nativeQuery = true)
+	List<SnsPostDao> findAllMyClipList(
 		@Param("snsUserId") Long snsUserId,
 		@Param("cursorId") Long cursorId,
-		Pageable pageable);
+		@Param("pageSize") Integer pageSize
+		);
 
+	@Query("SELECT SNS_PUR FROM SnsPostUserReaction SNS_PUR "
+		+ "INNER JOIN SnsScrap SNS_S ON SNS_S.snsPost = SNS_PUR.snsPost AND SNS_S.snsUser.id = :snsUserId "
+		+ "WHERE SNS_PUR.isClipped = true AND SNS_S.snsScrapBoard.id = :snsScrapBoardId ")
+	List<SnsPostUserReaction> findAllByScrapAndClipTrue(
+		@Param("snsUserId") Long snsUserId,
+		@Param("snsScrapBoardId") Long snsScrapBoardId
+	);
 }

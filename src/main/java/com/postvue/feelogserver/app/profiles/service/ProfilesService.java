@@ -8,35 +8,40 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.postvue.feelogserver.app.auth.dto.TokenResponse;
 import com.postvue.feelogserver.app.auth.service.AuthService;
+import com.postvue.feelogserver.app.cloud.service.R2CloudService;
 import com.postvue.feelogserver.app.common.rsp.SnsPostFollowsGetRsp;
 import com.postvue.feelogserver.app.notifications.service.NotificationService;
 import com.postvue.feelogserver.app.posts.dto.common.Location;
+import com.postvue.feelogserver.app.posts.dto.rsp.get.SnsPostRsp;
+import com.postvue.feelogserver.app.posts.service.PostsService;
 import com.postvue.feelogserver.app.profiles.dto.req.create.AddPostToScrapListReq;
 import com.postvue.feelogserver.app.profiles.dto.req.create.CreateProfileScrapReq;
 import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyPrivateProfileInfoReq;
 import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfileBirthdateInfoReq;
 import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfileEmailInfoReq;
 import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfileGenderInfoReq;
-import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfileInfo;
+import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfileInfoReq;
 import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfilePasswordInfoReq;
-import com.postvue.feelogserver.app.profiles.dto.rsp.common.MyScrapListRsp;
+import com.postvue.feelogserver.app.profiles.dto.rsp.common.ScrapThumbnailRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.create.PostToScrapListRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.create.PostToScrapRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetExistenceByUsernameRsp;
-import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetMyClipListRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetMyProfileInfoRsp;
-import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetMyProfilePostRsp;
+import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetProfilePostListRsp;
+import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetProfilePostRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetProfileBlockedUserRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetProfileInfoRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetProfileMainScrapPostRsp;
@@ -50,16 +55,18 @@ import com.postvue.feelogserver.domain.snsblockusers.SnsBlockUser;
 import com.postvue.feelogserver.domain.snsblockusers.repository.SnsBlockUserRepository;
 import com.postvue.feelogserver.domain.snsposts.SnsPost;
 import com.postvue.feelogserver.domain.snsposts.dto.SnsPostContentDao;
+import com.postvue.feelogserver.domain.snsposts.dto.SnsPostDao;
 import com.postvue.feelogserver.domain.snsposts.repository.SnsPostRepository;
 import com.postvue.feelogserver.domain.snsposts.vo.PostContentType;
 import com.postvue.feelogserver.domain.snsposts.vo.SnsPostContent;
 import com.postvue.feelogserver.domain.snspostuserreactions.SnsPostUserReaction;
 import com.postvue.feelogserver.domain.snspostuserreactions.dao.ProfilePostListDao;
+import com.postvue.feelogserver.domain.snspostuserreactions.repository.SnsPostUserReactionJdbcRepository;
 import com.postvue.feelogserver.domain.snspostuserreactions.repository.SnsPostUserReactionRepository;
 import com.postvue.feelogserver.domain.snsscrap.SnsScrap;
 import com.postvue.feelogserver.domain.snsscrap.repository.SnsScrapJdbcRepository;
 import com.postvue.feelogserver.domain.snsscrap.repository.SnsScrapRepository;
-import com.postvue.feelogserver.domain.snsscrap.repository.dao.MyScrapListDao;
+import com.postvue.feelogserver.domain.snsscrap.repository.dao.ScrapThumbNailDao;
 import com.postvue.feelogserver.domain.snsscrapboard.SnsScrapBoard;
 import com.postvue.feelogserver.domain.snsscrapboard.dao.ScrapBoardInfoDao;
 import com.postvue.feelogserver.domain.snsscrapboard.repository.SnsScrapBoardRepository;
@@ -70,6 +77,7 @@ import com.postvue.feelogserver.domain.snsuserfollows.repository.SnsUserFollowRe
 import com.postvue.feelogserver.domain.snsusers.SnsUser;
 import com.postvue.feelogserver.domain.snsusers.dao.ProfileInfoWithFollowDao;
 import com.postvue.feelogserver.domain.snsusers.dao.ProfileUserByUsernameDao;
+import com.postvue.feelogserver.domain.snsusers.dao.ProfileUserWithFollowByUsernameDao;
 import com.postvue.feelogserver.domain.snsusers.repository.SnsUserRepository;
 import com.postvue.feelogserver.domain.snsusers.vo.SnsUserGender;
 import com.postvue.feelogserver.global.constant.CookieConst;
@@ -78,6 +86,7 @@ import com.postvue.feelogserver.global.exception.BadRequestErrorException;
 import com.postvue.feelogserver.global.exception.UnauthorizedErrorException;
 import com.postvue.feelogserver.global.util.generator.CookieUtils;
 import com.postvue.feelogserver.global.util.generator.UrlUtils;
+import com.postvue.feelogserver.global.util.validation.UploadFileValidationUtils;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -89,17 +98,30 @@ public class ProfilesService {
 	private final SnsScrapRepository snsScrapRepository;
 	private final SnsUserRepository snsUserRepository;
 	private final SnsPostUserReactionRepository snsPostUserReactionRepository;
+	private final SnsPostUserReactionJdbcRepository snsPostUserReactionJdbcRepository;
 	private final SnsScrapBoardRepository snsScrapBoardRepository;
 	private final SnsScrapJdbcRepository snsScrapJdbcRepository;
 	private final SnsPostRepository snsPostRepository;
 	private final SnsBlockUserRepository snsBlockUserRepository;
 	private final AuthService authService;
 	private final NotificationService notificationService;
-
-	private final BCryptPasswordEncoder passwordEncoder;
+	private final R2CloudService r2CloudService;
+	private final PostsService postsService;
 
 	@Value("${security.service.auth.COOKIE_MAX_AGE_REFRESH_TOKEN}")
 	private Integer COOKIE_MAX_AGE_REFRESH_TOKEN;
+
+	@Value("${cloud.cloudflare.service.contentBucket.bucketPublicUrl}")
+	private String cloudflareBucketUrl;
+
+	@Value("${cloud.cloudflare.service.contentBucket.imageContentStoragePath}")
+	private String imageContentStoragePath;
+
+	@Value("${cloud.cloudflare.service.contentBucket.imageProfilePath}")
+	private String imageProfilePath;
+
+	@Value("${file.imageSize}")
+	private Integer imageFileSize;
 
 	// public GetFollowProfileInfoRsp getFollowProfileInfo(String username, Long myUserId) {
 	// 	SnsUserFollow snsUserFollow = snsUserFollowRepository.findByUsernameAndUserId(username, myUserId).orElseThrow();
@@ -123,17 +145,37 @@ public class ProfilesService {
 	}
 
 	@Transactional
-	public GetMyProfileInfoRsp putMyProfileInfo(Long userId, PutMyProfileInfo putMyProfileInfo) {
+	public GetMyProfileInfoRsp putMyProfileInfo(Long userId, PutMyProfileInfoReq putMyProfileInfoReq,
+		MultipartFile profileImgFile) {
 		SnsUser myUser = snsUserRepository.findById(userId).orElseThrow();
-		myUser.setUserLink(putMyProfileInfo.getWebsite());
-		myUser.setUserDescription(putMyProfileInfo.getIntroduce());
-		// if (!Objects.equals(putMyProfileInfo.getProfilePath(), "")) {
-		// 	myUser.setProfilePath(putMyProfileInfo.getProfilePath());
-		// }
-		myUser.setNickname(putMyProfileInfo.getNickname());
+		myUser.setUserLink(putMyProfileInfoReq.getWebsite());
+		myUser.setUserDescription(putMyProfileInfoReq.getIntroduce());
+		myUser.setNickname(putMyProfileInfoReq.getNickname());
+
+		if (profileImgFile!=null) {
+			String contentType = profileImgFile.getContentType();
+			boolean isImage = UploadFileValidationUtils.isImage(contentType);
+			if (!isImage){
+				throw new BadRequestErrorException("업로드 파일 유형이 아닙니다.");
+			}
+			if (profileImgFile.getSize() > imageFileSize){
+				throw new BadRequestErrorException("이미지 크기가 너무 큽니다.");
+			}
+
+			String originalFilename = profileImgFile.getOriginalFilename();
+			String extension = FilenameUtils.getExtension(originalFilename);
+			if(myUser.getProfilePath().startsWith(cloudflareBucketUrl)){
+				r2CloudService.deleteImageFromR2(myUser.getProfilePath().replace(cloudflareBucketUrl, ""));
+			}
+
+			String profilePath = imageContentStoragePath + imageProfilePath +
+				UUID.randomUUID() + "." + extension;
+
+			myUser.setProfilePath(cloudflareBucketUrl + profilePath);
+			r2CloudService.uploadImageToR2(profileImgFile, profilePath);
+		}
 
 		snsUserRepository.save(myUser);
-
 		return convertUserToMyProfileInfoRsp(myUser);
 	}
 
@@ -226,24 +268,49 @@ public class ProfilesService {
 		return getProfileFollowing(myUserId, snsUser.getUsername(), page);
 	}
 
-	public GetProfileUserRsp getProfileUserListByUsername(String username, Long myUserId, Long cursorId) {
-		List<ProfileUserByUsernameDao> profileUserByUsernameDaoList = snsUserRepository.findAllUserByUsername(username,
-			myUserId, cursorId,
-			PageRequest.of(PageConfigConst.PAGE_INIT_NUM, PageConfigConst.DEFAULT_PAGE_SIZE));
-		profileUserByUsernameDaoList = profileUserByUsernameDaoList.stream()
-			.filter((profileUserByUsernameDao -> !Objects.equals(profileUserByUsernameDao.getSnsUserId(), myUserId)))
-			.toList();
+	public GetProfileUserRsp getProfileUserListByUsername(String username, Long myUserId, Long cursorId, Boolean hasFollowInfo) {
+		List<GetProfileUserByUsername> getProfileUserByUsernameList;
 
-		List<GetProfileUserByUsername> getProfileUserByUsernameList = profileUserByUsernameDaoList.stream()
-			.map((profileUserByUsernameDao ->
-				GetProfileUserByUsername
-					.builder()
-					.userId(profileUserByUsernameDao.getSnsUserId().toString())
-					.username(profileUserByUsernameDao.getUsername())
-					.nickname(profileUserByUsernameDao.getNickname())
-					.profilePath(profileUserByUsernameDao.getProfilePath())
-					.build()))
-			.toList();
+		if (hasFollowInfo){
+			List<ProfileUserWithFollowByUsernameDao> profileUserWithFollowByUsernameDaoList = snsUserRepository.findAllUserWithFollowByUsername(username,
+				myUserId, cursorId,
+				PageRequest.of(PageConfigConst.PAGE_INIT_NUM, PageConfigConst.DEFAULT_PAGE_SIZE));
+			profileUserWithFollowByUsernameDaoList = profileUserWithFollowByUsernameDaoList.stream()
+				.filter((profileUserByUsernameDao -> !Objects.equals(profileUserByUsernameDao.getSnsUserId(), myUserId)))
+				.toList();
+
+			getProfileUserByUsernameList = profileUserWithFollowByUsernameDaoList.stream()
+				.map((profileUserByUsernameDao ->
+					GetProfileUserByUsername
+						.builder()
+						.userId(profileUserByUsernameDao.getSnsUserId().toString())
+						.username(profileUserByUsernameDao.getUsername())
+						.nickname(profileUserByUsernameDao.getNickname())
+						.profilePath(profileUserByUsernameDao.getProfilePath())
+						.isFollowed(profileUserByUsernameDao.getIsFollowed())
+						.build()))
+				.toList();
+		}
+		else{
+			List<ProfileUserByUsernameDao> profileUserByUsernameDaoList = snsUserRepository.findAllUserByUsername(username,
+				myUserId, cursorId,
+				PageRequest.of(PageConfigConst.PAGE_INIT_NUM, PageConfigConst.DEFAULT_PAGE_SIZE));
+			profileUserByUsernameDaoList = profileUserByUsernameDaoList.stream()
+				.filter((profileUserByUsernameDao -> !Objects.equals(profileUserByUsernameDao.getSnsUserId(), myUserId)))
+				.toList();
+
+			getProfileUserByUsernameList = profileUserByUsernameDaoList.stream()
+				.map((profileUserByUsernameDao ->
+					GetProfileUserByUsername
+						.builder()
+						.userId(profileUserByUsernameDao.getSnsUserId().toString())
+						.username(profileUserByUsernameDao.getUsername())
+						.nickname(profileUserByUsernameDao.getNickname())
+						.profilePath(profileUserByUsernameDao.getProfilePath())
+						.build()))
+				.toList();
+		}
+
 		return GetProfileUserRsp.builder()
 			.cursorId(
 				getProfileUserByUsernameList.size() != PageConfigConst.PAGE_INIT_NUM ? getProfileUserByUsernameList.get(
@@ -270,19 +337,36 @@ public class ProfilesService {
 		return getPostFollowList(profileFollowerDaoList);
 	}
 
-	public List<MyScrapListRsp> getScrapLists(Long userId, Integer page) {
-		List<MyScrapListDao> myScrapListDaoList = snsScrapRepository.selectScrapBoard(userId,
+	public List<ScrapThumbnailRsp> getScrapLists(Long userId, Integer page) {
+		List<ScrapThumbNailDao> scrapListDaoThumbNail = snsScrapRepository.selectScrapBoard(userId,
 			page * PageConfigConst.PROFILE_SCRAP_PAGE_NUM,
 			PageConfigConst.PROFILE_SCRAP_PAGE_NUM);
 
-		Map<Long, List<MyScrapListDao>> myScrapListHashMap = myScrapListDaoList.stream()
-			.collect(Collectors.groupingBy(MyScrapListDao::getSnsScrapBoardId));
+		System.out.println("콩콩콩");
+		return getScrapThumbnailListRsps(scrapListDaoThumbNail);
+	}
 
-		return myScrapListHashMap.entrySet().stream()
+	public List<ScrapThumbnailRsp> getScrapListsBySearchQuery(Long userId, String searchQuery, Integer page) {
+		if (userId == null){
+			throw new UnauthorizedErrorException("인증된 계정이 아닙니다.");
+		}
+		List<ScrapThumbNailDao> scrapListDaoList = snsScrapRepository.selectScrapBoardBySearchQuery(
+			userId, searchQuery, page * PageConfigConst.PROFILE_SCRAP_PAGE_NUM,
+			PageConfigConst.PROFILE_SCRAP_PAGE_NUM);
+
+		return getScrapThumbnailListRsps(scrapListDaoList);
+
+	}
+
+	private List<ScrapThumbnailRsp> getScrapThumbnailListRsps(List<ScrapThumbNailDao> scrapListDaoThumbNail) {
+		Map<Long, List<ScrapThumbNailDao>> scrapListHashMap  = scrapListDaoThumbNail.stream()
+			.collect(Collectors.groupingBy(ScrapThumbNailDao::getSnsScrapBoardId));
+
+		return scrapListHashMap.entrySet().stream()
 			.sorted(Map.Entry.comparingByKey(Comparator.reverseOrder()))
 			.map(entry -> {
 				Long myScrapListId = entry.getKey();
-				List<MyScrapListDao> myScrapListDaos = entry.getValue();
+				List<ScrapThumbNailDao> scrapThumbNailDaos = entry.getValue();
 
 				//@REFER: 나중에 참고 바람
 				// List<String> imagePathList = new ArrayList<>();
@@ -296,29 +380,32 @@ public class ProfilesService {
 				// }
 
 				List<GetProfileMainScrapPostRsp> getProfileMainScrapPostRspList = new ArrayList<>();
-				for (MyScrapListDao myScrapListDao : myScrapListDaos) {
-					if (!myScrapListDao.getStringToSnsPostContents().isEmpty()) {
-						SnsPostContentDao postContentDao = myScrapListDao.getStringToSnsPostContents().get(0);
-						getProfileMainScrapPostRspList.add(GetProfileMainScrapPostRsp.builder()
-							.postThumbnailContent(postContentDao.getContent())
-							.postThumbnailContentType(postContentDao.getPostContentType().toString())
-							.build());
+				for (ScrapThumbNailDao scrapThumbNailDao : scrapThumbNailDaos) {
+					if (!scrapThumbNailDao.getStringToSnsPostContents().isEmpty()) {
+						SnsPostContentDao postContentDao = scrapThumbNailDao.getStringToSnsPostContents().get(0);
+						getProfileMainScrapPostRspList.add(
+							GetProfileMainScrapPostRsp
+								.builder()
+								.postThumbnailContent(postContentDao.getContent())
+								.postThumbnailContentType(postContentDao.getPostContentType().toString())
+								.build()
+						);
 					}
 				}
 
-				return MyScrapListRsp.builder()
+				return ScrapThumbnailRsp.builder()
 					.scrapId(myScrapListId.toString())
-					.scrapName(myScrapListDaos.get(0).getScrapName())
-					.scrapNum(myScrapListDaos.get(0).getScrapNum())
-					.lastPostedAt(myScrapListDaos.get(0).getRecentlyPostedAt())
-					.myPostScrapPreviewList(getProfileMainScrapPostRspList)
+					.scrapName(scrapThumbNailDaos.get(0).getScrapName())
+					.scrapNum(scrapThumbNailDaos.get(0).getScrapNum())
+					.lastPostedAt(scrapThumbNailDaos.get(0).getRecentlyPostedAt())
+					.postScrapPreviewList(getProfileMainScrapPostRspList)
+					.isMe(scrapThumbNailDaos.get(0).getIsMe())
 					.build();
-			}).sorted(Comparator.comparing(MyScrapListRsp::getLastPostedAt).reversed()) // lastPostedAt 기준으로 내림차순 정렬
+			}).sorted(Comparator.comparing(ScrapThumbnailRsp::getLastPostedAt).reversed()) // lastPostedAt 기준으로 내림차순 정렬
 			.toList();
-
 	}
 
-	public List<GetScrapPreviewRsp> getMyScrapPreviewList(Long myUserId, Long postId) {
+	public List<GetScrapPreviewRsp> getScrapPreviewList(Long myUserId, Long postId) {
 		Pageable pageable = PageRequest.of(PageConfigConst.PAGE_INIT_NUM, PageConfigConst.SCRAP_PREVIEW_MAX_PAGE_NUM);
 		List<SnsScrapBoard> snsScrapBoardLists = snsScrapBoardRepository.findBySnsUser_IdOrderByIdDesc(
 			myUserId, pageable);
@@ -339,24 +426,23 @@ public class ProfilesService {
 
 	}
 
-	public GetMyClipListRsp getMyClipListRsp(Long myUserId, Long cursorId) {
+	public GetProfilePostListRsp getMyClipListRsp(Long myUserId, Long cursorId) {
 		Pageable pageable = PageRequest.of(PageConfigConst.PAGE_INIT_NUM, PageConfigConst.PROFILE_CLIP_PAGE_NUM);
-		List<ProfilePostListDao> profilePostListDaoList =
-			snsPostUserReactionRepository.findAllBySnsUser_snsUserIdAndIsClippedIsTrue(
-				myUserId, cursorId, pageable);
+		List<SnsPostDao> profilePostListDaoList =
+			snsPostUserReactionRepository.findAllMyClipList(
+				myUserId, cursorId, PageConfigConst.PROFILE_CLIP_PAGE_NUM);
 
+		List<SnsPostRsp> snsPostRspList = postsService.getPostGetRspList(profilePostListDaoList);
 
-		List<GetMyProfilePostRsp> getMyProfilePostRspList = convertDaoToProfilePostList(profilePostListDaoList);
-
-		if (getMyProfilePostRspList.isEmpty()) {
-			return GetMyClipListRsp.builder()
+		if (snsPostRspList.isEmpty()) {
+			return GetProfilePostListRsp.builder()
 				.cursorId(PageConfigConst.ZERO_ID)
-				.myClipRspList(new ArrayList<>())
+				.snsPostRspList(new ArrayList<>())
 				.build();
 		} else {
-			return GetMyClipListRsp.builder()
+			return GetProfilePostListRsp.builder()
 				.cursorId(profilePostListDaoList.get(profilePostListDaoList.size() - 1).getCursorId().toString())
-				.myClipRspList(getMyProfilePostRspList)
+				.snsPostRspList(snsPostRspList)
 				.build();
 		}
 	}
@@ -371,6 +457,12 @@ public class ProfilesService {
 			.scrapNum(scrapBoardInfoDao.getScrapNum())
 			.scrapName(scrapBoardInfoDao.getScrapName())
 			.lastPostedAt(scrapBoardInfoDao.getRecentlyPostedAt())
+			.isMe(scrapBoardInfoDao.getIsMe())
+			.targetAudience(scrapBoardInfoDao.getTargetAudience().toString())
+			.userId(scrapBoardInfoDao.getUserId().toString())
+			.username(scrapBoardInfoDao.getUsername())
+			.nickname(scrapBoardInfoDao.getNickname())
+			.profilePath(scrapBoardInfoDao.getProfilePath())
 			.build();
 	}
 
@@ -380,17 +472,17 @@ public class ProfilesService {
 			cursorId,
 			pageable);
 
-		List<GetMyProfilePostRsp> getMyProfilePostRspList = convertDaoToProfilePostList(profilePostListDaoList);
+		List<GetProfilePostRsp> getProfilePostRspList = convertDaoToProfilePostList(profilePostListDaoList);
 
-		if (getMyProfilePostRspList.isEmpty()) {
+		if (getProfilePostRspList.isEmpty()) {
 			return GetScrapRsp.builder()
 				.cursorId(PageConfigConst.ZERO_ID)
-				.myScrapPostList(new ArrayList<>())
+				.scrapPostList(new ArrayList<>())
 				.build();
 		} else {
 			return GetScrapRsp.builder()
 				.cursorId(profilePostListDaoList.get(profilePostListDaoList.size() - 1).getCursorId().toString())
-				.myScrapPostList(getMyProfilePostRspList)
+				.scrapPostList(getProfilePostRspList)
 				.build();
 		}
 	}
@@ -409,16 +501,15 @@ public class ProfilesService {
 	}
 
 	@Transactional
-	public MyScrapListRsp createProfileScrap(Long snsUserId, CreateProfileScrapReq createProfileScrapReq, Long postId) {
+	public ScrapThumbnailRsp createProfileScrap(Long snsUserId, CreateProfileScrapReq createProfileScrapReq, Long postId) {
 		SnsUser snsUser = SnsUser.builder()
 			.id(snsUserId)
 			.build();
 
 		ScrapTargetAudience targetAudience;
-		// @REFER: 매직 값 지우삼
-		if (Objects.equals(createProfileScrapReq.getTargetAudienceValue(), "PROTECTED_AUDIENCE")) {
+		if (Objects.equals(createProfileScrapReq.getTargetAudienceValue(), ScrapTargetAudience.PROTECTED_AUDIENCE.label())) {
 			targetAudience = ScrapTargetAudience.PROTECTED_AUDIENCE;
-		} else if (Objects.equals(createProfileScrapReq.getTargetAudienceValue(), "PRIVATE_AUDIENCE")) {
+		} else if (Objects.equals(createProfileScrapReq.getTargetAudienceValue(), ScrapTargetAudience.PRIVATE_AUDIENCE.label())) {
 			targetAudience = ScrapTargetAudience.PRIVATE_AUDIENCE;
 		} else {
 			targetAudience = ScrapTargetAudience.PUBLIC_AUDIENCE;
@@ -475,10 +566,31 @@ public class ProfilesService {
 		}
 
 		// 스크랩 보드 생성
-		return MyScrapListRsp.builder()
+		return ScrapThumbnailRsp.builder()
 			.scrapName(newScrapList.getScrapName())
 			.scrapId(newScrapList.getId().toString())
-			.myPostScrapPreviewList(getProfileMainScrapPostRspList)
+			.postScrapPreviewList(getProfileMainScrapPostRspList)
+			.build();
+	}
+
+	@Transactional
+	public ScrapThumbnailRsp updateProfileScrap(Long scrapId, Long snsUserId, CreateProfileScrapReq createProfileScrapReq, Long postId) {
+		ScrapTargetAudience targetAudience = getTargetAudienceValue(createProfileScrapReq.getTargetAudienceValue());
+		SnsScrapBoard scrapBoard = snsScrapBoardRepository.findBySnsUser_IdAndId(snsUserId,scrapId).orElseThrow(
+			() -> new BadRequestErrorException("해당 스크랩은 없습니다.")
+		);
+
+		scrapBoard.setScrapName(createProfileScrapReq.getScrapName());
+		scrapBoard.setTargetAudience(targetAudience);
+		snsScrapBoardRepository.save(scrapBoard);
+
+		List<GetProfileMainScrapPostRsp> getProfileMainScrapPostRspList = new ArrayList<>();
+
+		// 스크랩 보드 생성
+		return ScrapThumbnailRsp.builder()
+			.scrapName(scrapBoard.getScrapName())
+			.scrapId(scrapBoard.getId().toString())
+			.postScrapPreviewList(getProfileMainScrapPostRspList)
 			.build();
 	}
 
@@ -597,7 +709,9 @@ public class ProfilesService {
 
 		Optional<SnsUserFollow> snsUserFollowOpt = snsUserFollowRepository.findByFollowerUseAndFollowingUser(userId,
 			blockedUserId);
-		snsUserFollowOpt.ifPresent(snsUserFollowRepository::delete);
+		if(snsUserFollowOpt.isPresent()){
+			deleteFollow(userId, blockedUserId);
+		}
 
 		SnsBlockUser snsBlockUser = SnsBlockUser.builder()
 			.snsBlockerUser(SnsUser.builder().id(userId).build())
@@ -631,6 +745,37 @@ public class ProfilesService {
 			.isScraped(false)
 			.isClipped(!snsScrapList.isEmpty())
 			.build();
+	}
+
+	@Transactional
+	public Boolean deleteScrapBoard(Long snsUserId, Long scrapBoardId) {
+		Long scrapNum =snsScrapRepository.countBySnsUser_idAndSnsScrapBoard_id(snsUserId, scrapBoardId);
+		SnsScrapBoard snsScrapBoard = snsScrapBoardRepository.findBySnsUser_IdAndId(
+			snsUserId,scrapBoardId
+		).orElseThrow(
+			() -> new BadRequestErrorException("해당 스크랩은 없습니다.")
+		);
+		if (scrapNum > 0 ){
+			// 스크랩 보드 비 활성화, delete_at
+			System.out.println("수수께끼는 ");
+			snsScrapBoard.setDeleted_at(LocalDateTime.now());
+			snsScrapBoardRepository.save(snsScrapBoard);
+
+			// 클립한 거 false
+			List<SnsPostUserReaction> snsPostUserReactionList = snsPostUserReactionRepository.findAllByScrapAndClipTrue(snsUserId, scrapBoardId);
+			List<SnsPostUserReaction> snsPostUserReactionByIsClippedFalse = snsPostUserReactionList.stream().peek((snsPostUserReaction -> snsPostUserReaction.setIsClipped(false))).toList();
+
+			// batch update
+			snsPostUserReactionJdbcRepository.updateAll(snsPostUserReactionByIsClippedFalse);
+		}
+		else{
+			// board 삭제
+			System.out.println("모두 풀렸어 ");
+			snsScrapBoardRepository.delete(snsScrapBoard);
+		}
+
+
+		return false;
 
 	}
 
@@ -668,6 +813,7 @@ public class ProfilesService {
 
 		snsUserFollowRepository.delete(snsUserFollow);
 
+
 		return false;
 	}
 
@@ -678,22 +824,26 @@ public class ProfilesService {
 		return true;
 	}
 
-	private List<GetMyProfilePostRsp> convertDaoToProfilePostList(List<ProfilePostListDao> profilePostListDaoList) {
+	private List<GetProfilePostRsp> convertDaoToProfilePostList(List<ProfilePostListDao> profilePostListDaoList) {
 		return profilePostListDaoList.stream()
-			.map((profilePostListDao -> GetMyProfilePostRsp.builder()
+			.map((profilePostListDao -> GetProfilePostRsp.builder()
 				.postThumbnailContent(profilePostListDao.getPostContents()
 					.stream()
-					.filter(snsPostContent -> snsPostContent.getPostContentType() != PostContentType.TEXTFIELD)
 					.findFirst()
-					.orElse(new SnsPostContent(PostContentType.IMAGE, 100, "Not Image"))
+					.orElse(new SnsPostContent(PostContentType.IMAGE, 100, "Not Image",false,"","","",false))
 					.getContent()
 				)
 				.postThumbnailContentType(profilePostListDao.getPostContents()
 					.stream()
-					.filter(snsPostContent -> snsPostContent.getPostContentType() != PostContentType.TEXTFIELD)
 					.findFirst()
-					.orElse(new SnsPostContent(PostContentType.IMAGE, 100, "Not Image"))
+					.orElse(new SnsPostContent(PostContentType.IMAGE, 100, "Not Image",false,"","","",false))
 					.getPostContentType().toString())
+				.postThumbnailPreviewImg(profilePostListDao.getPostContents()
+					.stream()
+					.findFirst()
+					.orElse(new SnsPostContent(PostContentType.IMAGE, 100, "Not Image",false,"","","",false))
+					.getPreviewImg()
+				)
 				.postId(profilePostListDao.getPostId().toString())
 				.postedAt(profilePostListDao.getPostedAt())
 				.location(new Location(profilePostListDao.getLatitude(), profilePostListDao.getLongitude(),
@@ -735,6 +885,18 @@ public class ProfilesService {
 			.gender(snsUser.getSnsUserGender().toString())
 			.isPrivateProfile(snsUser.getIsPrivateProfile())
 			.build();
+	}
+
+	private ScrapTargetAudience getTargetAudienceValue (String targetAudienceValue) {
+		ScrapTargetAudience targetAudience;
+		if (Objects.equals(targetAudienceValue, ScrapTargetAudience.PROTECTED_AUDIENCE.label())) {
+			targetAudience = ScrapTargetAudience.PROTECTED_AUDIENCE;
+		} else if (Objects.equals(targetAudienceValue, ScrapTargetAudience.PRIVATE_AUDIENCE.label())) {
+			targetAudience = ScrapTargetAudience.PRIVATE_AUDIENCE;
+		} else {
+			targetAudience = ScrapTargetAudience.PUBLIC_AUDIENCE;
+		}
+		return targetAudience;
 	}
 
 }

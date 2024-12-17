@@ -56,12 +56,16 @@ public class SnsPostReport extends BaseMixinImpl {
 	private SnsUser reporterUser;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "reported_user_id", nullable = false, updatable = false)
+	@JoinColumn(name = "reported_user_id", updatable = false)
 	private SnsUser reportedUser;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "sns_post_id", nullable = false, updatable = false)
+	@JoinColumn(name = "sns_post_id", updatable = false)
 	private SnsPost snsPost;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "sns_post_comment_reaction_id", updatable = false)
+	private SnsPostCommentReaction snsPostCommentReaction;
 
 	@Column(name = "report_reason", length = 2047, nullable = false)
 	private String reportReason;

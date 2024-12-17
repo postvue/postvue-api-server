@@ -53,6 +53,7 @@ public class PostCommentNotificationProcessService
 		System.out.println("네 이놈!!!!");
 		// 알림 카운터가 충족되지 않을 때는 알림하지 않음
 		if (!needNotification) {
+			System.out.println("레몬스");
 			return;
 		}
 

@@ -8,4 +8,7 @@ public final class AccountConst {
 	public static final Integer ACCOUNT_PASSWORD_MIN_NUM = 8;
 	public static final Integer ACCOUNT_PASSWORD_MAX_NUM = 20;
 	public static final String ALLOWED_SPECIAL_CHAR_LIST = "!@_";
+
+	// 최대 삭제 계정 보유 기간
+	public static Integer MAX_DELETED_USER_RETENTION_DAY = 14;
 }

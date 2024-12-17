@@ -1,7 +1,10 @@
 package com.postvue.feelogserver.app.posts.service;
 
+import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -26,18 +30,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.postvue.feelogserver.app.cloud.service.MinioCloudService;
 import com.postvue.feelogserver.app.cloud.service.R2CloudService;
 import com.postvue.feelogserver.app.common.rsp.SnsPostFollowsGetRsp;
+import com.postvue.feelogserver.app.externallib.ffmpeg.FfmpegProcessingService;
 import com.postvue.feelogserver.app.maps.dto.GetAddressGeocodeRsp;
 import com.postvue.feelogserver.app.maps.service.MapService;
+import com.postvue.feelogserver.app.messagequeue.service.producer.VideoConversationProducer;
 import com.postvue.feelogserver.app.notifications.service.NotificationService;
 import com.postvue.feelogserver.app.posts.dto.common.Location;
 import com.postvue.feelogserver.app.posts.dto.common.PostContent;
 import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostCmntCreateReq;
 import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostCmntUpdateReq;
 import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostComposeCreateReq;
-import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostCreateByFileReq;
-import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostCreateByResourceLinkReq;
 import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostReportCreateReq;
 import com.postvue.feelogserver.app.posts.dto.req.create.SnsRepostCreateReq;
 import com.postvue.feelogserver.app.posts.dto.rsp.create.SnsPostCreateRsp;
@@ -75,6 +80,7 @@ import com.postvue.feelogserver.domain.snsposts.repository.SnsPostRepository;
 import com.postvue.feelogserver.domain.snsposts.vo.PostContentBusinessType;
 import com.postvue.feelogserver.domain.snsposts.vo.PostContentType;
 import com.postvue.feelogserver.domain.snsposts.vo.SnsPostContent;
+import com.postvue.feelogserver.domain.snsposts.vo.TgtAudType;
 import com.postvue.feelogserver.domain.snsposts.vo.TgtAudTypeValue;
 import com.postvue.feelogserver.domain.snspostuserreactions.SnsPostUserReaction;
 import com.postvue.feelogserver.domain.snspostuserreactions.dao.PostIsRepostedDao;
@@ -94,11 +100,14 @@ import com.postvue.feelogserver.domain.snsusers.SnsUser;
 import com.postvue.feelogserver.domain.snsusers.repository.SnsUserRepository;
 import com.postvue.feelogserver.global.constant.PageConfigConst;
 import com.postvue.feelogserver.global.constant.PostReportConst;
-import com.postvue.feelogserver.global.constant.ServerConfig;
+import com.postvue.feelogserver.global.constant.MediaConfigConst;
 import com.postvue.feelogserver.global.exception.BadRequestErrorException;
+import com.postvue.feelogserver.global.exception.BaseException;
+import com.postvue.feelogserver.global.exception.InternalServerErrorException;
 import com.postvue.feelogserver.global.exception.UnauthorizedErrorException;
 import com.postvue.feelogserver.global.util.converter.TagConverter;
 import com.postvue.feelogserver.global.util.response.ObjectConvertRspUtil;
+import com.postvue.feelogserver.global.util.validation.StringValidUtil;
 import com.postvue.feelogserver.global.util.validation.UploadFileValidationUtils;
 
 import jakarta.transaction.Transactional;
@@ -119,12 +128,12 @@ public class PostsService {
 	private final SnsPostCommentLikeRepository snsPostCommentLikeRepository;
 	private final SnsUserFavoriteTermBookmarkRepository snsUserFavoriteTermBookmarkRepository;
 	private final SnsPostReportRepository snsPostReportRepository;
-
 	private final NotificationService notificationService;
-
 	private final MapService mapService;
-
 	private final R2CloudService r2CloudService;
+	private final MinioCloudService minioCloudService;
+	private final FfmpegProcessingService ffmpegProcessingService;
+	private final VideoConversationProducer videoConversationProducer;
 
 	@Value("${file.imageSize}")
 	private Integer imageFileSize;
@@ -132,14 +141,6 @@ public class PostsService {
 	@Value("${file.videoSize}")
 	private Integer videoFileSize;
 
-	@Value("${cloud.cloudflare.service.contentBucket.bucketPublicUrl}")
-	private String bucketUrl;
-
-	@Value("${cloud.cloudflare.service.contentBucket.imageContentStoragePath}")
-	private String imageContentStoragePath;
-
-	@Value("${cloud.cloudflare.service.contentBucket.imageCommentContentPath}")
-	private String imageCommentContentPath;
 
 	public GetTasteForMeRsp findTasteForMePosts(Long snsUserId, Integer page, Long cursorId) {
 		Long cursor = Long.valueOf(PageConfigConst.ZERO_ID);
@@ -158,7 +159,7 @@ public class PostsService {
 			List<SnsPostDao> snsPostsByFollow = snsPostRepository.selectTasteForMeByFollow(snsUserId, cursorId,
 				followPageNum);
 			if (!snsPostsByFollow.isEmpty()) {
-				cursor = snsPostsByFollow.get(snsPostsByFollow.size() - 1).getPostId();
+				cursor = snsPostsByFollow.get(snsPostsByFollow.size() - 1).getCursorId();
 				snsPostList.addAll(snsPostsByFollow);
 			}
 		}
@@ -195,7 +196,7 @@ public class PostsService {
 			List<SnsPostDao> snsPostsByFollow = snsPostRepository.selectTasteForMeByFollow(snsUserId, cursorId,
 				followPageNum);
 			if (!snsPostsByFollow.isEmpty()) {
-				cursor = snsPostsByFollow.get(snsPostsByFollow.size() - 1).getPostId();
+				cursor = snsPostsByFollow.get(snsPostsByFollow.size() - 1).getCursorId();
 				snsPostList.addAll(snsPostsByFollow);
 			}
 		}
@@ -282,7 +283,7 @@ public class PostsService {
 	}
 
 	public SnsPostInfoRsp findPostInfo(Long userId, Long postId) {
-		SnsPostInfoDao snsPostInfoDao = snsPostRepository.selectPostInfo(postId).orElseThrow(
+		SnsPostInfoDao snsPostInfoDao = snsPostRepository.selectPostInfo(postId, userId).orElseThrow(
 			() -> new BadRequestErrorException("해당 게시물은 없습니다.")
 		);
 
@@ -375,7 +376,7 @@ public class PostsService {
 				snsUserId, searchQuery);
 			isBookMarkFavoriteTerm = favoriteTermBookmarkOptional.isPresent();
 		}
-		List<SnsPostDao> snsPosts = snsPostRepository.selectTagByRelationSearchQueryByPopular(snsUserId,
+		List<SnsPostDao> snsPosts = snsPostRepository.selectPostBySearchQueryPopular(snsUserId,
 			searchQuery,
 			page * PageConfigConst.DEFAULT_PAGE_SIZE,
 			PageConfigConst.DEFAULT_PAGE_SIZE, LocalDateTime.now());
@@ -398,7 +399,7 @@ public class PostsService {
 					snsUserId, searchQuery);
 			isBookMarkFavoriteTerm = favoriteTermBookmarkOptional.isPresent();
 		}
-		List<SnsPostDao> snsPosts = snsPostRepository.selectTagByRelationSearchQuery(snsUserId,
+		List<SnsPostDao> snsPosts = snsPostRepository.selectPostBySearchQueryRecently(snsUserId,
 			page * PageConfigConst.DEFAULT_PAGE_SIZE,
 			searchQuery,
 			PageConfigConst.DEFAULT_PAGE_SIZE);
@@ -410,7 +411,35 @@ public class PostsService {
 			.isFetchFavoriteState(isFetchFavorite)
 			.isBookMarkedFavoriteTerm(isBookMarkFavoriteTerm)
 			.build();
+	}
 
+	public GetSearchPostsRsp findPostBySearchQueryByNear(
+		Long snsUserId, Integer page, String searchQuery,
+		Float latitude, Float longitude,
+		Boolean isFetchFavorite) {
+		boolean isBookMarkFavoriteTerm = false;
+		if (isFetchFavorite || Objects.equals(page, PageConfigConst.PAGE_INIT_NUM)) {
+			isFetchFavorite = true;
+			Optional<SnsUserFavoriteTermBookmark> favoriteTermBookmarkOptional = snsUserFavoriteTermBookmarkRepository
+				.findBySnsUser_IdAndFavoriteTermName(
+					snsUserId, searchQuery);
+			isBookMarkFavoriteTerm = favoriteTermBookmarkOptional.isPresent();
+		}
+		List<SnsPostDao> snsPosts = snsPostRepository.selectPostBySearchQueryNear(snsUserId,
+			page * PageConfigConst.DEFAULT_PAGE_SIZE,
+			searchQuery,
+			PageConfigConst.DEFAULT_PAGE_SIZE,
+			latitude,
+			longitude
+		);
+
+		List<SnsPostRsp> snsPostRspList = getPostGetRspList(snsPosts);
+		return GetSearchPostsRsp.builder()
+			.snsPostRspList(snsPostRspList)
+
+			.isFetchFavoriteState(isFetchFavorite)
+			.isBookMarkedFavoriteTerm(isBookMarkFavoriteTerm)
+			.build();
 	}
 
 	public GetPostRelationRsp findPostRelation(Long postId, Long userId, Long cursorId) {
@@ -450,6 +479,7 @@ public class PostsService {
 		return new SnsPostClipPutRsp(snsPostUserReaction.getIsClipped());
 	}
 
+	@Transactional
 	public SnsPostLikePutRsp modifyPostLike(Long snsPostId, Long snsUserId) {
 		Optional<SnsPostUserReaction> snsPostUserReactionOpt = snsPostUserReactionRepository.findBySnsPostAndSnsUser(
 			snsPostId,
@@ -484,146 +514,146 @@ public class PostsService {
 		return new SnsPostLikePutRsp(snsPostUserReaction.getIsLiked());
 	}
 
-	@Transactional
-	public SnsPostCreateRsp savePostByResourceLink(Long userId,
-		SnsPostCreateByResourceLinkReq snsPostCreateByResourceLinkReq) throws
-		JsonProcessingException {
-		// 유저 불러오기
-		SnsUser snsUser = new SnsUser();
-		snsUser.setId(userId);
-		List<String> tagNameList = snsPostCreateByResourceLinkReq.getTagList();
+	// @Transactional
+	// public SnsPostCreateRsp savePostByResourceLink(Long userId,
+	// 	SnsPostCreateByResourceLinkReq snsPostCreateByResourceLinkReq) throws
+	// 	JsonProcessingException {
+	// 	// 유저 불러오기
+	// 	SnsUser snsUser = new SnsUser();
+	// 	snsUser.setId(userId);
+	// 	List<String> tagNameList = snsPostCreateByResourceLinkReq.getTagList();
+	//
+	// 	// QUERY 2: SELECT, EXITING SNS TAG LIST
+	// 	List<SnsTag> existingSnsTagEntityList = snsTagRepository.findAllByTagNameIn(tagNameList);
+	//
+	// 	List<String> newTagNameList = tagNameList.stream()
+	// 		.filter(tagName -> !existingSnsTagEntityList.stream().map(SnsTag::getTagName).toList().contains(tagName))
+	// 		.toList();
+	//
+	// 	// QUERY 3: BULK INSERT, NEW TAG LIST
+	// 	List<SnsTag> newSnsTagEntityList = newTagNameList.stream().map(tagName -> SnsTag.builder()
+	// 		.tagName(tagName)
+	// 		.build()).toList();
+	//
+	// 	snsTagJdbcRepository.saveAll(newSnsTagEntityList);
+	//
+	// 	List<SnsTag> snsRepostTagEntityList = new ArrayList<>();
+	// 	snsRepostTagEntityList.addAll(existingSnsTagEntityList);
+	// 	snsRepostTagEntityList.addAll(newSnsTagEntityList);
+	//
+	// 	// QUERY 4: INSERT, NEW POST
+	// 	SnsPost snsNewPost = SnsPost.builder()
+	// 		.snsPostContents(snsPostCreateByResourceLinkReq.getPostContents()
+	// 			.stream()
+	// 			.map((postContent -> new SnsPostContent(
+	// 				postContent.getPostContentType(),
+	// 				postContent.getAscSortNum(),
+	// 				postContent.getContent())))
+	// 			.toList())
+	// 		.snsUser(snsUser)
+	// 		.postTitle(snsPostCreateByResourceLinkReq.getTitle())
+	// 		.postBodyText(snsPostCreateByResourceLinkReq.getBodyText())
+	// 		.latitude(snsPostCreateByResourceLinkReq.getLatitude())
+	// 		.longitude(snsPostCreateByResourceLinkReq.getLongitude())
+	// 		.tags(snsRepostTagEntityList.stream().map(snsTag -> PostTag.builder()
+	// 			.tagId(snsTag.getId())
+	// 			.tagName(snsTag.getTagName())
+	// 			.build()).toList())
+	// 		.build();
+	//
+	// 	if (!snsPostCreateByResourceLinkReq.getAddress().trim().isEmpty()) {
+	// 		GetAddressGeocodeRsp getAddressGeocodeRsp = mapService.getAddressGeocode(
+	// 			snsPostCreateByResourceLinkReq.getAddress());
+	//
+	// 		snsNewPost.setAddress(snsPostCreateByResourceLinkReq.getAddress());
+	// 		snsNewPost.setLatitude(getAddressGeocodeRsp.getLatitude());
+	// 		snsNewPost.setLongitude(getAddressGeocodeRsp.getLongitude());
+	// 	}
+	//
+	// 	snsPostJdbcRepository.insertPost(snsNewPost);
+	//
+	// 	// QUERY 5: INSERT SNS POST USER REACTION
+	// 	SnsPostUserReaction snsPostUserReaction = SnsPostUserReaction.builder()
+	// 		.snsPost(snsNewPost)
+	// 		.snsUser(snsUser)
+	// 		.build();
+	// 	snsPostUserReactionRepository.save(snsPostUserReaction);
+	//
+	// 	// QUERY 6: BULK INSERT, NEW SNS TAG POST LIST
+	// 	snsTagPostJdbcRepository.saveAll(snsRepostTagEntityList.stream().map(snsTag -> SnsTagPost.builder()
+	// 		.snsTag(snsTag)
+	// 		.snsPost(snsNewPost)
+	// 		.build()).toList());
+	//
+	// 	return new SnsPostCreateRsp(snsPostUserReaction.getIsReposted(),
+	// 		convertToPostGetRspByPostCreated(snsNewPost));
+	// }
 
-		// QUERY 2: SELECT, EXITING SNS TAG LIST
-		List<SnsTag> existingSnsTagEntityList = snsTagRepository.findAllByTagNameIn(tagNameList);
-
-		List<String> newTagNameList = tagNameList.stream()
-			.filter(tagName -> !existingSnsTagEntityList.stream().map(SnsTag::getTagName).toList().contains(tagName))
-			.toList();
-
-		// QUERY 3: BULK INSERT, NEW TAG LIST
-		List<SnsTag> newSnsTagEntityList = newTagNameList.stream().map(tagName -> SnsTag.builder()
-			.tagName(tagName)
-			.build()).toList();
-
-		snsTagJdbcRepository.saveAll(newSnsTagEntityList);
-
-		List<SnsTag> snsRepostTagEntityList = new ArrayList<>();
-		snsRepostTagEntityList.addAll(existingSnsTagEntityList);
-		snsRepostTagEntityList.addAll(newSnsTagEntityList);
-
-		// QUERY 4: INSERT, NEW POST
-		SnsPost snsNewPost = SnsPost.builder()
-			.snsPostContents(snsPostCreateByResourceLinkReq.getPostContents()
-				.stream()
-				.map((postContent -> new SnsPostContent(
-					postContent.getPostContentType(),
-					postContent.getAscSortNum(),
-					postContent.getContent())))
-				.toList())
-			.snsUser(snsUser)
-			.postTitle(snsPostCreateByResourceLinkReq.getTitle())
-			.postBodyText(snsPostCreateByResourceLinkReq.getBodyText())
-			.latitude(snsPostCreateByResourceLinkReq.getLatitude())
-			.longitude(snsPostCreateByResourceLinkReq.getLongitude())
-			.tags(snsRepostTagEntityList.stream().map(snsTag -> PostTag.builder()
-				.tagId(snsTag.getId())
-				.tagName(snsTag.getTagName())
-				.build()).toList())
-			.build();
-
-		if (!snsPostCreateByResourceLinkReq.getAddress().trim().isEmpty()) {
-			GetAddressGeocodeRsp getAddressGeocodeRsp = mapService.getAddressGeocode(
-				snsPostCreateByResourceLinkReq.getAddress());
-
-			snsNewPost.setAddress(snsPostCreateByResourceLinkReq.getAddress());
-			snsNewPost.setLatitude(getAddressGeocodeRsp.getLatitude());
-			snsNewPost.setLongitude(getAddressGeocodeRsp.getLongitude());
-		}
-
-		snsPostJdbcRepository.insertPost(snsNewPost);
-
-		// QUERY 5: INSERT SNS POST USER REACTION
-		SnsPostUserReaction snsPostUserReaction = SnsPostUserReaction.builder()
-			.snsPost(snsNewPost)
-			.snsUser(snsUser)
-			.build();
-		snsPostUserReactionRepository.save(snsPostUserReaction);
-
-		// QUERY 6: BULK INSERT, NEW SNS TAG POST LIST
-		snsTagPostJdbcRepository.saveAll(snsRepostTagEntityList.stream().map(snsTag -> SnsTagPost.builder()
-			.snsTag(snsTag)
-			.snsPost(snsNewPost)
-			.build()).toList());
-
-		return new SnsPostCreateRsp(snsPostUserReaction.getIsReposted(),
-			convertToPostGetRspByPostCreated(snsNewPost));
-	}
-
-	@Transactional
-	public SnsPostCreateRsp savePostByFile(Long userId, SnsPostCreateByFileReq snsPostCreateByFileReq) throws
-		JsonProcessingException {
-		// 유저 불러오기
-		SnsUser snsUser = new SnsUser();
-		snsUser.setId(userId);
-		List<String> tagNameList = snsPostCreateByFileReq.getTagList();
-
-		// QUERY 2: SELECT, EXITING SNS TAG LIST
-		List<SnsTag> existingSnsTagEntityList = snsTagRepository.findAllByTagNameIn(tagNameList);
-
-		List<String> newTagNameList = tagNameList.stream()
-			.filter(tagName -> !existingSnsTagEntityList.stream().map(SnsTag::getTagName).toList().contains(tagName))
-			.toList();
-
-		// QUERY 3: BULK INSERT, NEW TAG LIST
-		List<SnsTag> newSnsTagEntityList = newTagNameList.stream().map(tagName -> SnsTag.builder()
-			.tagName(tagName)
-			.build()).toList();
-
-		snsTagJdbcRepository.saveAll(newSnsTagEntityList);
-
-		List<SnsTag> snsRepostTagEntityList = new ArrayList<>();
-		snsRepostTagEntityList.addAll(existingSnsTagEntityList);
-		snsRepostTagEntityList.addAll(newSnsTagEntityList);
-
-		// QUERY 4: INSERT, NEW POST
-		SnsPost snsNewPost = SnsPost.builder()
-			.snsPostContents(snsPostCreateByFileReq.getPostContents()
-				.stream()
-				.map((postContent -> new SnsPostContent(
-					postContent.getPostContentType(),
-					postContent.getAscSortNum(),
-					postContent.getContent())))
-				.toList())
-			.snsUser(snsUser)
-			.postTitle(snsPostCreateByFileReq.getTitle())
-			.postBodyText(snsPostCreateByFileReq.getBodyText())
-			.latitude(snsPostCreateByFileReq.getLatitude())
-			.longitude(snsPostCreateByFileReq.getLongitude())
-			.tags(snsRepostTagEntityList.stream().map(snsTag -> PostTag.builder()
-				.tagId(snsTag.getId())
-				.tagName(snsTag.getTagName())
-				.build()).toList())
-			.build();
-
-		snsPostJdbcRepository.insertPost(snsNewPost);
-
-		// QUERY 5: INSERT SNS POST USER REACTION
-		// @REFER: ? 왜 리액션 추가 했지?
-		SnsPostUserReaction snsPostUserReaction = SnsPostUserReaction.builder()
-			.snsPost(snsNewPost)
-			.snsUser(snsUser)
-			.build();
-		snsPostUserReactionRepository.save(snsPostUserReaction);
-
-		// QUERY 6: BULK INSERT, NEW SNS TAG POST LIST
-		snsTagPostJdbcRepository.saveAll(snsRepostTagEntityList.stream().map(snsTag -> SnsTagPost.builder()
-			.snsTag(snsTag)
-			.snsPost(snsNewPost)
-			.build()).toList());
-
-		return new SnsPostCreateRsp(snsPostUserReaction.getIsReposted(),
-			convertToPostGetRspByPostCreated(snsNewPost));
-	}
+	// @Transactional
+	// public SnsPostCreateRsp savePostByFile(Long userId, SnsPostCreateByFileReq snsPostCreateByFileReq) throws
+	// 	JsonProcessingException {
+	// 	// 유저 불러오기
+	// 	SnsUser snsUser = new SnsUser();
+	// 	snsUser.setId(userId);
+	// 	List<String> tagNameList = snsPostCreateByFileReq.getTagList();
+	//
+	// 	// QUERY 2: SELECT, EXITING SNS TAG LIST
+	// 	List<SnsTag> existingSnsTagEntityList = snsTagRepository.findAllByTagNameIn(tagNameList);
+	//
+	// 	List<String> newTagNameList = tagNameList.stream()
+	// 		.filter(tagName -> !existingSnsTagEntityList.stream().map(SnsTag::getTagName).toList().contains(tagName))
+	// 		.toList();
+	//
+	// 	// QUERY 3: BULK INSERT, NEW TAG LIST
+	// 	List<SnsTag> newSnsTagEntityList = newTagNameList.stream().map(tagName -> SnsTag.builder()
+	// 		.tagName(tagName)
+	// 		.build()).toList();
+	//
+	// 	snsTagJdbcRepository.saveAll(newSnsTagEntityList);
+	//
+	// 	List<SnsTag> snsRepostTagEntityList = new ArrayList<>();
+	// 	snsRepostTagEntityList.addAll(existingSnsTagEntityList);
+	// 	snsRepostTagEntityList.addAll(newSnsTagEntityList);
+	//
+	// 	// QUERY 4: INSERT, NEW POST
+	// 	SnsPost snsNewPost = SnsPost.builder()
+	// 		.snsPostContents(snsPostCreateByFileReq.getPostContents()
+	// 			.stream()
+	// 			.map((postContent -> new SnsPostContent(
+	// 				postContent.getPostContentType(),
+	// 				postContent.getAscSortNum(),
+	// 				postContent.getContent())))
+	// 			.toList())
+	// 		.snsUser(snsUser)
+	// 		.postTitle(snsPostCreateByFileReq.getTitle())
+	// 		.postBodyText(snsPostCreateByFileReq.getBodyText())
+	// 		.latitude(snsPostCreateByFileReq.getLatitude())
+	// 		.longitude(snsPostCreateByFileReq.getLongitude())
+	// 		.tags(snsRepostTagEntityList.stream().map(snsTag -> PostTag.builder()
+	// 			.tagId(snsTag.getId())
+	// 			.tagName(snsTag.getTagName())
+	// 			.build()).toList())
+	// 		.build();
+	//
+	// 	snsPostJdbcRepository.insertPost(snsNewPost);
+	//
+	// 	// QUERY 5: INSERT SNS POST USER REACTION
+	// 	// @REFER: ? 왜 리액션 추가 했지?
+	// 	SnsPostUserReaction snsPostUserReaction = SnsPostUserReaction.builder()
+	// 		.snsPost(snsNewPost)
+	// 		.snsUser(snsUser)
+	// 		.build();
+	// 	snsPostUserReactionRepository.save(snsPostUserReaction);
+	//
+	// 	// QUERY 6: BULK INSERT, NEW SNS TAG POST LIST
+	// 	snsTagPostJdbcRepository.saveAll(snsRepostTagEntityList.stream().map(snsTag -> SnsTagPost.builder()
+	// 		.snsTag(snsTag)
+	// 		.snsPost(snsNewPost)
+	// 		.build()).toList());
+	//
+	// 	return new SnsPostCreateRsp(snsPostUserReaction.getIsReposted(),
+	// 		convertToPostGetRspByPostCreated(snsNewPost));
+	// }
 
 	@Transactional
 	public SnsPostCreateRsp savePostRepost(Long snsPostId, Long userId, SnsRepostCreateReq snsRepostCreateReq) throws
@@ -731,9 +761,6 @@ public class PostsService {
 
 		snsPost.setReactionCount((snsPost.getReactionCount() != null ? snsPost.getReactionCount() : 0) + 1);
 
-		// 파일 저장
-		r2CloudService.uploadImageToR2(file,newSnsPostCommentReaction.getCommentMediaContent());
-
 		return convertToPostCommentGetRsp(newSnsPostCommentReaction);
 	}
 
@@ -755,23 +782,20 @@ public class PostsService {
 			.build();
 
 		snsPostCmntReaction.setIsCommented(true);
-		SnsPostCommentReaction newSnsPostCommentReaction = saveCmntReaction(file, snsPostCmntReaction);
+		saveCmntReaction(file, snsPostCmntReaction);
 
-		r2CloudService.uploadImageToR2(file,newSnsPostCommentReaction.getCommentMediaContent());
 
 		return convertToPostReplyByCommentRsp(snsPostCmntReaction, isThread);
 	}
 
 	private SnsPostCommentReaction saveCmntReaction(MultipartFile file, SnsPostCommentReaction snsPostCmntReaction) {
 		if (file != null){
+			System.out.println("호잉승");
 			String contentType = file.getContentType();
 			String originalFilename = file.getOriginalFilename();
 
 			// 일단 이미지만 저장할 수 잏게
 			String extension = FilenameUtils.getExtension(originalFilename);
-
-			System.out.println("파일 이름은? "+originalFilename);
-			System.out.println(extension);
 
 			boolean isImage = UploadFileValidationUtils.isImage(contentType);
 
@@ -784,12 +808,15 @@ public class PostsService {
 				PostCommentMediaType.IMAGE
 			);
 
-			System.out.println("네 이놈1");
-			snsPostCmntReaction.setCommentMediaContent(imageContentStoragePath + imageCommentContentPath +
-				 UUID.randomUUID() + "." + extension);
-		}
 
-		System.out.println("네 이놈2");
+
+			String contentUrl = r2CloudService.getPostCommentImageContentUrlByMinio(UUID.randomUUID() + "." + extension);
+
+			snsPostCmntReaction.setCommentMediaContent(r2CloudService.getPublicContentUrlByR2(contentUrl));
+
+			// 파일 저장
+			r2CloudService.uploadImageToR2(file, contentUrl);
+		}
 
 		return snsPostCommentReactionRepository.save(snsPostCmntReaction);
 	}
@@ -820,6 +847,8 @@ public class PostsService {
 
 		// @REFER: 진짜 삭제하진 말고 deleted_at으로 관리
 		snsTagPostRepository.deleteAllBySnsPostId(mySnsPost);
+		mySnsPost.setDeletedAt(LocalDateTime.now());
+		snsPostRepository.save(mySnsPost);
 		// snsPostUserReactionRepository.deleteBySnsPostAndSnsUser_Id(mySnsPost, snsUserId);
 		// snsPostRepository.delete(mySnsPost);
 
@@ -943,122 +972,151 @@ public class PostsService {
 	}
 
 	@Transactional
-	public String createPostCompose (
+	public Boolean composePost (
 		SnsPostComposeCreateReq snsPostComposeCreateReq,
 		List<MultipartFile> files,
-		Long userId) {
-		int uploadNum = files.size() + snsPostComposeCreateReq.getPostContentLinkList().size();
-		if (uploadNum > ServerConfig.MAX_UPLOAD_FILE_NUM) {
-			throw new BadRequestErrorException(
-				String.format("업로드 파일은 쵀대 %d개까지 입니다.", ServerConfig.MAX_UPLOAD_FILE_NUM));
-		}
+		Long userId
+	) {
+		createPostCompose(new SnsPost(),snsPostComposeCreateReq ,files,userId,false);
+		return true;
+	}
+
+	@Transactional
+	// @REFER: cloudflare 랑 minio랑 구분 되도록 필요
+	public Boolean editPost (
+		Long snsPostId,
+		SnsPostComposeCreateReq snsPostComposeCreateReq,
+		List<MultipartFile> files,
+		Long userId
+	) {
+		SnsPost snsPost = snsPostRepository.findById(snsPostId).orElseThrow(
+			() -> new BadRequestErrorException("해당 게시물은 없습니다.")
+		);
+
+		snsPost.getSnsPostContents().forEach((snsPostContent -> {
+			if(snsPostContent.getIsLink()) return;
+			if ( snsPostComposeCreateReq.getPostContentLinkList().stream().map(PostContent::getContent).toList().contains(snsPostContent.getContent())){
+				String oldFileUrl = snsPostContent.getContent();
+				//@REFER: 매직 넘버
+				r2CloudService.renameImageInR2(oldFileUrl, String.format("delete/posts/%d/%s",snsPost.getId(),oldFileUrl));
+			}
+		}));
+		createPostCompose(snsPost, snsPostComposeCreateReq, files, userId,true);
+		return true;
+	}
+
+	@Transactional(rollbackOn = Exception.class)
+	public void createPostCompose(
+		SnsPost snsPost,
+		SnsPostComposeCreateReq snsPostComposeCreateReq,
+		List<MultipartFile> files,
+		Long userId,
+		Boolean isEdit
+	) {
+		int fileSize =  files != null ? files.size() : 0;
+
+		// 업로드 수가 타당한지?
+		isValidUploadNum(fileSize + snsPostComposeCreateReq.getPostContentLinkList().size());
 
 		List<SnsPostContent> snsPostContentList = new ArrayList<>();
 		AtomicInteger index = new AtomicInteger();
-	    String contentUrl = "test/";
-		files.forEach((multipartFile -> {
-			// 이미지 또는 비디오 파일인지 확인
-			String contentType = multipartFile.getContentType();
-			String originalFilename = multipartFile.getOriginalFilename();
 
-			String extension = FilenameUtils.getExtension(originalFilename);
-
-			boolean isImage = UploadFileValidationUtils.isImage(contentType);
-			boolean isVideo = UploadFileValidationUtils.isVideo(contentType);
-			boolean isValidType = isImage || isVideo;
-
-			if(!isValidType){
-				throw new BadRequestErrorException("업로드 파일 유형이 아닙니다.");
-			}
-
-			if((isImage && multipartFile.getSize() > imageFileSize) || (isVideo && multipartFile.getSize() > videoFileSize)){
-				throw new BadRequestErrorException("파일 크기가 너무 큽니다.");
-			}
-
-			snsPostContentList.add(SnsPostContent.builder()
-					.postContentType(
-						isImage ? PostContentType.IMAGE : PostContentType.VIDEO
-					)
-					.content(contentUrl + UUID.randomUUID() + "." + extension)
-					.ascSortNum(index.incrementAndGet())
-				.build());
-		}));
-
-		snsPostComposeCreateReq.getPostContentLinkList().forEach((postContent -> {
-			snsPostContentList.add(SnsPostContent.builder()
-				.postContentType(postContent.getPostContentType())
-				.content(postContent.getContent())
-				.ascSortNum(index.incrementAndGet())
-				.build());
-		}));
+		// content url 생성 및 추가 추가
+		addContentUrls(fileSize, files , snsPostComposeCreateReq, snsPostContentList, index);
 
 		SnsUser snsUser = SnsUser.builder().id(userId).build();
-		List<String> tagNameList = snsPostComposeCreateReq.getTagList();
 
-		// QUERY 2: SELECT, EXITING SNS TAG LIST
-		List<SnsTag> existingSnsTagEntityList = snsTagRepository.findAllByTagNameIn(tagNameList);
-
-		List<String> newTagNameList = tagNameList.stream()
-			.filter(tagName -> !existingSnsTagEntityList.stream().map(SnsTag::getTagName).toList().contains(tagName))
-			.toList();
-
-		// QUERY 3: BULK INSERT, NEW TAG LIST
-		List<SnsTag> newSnsTagEntityList = newTagNameList.stream().map(tagName -> SnsTag.builder()
-			.tagName(tagName)
-			.build()).toList();
-
-		snsTagJdbcRepository.saveAll(newSnsTagEntityList);
-
-		List<SnsTag> snsPostTagEntityList = new ArrayList<>();
-		snsPostTagEntityList.addAll(existingSnsTagEntityList);
-		snsPostTagEntityList.addAll(newSnsTagEntityList);
+		// 태그 생성
+		List<SnsTag> snsPostTagEntityList = createPostTagRelation(snsPostComposeCreateReq, snsPostContentList);
 
 		// 링크로 업로드 된 이미지나 비디오
 		// QUERY 4: INSERT, NEW POST
-		SnsPost snsNewPost = SnsPost.builder()
-			.snsPostContents(snsPostContentList)
-			.snsUser(snsUser)
-			.postTitle(snsPostComposeCreateReq.getTitle())
-			.postBodyText(snsPostComposeCreateReq.getBodyText())
-			.latitude(snsPostComposeCreateReq != null ? snsPostComposeCreateReq.getLatitude() : null)
-			.longitude(snsPostComposeCreateReq != null ? snsPostComposeCreateReq.getLongitude() : null)
-			.tags(snsPostTagEntityList.stream().map(snsTag -> PostTag.builder()
-				.tagId(snsTag.getId())
-				.tagName(snsTag.getTagName())
-				.build()).toList())
-			.build();
-
-		if (!snsPostComposeCreateReq.getAddress().trim().isEmpty()) {
-			GetAddressGeocodeRsp getAddressGeocodeRsp = mapService.getAddressGeocode(
-				snsPostComposeCreateReq.getAddress());
-
-			snsNewPost.setAddress(snsPostComposeCreateReq.getAddress());
-			snsNewPost.setLatitude(getAddressGeocodeRsp.getLatitude());
-			snsNewPost.setLongitude(getAddressGeocodeRsp.getLongitude());
-		}
+		SnsPost _snsPost = updateUploadSnsPost(snsPost, snsPostComposeCreateReq, snsUser, snsPostContentList,snsPostTagEntityList);
 
 		try {
-			snsPostJdbcRepository.insertPost(snsNewPost);
+			if (isEdit){
+				snsTagPostJdbcRepository.deleteByPostId(_snsPost.getId());
+				snsPostJdbcRepository.updatePost(_snsPost);
+			}
+			else{
+				snsPostJdbcRepository.insertPost(_snsPost);
 
-			// QUERY 5: INSERT SNS POST USER REACTION
-			SnsPostUserReaction snsPostUserReaction = SnsPostUserReaction.builder()
-				.snsPost(snsNewPost)
-				.snsUser(snsUser)
-				.build();
-			snsPostUserReactionRepository.save(snsPostUserReaction);
-
+				// QUERY 5: INSERT SNS POST USER REACTION
+				SnsPostUserReaction snsPostUserReaction = SnsPostUserReaction.builder()
+					.snsPost(_snsPost)
+					.snsUser(snsUser)
+					.build();
+				snsPostUserReactionRepository.save(snsPostUserReaction);
+			}
 			// QUERY 6: BULK INSERT, NEW SNS TAG POST LIST
 			snsTagPostJdbcRepository.saveAll(snsPostTagEntityList.stream().map(snsTag -> SnsTagPost.builder()
 				.snsTag(snsTag)
-				.snsPost(snsNewPost)
+				.snsPost(_snsPost)
 				.build()).toList());
 		}
 		catch (JsonProcessingException e) {
 			throw new BadRequestErrorException("Json 객체 변환 과정에서 오류가 났습니다: " + e);
 		}
 
-		r2CloudService.uploadImagesToR2(files, snsPostContentList.stream().map((SnsPostContent::getContent)).toList());
-		return "Good";
+		if (fileSize > 0){
+			// r2CloudService.uploadFileToR2(files, fileContentUrls);
+			try {
+				for (int i = 0; i < files.size(); i++) {
+					// 이미지 인 경우 => cloudflare r2에 저장
+					if(UploadFileValidationUtils.isImage(files.get(i).getContentType())){
+						r2CloudService.uploadImageToR2(files.get(i), snsPostContentList.get(i).getContent());
+					}
+					// 비디오인 경우 => minio에 저장
+					else{
+						// 비디오 파일
+						// File videoTempFile = File.createTempFile(MediaConfigConst.UPLOAD_TEMP_FILE_PREFIX_NAME,
+						// 	files.get(i).getOriginalFilename());
+						// files.get(i).transferTo(videoTempFile);
+						//
+						// String tempFolderName = UUID.randomUUID().toString();
+						// Path tempDir = Files.createTempDirectory(tempFolderName);
+						// Path outputTempAbsoluteDirPath = tempDir.toAbsolutePath();
+						// String outputTempAbsoluteDirPathString = outputTempAbsoluteDirPath.toString();
+						// File outputDirFile = outputTempAbsoluteDirPath.toFile();
+						// ffmpegProcessingService.convertToHLS(videoTempFile, outputDirFile, minioCloudService.m3u8FileName);
+						// minioCloudService.uploadHLSToMinio(outputDirFile, minioCloudService.getBucketKeyContentUrl(snsPostContentList.get(i).getContent()));
+						//
+						// // poster 이미지
+						// File posterImgFile = ffmpegProcessingService.generateVideoPoster(videoTempFile, "output.jpg");
+						// minioCloudService.uploadImageJpegToMinio(posterImgFile, minioCloudService.getBucketKeyContentUrl(snsPostContentList.get(i).getPreviewImg()));
+						//
+						// // 즉시 제거
+						// videoTempFile.delete();
+						// outputDirFile.delete();
+						// tempDir.toFile().delete();
+						// posterImgFile.delete();
+
+						File videoTempFile = File.createTempFile(
+							MediaConfigConst.UPLOAD_TEMP_FILE_PREFIX_NAME + UUID.randomUUID() + "-",
+							files.get(i).getOriginalFilename());
+						files.get(i).transferTo(videoTempFile);
+
+						// poster 이미지 생성및 업로드
+						File posterImgFile = ffmpegProcessingService.generateVideoPoster(videoTempFile, MediaConfigConst.TEMP_IMAGE_NAME);
+						minioCloudService.uploadImageJpegToMinio(posterImgFile, minioCloudService.getBucketKeyContentUrl(
+							snsPostContentList.get(i).getPreviewImg()));
+						posterImgFile.delete();
+
+						// RabbitMQ에 등록
+						videoConversationProducer.sendVideoConversionUploadToQueue(
+							_snsPost.getId(),
+							videoTempFile.getAbsolutePath(),
+							snsPostContentList.get(i)
+						);
+					}
+				}
+			} catch (BaseException e) {
+				throw e;
+			} catch (Exception e) {
+				System.out.println(e);
+				throw new InternalServerErrorException("서버 오류로 업로드 실패", e);
+			}
+		}
 	}
 
 	@Transactional
@@ -1073,42 +1131,34 @@ public class PostsService {
 			.postReportStatus(PostReportStatus.PENDING)
 			.build();
 
-		switch (snsPostReportCreateReq.getPostReportReasonType()) {
-			case PostReportConst.POST_DISLIKE_REASON_TYPE -> {
-				snsPostReport.setPostReportReasonType(PostReportReasonType.DISLIKE);
-				snsPostReport.setReportReason(PostReportConst.POST_DISLIKE_REASON);
-			}
-			case PostReportConst.POST_INACCURATE_LOCATION_REASON_TYPE -> {
-				snsPostReport.setPostReportReasonType(PostReportReasonType.INACCURATE_LOCATION);
-				snsPostReport.setReportReason(PostReportConst.POST_INACCURATE_LOCATION_REASON);
-			}
-			case PostReportConst.POST_SPAM_OR_SCAM_REASON_TYPE -> {
-				snsPostReport.setPostReportReasonType(PostReportReasonType.SPAM_OR_SCAM);
-				snsPostReport.setReportReason(PostReportConst.POST_SPAM_OR_SCAM_REASON);
-			}
-			case PostReportConst.POST_SENSITIVE_CONTENT_REASON_TYPE -> {
-				snsPostReport.setPostReportReasonType(PostReportReasonType.SENSITIVE_CONTENT);
-				snsPostReport.setReportReason(PostReportConst.POST_SENSITIVE_CONTENT);
-			}
-			case PostReportConst.POST_HARMFUL_OR_ABUSIVE_REASON_TYPE -> {
-				snsPostReport.setPostReportReasonType(PostReportReasonType.HARMFUL_OR_ABUSIVE);
-				snsPostReport.setReportReason(PostReportConst.POST_HARMFUL_OR_ABUSIVE_REASON);
-			}
-			case PostReportConst.POST_OTHER_REASON_TYPE -> {
-				snsPostReport.setPostReportReasonType(PostReportReasonType.OTHER);
-				if (snsPostReportCreateReq.getPostReportReason() == null) {
-					throw new BadRequestErrorException("신고 이유를 보내 주어야 됩니다.");
-				}
-				snsPostReport.setReportReason(snsPostReportCreateReq.getPostReportReason());
-			}
-			default -> throw new BadRequestErrorException("맞지 않는 신고입니다.");
-		}
+		registerReportType(snsPostReport, snsPostReportCreateReq);
 
 		snsPostReportRepository.save(snsPostReport);
 		return true;
 	}
 
-	private List<SnsPostRsp> getPostGetRspList(List<SnsPostDao> snsPostDaoList) {
+	@Transactional
+	public Boolean createPostCommentReport(
+		Long snsPostId, Long snsPostCommentId, Long snsUserId,
+		SnsPostReportCreateReq snsPostReportCreateReq){
+		SnsPost snsPost = snsPostRepository.findById(snsPostId).orElseThrow(
+			() -> new BadRequestErrorException("해당 게시물은 없습니다.")
+		);
+		SnsPostReport snsPostReport = SnsPostReport.builder()
+			.snsPost(snsPost)
+			.snsPostCommentReaction(SnsPostCommentReaction.builder().id(snsPostCommentId).build())
+			.reporterUser(SnsUser.builder().id(snsUserId).build())
+			.reportedUser(snsPost.getSnsUser())
+			.postReportStatus(PostReportStatus.PENDING)
+			.build();
+
+		registerReportType(snsPostReport, snsPostReportCreateReq);
+
+		snsPostReportRepository.save(snsPostReport);
+		return true;
+	}
+
+	public List<SnsPostRsp> getPostGetRspList(List<SnsPostDao> snsPostDaoList) {
 		return snsPostDaoList.stream().map((this::convertToPostGetRsp)).toList();
 	}
 
@@ -1131,7 +1181,6 @@ public class PostsService {
 			.followable(false)
 			.isLiked(false)
 			.isClipped(false)
-			.isBookmarked(false)
 			.postTitle(snsPost.getPostTitle())
 			.postBodyText(snsPost.getPostBodyText())
 			// @REFER: 제거
@@ -1140,14 +1189,16 @@ public class PostsService {
 				.stream()
 				.map((snsPostContent -> new PostContent(snsPostContent.getPostContentType(),
 					snsPostContent.getContent(),
-					snsPostContent.getAscSortNum())))
+					snsPostContent.getAscSortNum(),
+					snsPostContent.getPreviewImg(),
+					snsPostContent.getIsUploaded()
+					)))
 				.toList())
 			.postedAt(snsPost.getCreatedAt())
 			.build();
 	}
 
 	private SnsPostRsp convertToPostGetRsp(SnsPostDao snsPostDao) {
-
 		return SnsPostRsp.builder()
 			.postId(snsPostDao.getPostId().toString())
 			.userId(snsPostDao.getSnsUserId().toString())
@@ -1159,7 +1210,6 @@ public class PostsService {
 			.isLiked(snsPostDao.getIsLiked())
 			.isClipped(snsPostDao.getIsClipped())
 			.isReposted(snsPostDao.getIsReposted())
-			.isBookmarked(snsPostDao.getIsBookmarked())
 			.postTitle(snsPostDao.getPostTitle())
 			.postBodyText(snsPostDao.getPostBodyText())
 			// @REFER: 제거
@@ -1168,8 +1218,11 @@ public class PostsService {
 			.postContents(snsPostDao.getStringToSnsPostContents()
 				.stream()
 				.map((snsPostContent -> new PostContent(snsPostContent.getPostContentType(),
-					snsPostContent.getContent(),
-					snsPostContent.getAscSortNum())))
+					Objects.requireNonNullElse(snsPostContent.getBucketUrl(),"") + Objects.requireNonNullElse(snsPostContent.getContent(),""),
+					snsPostContent.getAscSortNum(),
+					Objects.requireNonNullElse(snsPostContent.getBucketUrl(),"") + Objects.requireNonNullElse(snsPostContent.getPreviewImg(),""),
+					snsPostContent.getIsUploaded()
+				)))
 				.toList())
 			.postedAt(snsPostDao.getPostedAt())
 			.build();
@@ -1183,7 +1236,7 @@ public class PostsService {
 			.profilePath(postCommentDao.getProfilePath())
 			.postCommentMsg(postCommentDao.getCommentMsg())
 			.commentMediaType(postCommentDao.getPostCommentMediaType() != null ? postCommentDao.getPostCommentMediaType().toString() : null)
-			.commentMediaContent(bucketUrl + postCommentDao.getPostCommentMediaContent())
+			.commentMediaContent(postCommentDao.getPostCommentMediaContent())
 			.commentCount(postCommentDao.getCommentCount())
 			.likeCount(postCommentDao.getLikeCount())
 			.postedAt(postCommentDao.getPostedAt())
@@ -1203,7 +1256,7 @@ public class PostsService {
 			.profilePath(postCommentDao.getProfilePath())
 			.postCommentMsg(postCommentDao.getCommentMsg())
 			.commentMediaType(postCommentDao.getPostCommentMediaType() != null ? postCommentDao.getPostCommentMediaType().toString() : null)
-			.commentMediaContent( bucketUrl + postCommentDao.getPostCommentMediaContent())
+			.commentMediaContent(postCommentDao.getPostCommentMediaContent())
 			.commentCount(postCommentDao.getCommentCount())
 			.likeCount(postCommentDao.getLikeCount())
 			.postedAt(postCommentDao.getPostedAt())
@@ -1224,7 +1277,7 @@ public class PostsService {
 			.username(snsUser.getUsername())
 			.profilePath(snsUser.getProfilePath())
 			.postCommentMsg(snsPostCommentReaction.getCommentMsg())
-			.commentMediaType(snsPostCommentReaction.getCommentMediaType().toString())
+			.commentMediaType(snsPostCommentReaction.getCommentMediaType() != null ? snsPostCommentReaction.getCommentMediaType().toString() : null)
 			.commentMediaContent(snsPostCommentReaction.getCommentMediaContent())
 			.commentCount(0)
 			.likeCount(0)
@@ -1246,7 +1299,7 @@ public class PostsService {
 			.username(snsUser.getUsername())
 			.profilePath(snsUser.getProfilePath())
 			.postCommentMsg(snsPostCommentReaction.getCommentMsg())
-			.commentMediaType(snsPostCommentReaction.getCommentMediaType().toString())
+			.commentMediaType(snsPostCommentReaction.getCommentMediaType() != null ? snsPostCommentReaction.getCommentMediaType().toString() : null)
 			.commentMediaContent(snsPostCommentReaction.getCommentMediaContent())
 			.commentCount(0)
 			.likeCount(0)
@@ -1294,7 +1347,10 @@ public class PostsService {
 				.stream()
 				.map((snsPostContent -> new PostContent(snsPostContent.getPostContentType(),
 					snsPostContent.getContent(),
-					snsPostContent.getAscSortNum())))
+					snsPostContent.getAscSortNum(),
+					snsPostContent.getPreviewImg(),
+					snsPostContent.getIsUploaded()
+				)))
 				.toList())
 			.postedAt(snsPostInfoDao.getPostedAt())
 			.targetAudTypeId(
@@ -1308,6 +1364,203 @@ public class PostsService {
 				}
 			)
 			.build();
+	}
+
+
+	private void isValidUploadNum (Integer uploadNum){
+		if (uploadNum > MediaConfigConst.MAX_UPLOAD_FILE_NUM) {
+			throw new BadRequestErrorException(
+				String.format("업로드 파일은 쵀대 %d개까지 입니다.", MediaConfigConst.MAX_UPLOAD_FILE_NUM));
+		}
+		if (uploadNum <= 0){
+			throw new BadRequestErrorException(
+				"업로드 파일은 최소 1개 이상을 보내주셔야 됩니다.");
+		}
+	}
+
+	private void addContentUrls (Integer fileSize, List<MultipartFile> files,
+		SnsPostComposeCreateReq snsPostComposeCreateReq,
+		List<SnsPostContent> snsPostContentList, AtomicInteger index){
+
+		// 파일이 아닌 링크로 업로드 하는 경우
+		snsPostComposeCreateReq.getPostContentLinkList().forEach((postContent -> {
+			snsPostContentList.add(SnsPostContent.builder()
+				.postContentType(postContent.getPostContentType())
+				.content(postContent.getContent())
+				.ascSortNum(index.incrementAndGet())
+				.isLink(true)
+				.build());
+		}));
+
+		// 파일이 한개 이상인 경우
+		if(fileSize > 0){
+			files.forEach((multipartFile -> {
+				// 이미지 또는 비디오 파일인지 확인
+				String contentType = multipartFile.getContentType();
+				String originalFilename = multipartFile.getOriginalFilename();
+
+				String extension = FilenameUtils.getExtension(originalFilename);
+
+				boolean isImage = UploadFileValidationUtils.isImage(contentType);
+				boolean isVideo = UploadFileValidationUtils.isVideo(contentType);
+				boolean isValidType = isImage || isVideo;
+
+				if(!isValidType){
+					throw new BadRequestErrorException("업로드 파일 유형이 아닙니다.");
+				}
+
+				if((isImage && multipartFile.getSize() > imageFileSize) || (isVideo && multipartFile.getSize() > videoFileSize)){
+					throw new BadRequestErrorException("파일 크기가 너무 큽니다.");
+				}
+
+				boolean isLink = false;
+				SnsPostContent newSnsPostContent;
+				// 이미지의 경우 cloudflare r2에 저장
+				if (isImage){
+					String contentUrl = r2CloudService.getPostImageContentUrlByMinio(UUID.randomUUID() + "." + extension);
+					String buckUrl = r2CloudService.bucketPublicUrl;
+
+					System.out.println("버킷: " + buckUrl);
+					newSnsPostContent = SnsPostContent.builder()
+						.postContentType(
+							PostContentType.IMAGE
+						)
+						.content(contentUrl)
+						.bucketUrl(buckUrl)
+						.ascSortNum(index.incrementAndGet())
+						.isLink(isLink)
+						.isUploaded(true)
+						.build();
+				}
+				// 영상의 경우 minio에 저장 ex) videos/
+				else{
+					String randomName = UUID.randomUUID().toString();
+
+					// 출력 ex) 버킷 주소/비디오 폴더 경로/g3839md93589383-38392/output.m3u8
+					String videoContentPath = minioCloudService.getHlsContentUrlByMinio(randomName + "/" + minioCloudService.m3u8FileName);
+					// 출력 ex) 버킷 주소/포스터 폴더 경로/g3839md93589383-38392.jpg
+					String posterPath = minioCloudService.getVideoPosterContentUrlByMinio(randomName + MediaConfigConst.IMAGE_JPEG_FORMAT);
+					String buckUrl = minioCloudService.bucketPublicUrl;
+					newSnsPostContent = SnsPostContent.builder()
+						.postContentType(
+							PostContentType.VIDEO
+						)
+						.content(videoContentPath)
+						.previewImg(posterPath)
+						.bucketUrl(buckUrl)
+						.ascSortNum(index.incrementAndGet())
+						.isLink(isLink)
+						.isUploaded(false) // 비디오 처리는 다소 오래거리기 때문에 RabbitMQ로 처리
+						.build();
+				}
+				snsPostContentList.add(newSnsPostContent);
+			}));
+		}
+	}
+
+	private List<SnsTag> createPostTagRelation (SnsPostComposeCreateReq snsPostComposeCreateReq, List<SnsPostContent> snsPostContentList) {
+		List<String> tagNameList = snsPostComposeCreateReq.getTagList();
+
+		// QUERY 2: SELECT, EXITING SNS TAG LIST
+		List<SnsTag> existingSnsTagEntityList = snsTagRepository.findAllByTagNameIn(tagNameList);
+
+		List<String> newTagNameList = tagNameList.stream()
+			.filter(tagName -> !existingSnsTagEntityList.stream().map(SnsTag::getTagName).toList().contains(tagName))
+			.toList();
+
+		System.out.println("컨텐츠: " + snsPostContentList.size());
+		snsPostContentList.forEach(snsPostContent -> System.out.println(snsPostContent.getContent()));
+		Random random = new Random();
+		int randomIndexs = random.nextInt(snsPostContentList.size());
+		System.out.println("컨텐츠1: " + snsPostContentList.get(randomIndexs).getContent());
+		System.out.println("콘텐츠: " + snsPostContentList.get(randomIndexs).getPostContentType());
+		// QUERY 3: BULK INSERT, NEW TAG LIST
+		List<SnsTag> newSnsTagEntityList = newTagNameList.stream().map(tagName -> {
+			int randomIndex = random.nextInt(snsPostContentList.size());
+			return SnsTag.builder()
+			.tagName(tagName)
+			.tagRepsBatchContent(snsPostContentList.get(randomIndex).getContent())
+			.tagRepsBatchContentType(snsPostContentList.get(randomIndex).getPostContentType())
+			.build();
+		}).toList();
+
+		snsTagJdbcRepository.saveAll(newSnsTagEntityList);
+
+		List<SnsTag> snsPostTagEntityList = new ArrayList<>();
+		snsPostTagEntityList.addAll(existingSnsTagEntityList);
+		snsPostTagEntityList.addAll(newSnsTagEntityList);
+
+		return snsPostTagEntityList;
+	}
+
+	private SnsPost updateUploadSnsPost (
+		SnsPost snsPost,SnsPostComposeCreateReq
+		snsPostComposeCreateReq, SnsUser snsUser,
+		List<SnsPostContent> snsPostContentList,
+		List<SnsTag> snsPostTagEntityList) {
+		snsPost.setSnsPostContents(snsPostContentList);
+		snsPost.setSnsUser(snsUser);
+		snsPost.setPostTitle(snsPostComposeCreateReq.getTitle());
+		snsPost.setPostTitle(snsPostComposeCreateReq.getTitle());
+		snsPost.setPostBodyText(snsPostComposeCreateReq.getBodyText());
+		snsPost.setTags(snsPostTagEntityList.stream().map(snsTag -> PostTag.builder()
+				.tagId(snsTag.getId())
+				.tagName(snsTag.getTagName())
+				.build()).toList());
+		snsPost.setTgtAudType(switch (snsPostComposeCreateReq.getTargetAudienceValue()) {
+			case TgtAudTypeValue.PUBLIC_SCOPE_ID_VALUE:
+				yield TgtAudType.PUBLIC_SCOPE;
+			case TgtAudTypeValue.FOLLOWERS_SCOPE_ID_VALUE:
+				yield TgtAudType.FOLLOWERS_SCOPE;
+			case TgtAudTypeValue.PRIVATE_SCOPE_ID_VALUE:
+				yield TgtAudType.PRIVATE_SCOPE;
+			default:
+				throw new BadRequestErrorException("옳바르지 않은 공개 대상 타입 입니다.");
+		});
+
+		if (StringValidUtil.isNotBlank(snsPostComposeCreateReq.getAddress())) {
+			GetAddressGeocodeRsp getAddressGeocodeRsp = mapService.getAddressGeocode(
+				snsPostComposeCreateReq.getAddress());
+
+			snsPost.setAddress(snsPostComposeCreateReq.getAddress());
+			snsPost.setLatitude(getAddressGeocodeRsp.getLatitude());
+			snsPost.setLongitude(getAddressGeocodeRsp.getLongitude());
+		}
+
+		return snsPost;
+	}
+
+	private void registerReportType (SnsPostReport snsPostReport, SnsPostReportCreateReq snsPostReportCreateReq) {
+		switch (snsPostReportCreateReq.getPostReportReasonType()) {
+			case PostReportConst.POST_DISLIKE_REASON_TYPE -> {
+				snsPostReport.setPostReportReasonType(PostReportReasonType.DISLIKE);
+				snsPostReport.setReportReason(PostReportConst.POST_DISLIKE_REASON);
+			}
+			case PostReportConst.POST_INACCURATE_LOCATION_REASON_TYPE -> {
+				snsPostReport.setPostReportReasonType(PostReportReasonType.INACCURATE_LOCATION);
+				snsPostReport.setReportReason(PostReportConst.POST_INACCURATE_LOCATION_REASON);
+			}
+			case PostReportConst.POST_SPAM_OR_SCAM_REASON_TYPE -> {
+				snsPostReport.setPostReportReasonType(PostReportReasonType.SPAM_OR_SCAM);
+				snsPostReport.setReportReason(PostReportConst.POST_SPAM_OR_SCAM_REASON);
+			}
+			case PostReportConst.POST_SENSITIVE_CONTENT_REASON_TYPE -> {
+				snsPostReport.setPostReportReasonType(PostReportReasonType.SENSITIVE_CONTENT);
+				snsPostReport.setReportReason(PostReportConst.POST_SENSITIVE_CONTENT);
+			}
+			case PostReportConst.POST_HARMFUL_OR_ABUSIVE_REASON_TYPE -> {
+				snsPostReport.setPostReportReasonType(PostReportReasonType.HARMFUL_OR_ABUSIVE);
+				snsPostReport.setReportReason(PostReportConst.POST_HARMFUL_OR_ABUSIVE_REASON);
+			}
+			case PostReportConst.POST_OTHER_REASON_TYPE -> {
+				snsPostReport.setPostReportReasonType(PostReportReasonType.OTHER);
+				if (snsPostReportCreateReq.getPostReportReason() == null) {
+					throw new BadRequestErrorException("신고 이유를 보내 주어야 됩니다.");
+				}
+				snsPostReport.setReportReason(snsPostReportCreateReq.getPostReportReason());
+			}
+			default -> throw new BadRequestErrorException("맞지 않는 신고입니다.");
+		}
 	}
 
 

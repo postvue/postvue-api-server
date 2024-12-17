@@ -12,7 +12,7 @@ public interface SearchRepository {
 		+ "post_relation AS (SELECT * FROM post_by_tag UNION SELECT * FROM post_by_scrap) "
 		+ "SELECT sns_post.sns_post_id AS post_id, SNS_U.profile_path AS profile_path,  "
 		+ "COALESCE(SPUR.is_liked,false) AS is_liked, COALESCE(SPUR.is_reposted,false) AS is_reposted, COALESCE(SPUR.is_clipped,false) AS is_clipped,  "
-		+ "COALESCE(SPUR.is_bookmarked,false) AS is_bookmarked, sns_post.last_updated_at AS posted_at,  "
+		+ "sns_post.last_updated_at AS posted_at,  "
 		+ "latitude, longitude, address, post_category, reaction_count, (CASE WHEN sns_post.sns_user_id = :snsUserId THEN false ELSE true END) AS followable,  "
 		+ "sns_post_contents, tags, tgt_aud_type, sns_post.sns_user_id AS sns_user_id, SNS_U.username AS username, FOLLOW.following_id as following_id  "
 		+ "from sns_posts_tb AS sns_post  "

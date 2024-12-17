@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.postvue.feelogserver.domain.snsscrap.SnsScrap;
 import com.postvue.feelogserver.domain.snsscrap.repository.SnsScrapRepository;
@@ -39,6 +40,7 @@ public class SnsScrapBoardEndpoint implements CrudService<SnsScrapBoardEndpointD
 	}
 
 	@Override
+	@Transactional
 	public @Nullable SnsScrapBoardEndpointDto save(SnsScrapBoardEndpointDto value) {
 		SnsScrapBoard snsScrapBoard = value.id() != null && Long.parseLong(value.id()) > 0
 			? snsScrapBoardRepository.getReferenceById(Long.parseLong(value.id()))
@@ -52,6 +54,7 @@ public class SnsScrapBoardEndpoint implements CrudService<SnsScrapBoardEndpointD
 	}
 
 	@Override
+	@Transactional
 	public void delete(Long id) {
 		snsScrapBoardRepository.deleteById(id);
 	}

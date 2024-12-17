@@ -1,12 +1,15 @@
 package com.postvue.feelogserver.domain.snsposts;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Where;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedDate;
 
 import com.postvue.feelogserver.core.config.SnowflakeId;
 import com.postvue.feelogserver.domain.snsposts.vo.PostContentBusinessType;
@@ -47,6 +50,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @DynamicInsert
+@Where(clause = "deleted_at IS NULL")
 public class SnsPost extends BaseMixinImpl implements Serializable {
 	@Id
 	@SnowflakeId
@@ -115,6 +119,10 @@ public class SnsPost extends BaseMixinImpl implements Serializable {
 	@Column(name = "post_content_business_type", insertable = false)
 	@ColumnDefault(value = PostContentBusinessTypeValue.DEFAULT_POST_CONTENT_BUSINESS_TYPE_VALUE)
 	private PostContentBusinessType postContentBusinessType;
+
+	@CreatedDate
+	@Column(name = "deleted_at")
+	private LocalDateTime deletedAt;
 
 	// @Enumerated(value = EnumType.STRING)
 	// @Column(name = "aud_share_scope", insertable = false)

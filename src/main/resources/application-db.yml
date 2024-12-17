@@ -1,25 +1,32 @@
 spring:
+  flyway:
+    enabled: true # Flyway 활성화
+    locations: classpath:db/migration # 마이그레이션 파일 위치
+    baseline-on-migrate: true # 이미 존재하는 DB에 baseline을 적용
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/feelogdb?rewriteBatchedStatements=true&profileSQL=true&logger=Slf4JLogger&maxQuerySizeToLog=999999
-    username: root
-    password: 2160
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
+    generate-ddl: false
     properties:
       hibernate:
         format_sql: true
-        ddl-auto: create
         show_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           batch_size: 1000
           order_inserts: true
           order_updates: true
-
     database: postgresql
+    open-in-view: false
 
 logging:
   level:

@@ -100,15 +100,20 @@ public class MapController {
 
 	@GetMapping("/search/recomm")
 	public ServerGetOkRsp<List<GetMapSearchRecommRsp>> getMapSearchRecomm(
+		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@RequestParam(value = "srch_qry", required = true) String srchQry) {
-		return new ServerGetOkRsp<>(mapService.getMapRecommSearch(srchQry));
+
+		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
+		return new ServerGetOkRsp<>(mapService.getMapRecommSearch(srchQry, snsUserId));
 	}
 
 	@GetMapping("/search/post")
 	public ServerGetOkRsp<List<GetMapSearchPostRsp>> getAllMapPostBySrchQry(
+		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@RequestParam(value = "srch_qry", required = true) String srchQry,
 		@RequestParam(name = "page", defaultValue = PageConfigConst.PAGE_INIT_NUM_STRING) Integer page) {
+		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
 		return new ServerGetOkRsp<>(
-			mapService.getAllMapPostBySrchQry(srchQry, page, PageConfigConst.MAP_POST_PAGE_SIZE));
+			mapService.getAllMapPostBySrchQry(srchQry, page, PageConfigConst.MAP_POST_PAGE_SIZE, snsUserId));
 	}
 }

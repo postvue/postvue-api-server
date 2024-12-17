@@ -10,6 +10,7 @@ import com.postvue.feelogserver.domain.snstags.dao.PostTagDao;
 
 public interface SnsPostDao {
 	ObjectMapper objectMapper = new ObjectMapper();
+	Long getCursorId();
 
 	Long getPostId();
 
@@ -19,7 +20,6 @@ public interface SnsPostDao {
 
 	Boolean getIsClipped();
 
-	Boolean getIsBookmarked();
 
 	Boolean getFollowable();
 
@@ -55,7 +55,9 @@ public interface SnsPostDao {
 			return objectMapper.readValue(getSnsPostContents(), new TypeReference<List<SnsPostContentDao>>() {
 			});
 		} catch (IOException e) {
-			throw new RuntimeException("Failed to convert JSON to List<SnsPostContentDao>");
+			System.out.println("아카자");
+			System.out.println("Failed to convert JSON to List<SnsPostContentDao>: "+ e);
+			return null;
 		}
 	}
 
@@ -64,6 +66,7 @@ public interface SnsPostDao {
 			return objectMapper.readValue(getTags(), new TypeReference<List<PostTagDao>>() {
 			});
 		} catch (IOException e) {
+			System.out.println("무잔");
 			throw new RuntimeException("Failed to convert JSON to List<PostTag>");
 		}
 	}

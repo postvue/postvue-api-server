@@ -1,6 +1,7 @@
 package com.postvue.feelogserver.app.maps.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -114,7 +115,13 @@ public class MapService {
 				throw new InternalServerErrorException("주소 정보가 없습니다.");
 			}
 		} else {
-			throw new BadRequestErrorException("해당 gps 정보가 DB 상에 존재하지 않습니다.");
+			if (Objects.equals(vworldGetReverseGeocodeRsp.getResponse().getStatus(), VworldRspConst.VWORLD_NOT_FOUND_RSP_STATUS)){
+				System.out.println("헤에");
+				return null;
+			}
+			else{
+				throw new BadRequestErrorException("해당 gps 정보가 DB 상에 존재하지 않습니다.");
+			}
 		}
 	}
 
@@ -125,29 +132,43 @@ public class MapService {
 			crs, rspRoadType,
 			String.format("%s,%s", longitude, latitude), vworldClientId);
 
+		System.out.println("야야야야야야");
+		System.out.println(String.format("%s,%s", longitude, latitude));
+		System.out.println(vworldGetReverseGeocodeRsp.getResponse());
+		System.out.println(vworldGetReverseGeocodeRsp.getResponse().getStatus());
+
 		if (Objects.equals(vworldGetReverseGeocodeRsp.getResponse().getStatus(), VworldRspConst.VWORLD_OK_RSP_STATUS)) {
 			List<VworldGetAddressResultRsp> vworldGetAddressResultRsps = vworldGetReverseGeocodeRsp.getResponse()
 				.getResult();
 			if (!vworldGetAddressResultRsps.isEmpty()) {
 
+
 				return vworldGetAddressResultRsps.stream()
-					.map((vworldGetAddressResultRsp -> GetAddressReverseGeocodeRsp.builder()
-						.address(vworldGetAddressResultRsp.getStructure().getLevel1() + " "
-							+ vworldGetAddressResultRsp.getStructure().getLevel2() + " "
-							+ vworldGetAddressResultRsp.getStructure().getLevel4L() + " "
-							+ vworldGetAddressResultRsp.getStructure().getLevel5())
-						.buildName(vworldGetAddressResultRsp.getStructure().getDetail())
-						.zipcode(vworldGetAddressResultRsp.getText())
-						.latitude(vworldGetReverseGeocodeRsp.getResponse().getInput().getPoint().getY())
-						.longitude(vworldGetReverseGeocodeRsp.getResponse().getInput().getPoint().getX())
-						.build()))
+					.map((vworldGetAddressResultRsp -> {
+						System.out.println(vworldGetAddressResultRsp.getText());
+						return GetAddressReverseGeocodeRsp.builder()
+							.address(vworldGetAddressResultRsp.getStructure().getLevel1() + " "
+								+ vworldGetAddressResultRsp.getStructure().getLevel2() + " "
+								+ vworldGetAddressResultRsp.getStructure().getLevel4L() + " "
+								+ vworldGetAddressResultRsp.getStructure().getLevel5())
+							.buildName(vworldGetAddressResultRsp.getStructure().getDetail())
+							.zipcode(vworldGetAddressResultRsp.getText())
+							.latitude(vworldGetReverseGeocodeRsp.getResponse().getInput().getPoint().getY())
+							.longitude(vworldGetReverseGeocodeRsp.getResponse().getInput().getPoint().getX())
+							.build();
+					}))
 					.toList();
 
 			} else {
 				throw new InternalServerErrorException("주소 정보가 없습니다.");
 			}
 		} else {
-			throw new BadRequestErrorException("해당 gps 정보가 DB 상에 존재하지 않습니다.");
+			if (Objects.equals(vworldGetReverseGeocodeRsp.getResponse().getStatus(), VworldRspConst.VWORLD_NOT_FOUND_RSP_STATUS)){
+				return List.of();
+			}
+			else{
+				throw new BadRequestErrorException("해당 gps 정보가 DB 상에 존재하지 않습니다.");
+			}
 		}
 	}
 
@@ -247,15 +268,15 @@ public class MapService {
 		return getAddressList;
 	}
 
-	public List<GetMapSearchPostRsp> getAllMapPostBySrchQry(String srchQry, Integer page, Integer pageSize) {
+	public List<GetMapSearchPostRsp> getAllMapPostBySrchQry(String srchQry, Integer page, Integer pageSize, Long snsUserId) {
 		return snsPostRepository.findAllMapPostBySearchQuery(srchQry, page * pageSize,
-				pageSize)
+				pageSize, snsUserId)
 			.stream()
 			.map((v) -> GetMapSearchPostRsp.builder().searchQueryName(v.getSearchQuery()).build())
 			.toList();
 	}
 
-	public List<GetMapSearchRecommRsp> getMapRecommSearch(String srchQry) {
+	public List<GetMapSearchRecommRsp> getMapRecommSearch(String srchQry, Long snsUserId) {
 		NaverLocalSearchResponseDto naverLocalSearchResponseDto = naverApiClient.getLocalSearch(xNaverClientId,
 			xNaverClientSecret,
 			srchQry, PageConfigConst.MAP_SEARCH_RECOMM_PLAcE_PAGE_SIZE);
@@ -274,7 +295,7 @@ public class MapService {
 
 		getMapSearchRecommRsps.addAll(
 			getAllMapPostBySrchQry(srchQry, PageConfigConst.PAGE_INIT_NUM,
-				PageConfigConst.MAP_SEARCH_RECOMM_POST_PAGE_SIZE).stream()
+				PageConfigConst.MAP_SEARCH_RECOMM_POST_PAGE_SIZE, snsUserId).stream()
 				.map((getMapSearchPostRsp ->
 					GetMapSearchRecommRsp.builder()
 						.isPlace(false)

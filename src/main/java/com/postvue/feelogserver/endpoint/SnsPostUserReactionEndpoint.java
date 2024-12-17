@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.postvue.feelogserver.domain.snsposts.SnsPost;
 import com.postvue.feelogserver.domain.snspostuserreactions.SnsPostUserReaction;
@@ -37,6 +38,7 @@ public class SnsPostUserReactionEndpoint implements CrudService<SnsPostUserReact
 	}
 
 	@Override
+	@Transactional
 	public @Nullable SnsPostUserReactionEndpointDto save(SnsPostUserReactionEndpointDto value) {
 		SnsPostUserReaction snsPostUserReaction = value.id() != null && Long.parseLong(value.id()) > 0
 			? snsPostUserReactionRepository.getReferenceById(Long.parseLong(value.id()))
@@ -44,8 +46,6 @@ public class SnsPostUserReactionEndpoint implements CrudService<SnsPostUserReact
 
 		snsPostUserReaction.setSnsPost(SnsPost.builder().id(Long.parseLong(value.id())).build());
 		snsPostUserReaction.setSnsUser(SnsUser.builder().id(Long.parseLong(value.id())).build());
-		snsPostUserReaction.setIsBookmarked(value.isBookmarked());
-		snsPostUserReaction.setIsBookmarkedAt(value.isBookmarkedAt());
 		snsPostUserReaction.setIsShown(value.isShown());
 		snsPostUserReaction.setNotShownAt(value.notShownAt());
 
@@ -53,6 +53,7 @@ public class SnsPostUserReactionEndpoint implements CrudService<SnsPostUserReact
 	}
 
 	@Override
+	@Transactional
 	public void delete(Long id) {
 		snsPostUserReactionRepository.deleteById(id);
 	}

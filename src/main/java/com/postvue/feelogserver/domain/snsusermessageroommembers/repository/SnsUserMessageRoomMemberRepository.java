@@ -49,4 +49,5 @@ public interface SnsUserMessageRoomMemberRepository
 			+ "WHERE SNS_UMRM.snsUserMessageRoom.id = :messageRoomId")
 	List<MsgRoomMemberDao> findAllTargetByRoomId(
 		@Param("messageRoomId") Long messageRoomId);
+
 }

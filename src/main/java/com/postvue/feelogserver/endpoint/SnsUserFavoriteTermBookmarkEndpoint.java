@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.postvue.feelogserver.domain.snstagfollows.SnsTagFollow;
 import com.postvue.feelogserver.domain.snsuserfavoritetermbookmarks.SnsUserFavoriteTermBookmark;
@@ -37,6 +38,7 @@ public class SnsUserFavoriteTermBookmarkEndpoint implements CrudService<SnsUserF
 	}
 
 	@Override
+	@Transactional
 	public @Nullable SnsUserFavoriteTermBookmarkEndpointDto save(SnsUserFavoriteTermBookmarkEndpointDto value) {
 		SnsUserFavoriteTermBookmark snsUserFavoriteTermBookmark = value.id() != null && Long.parseLong(value.id()) > 0
 			? snsUserFavoriteTermBookmarkRepository.getReferenceById(Long.parseLong(value.id()))
@@ -52,6 +54,7 @@ public class SnsUserFavoriteTermBookmarkEndpoint implements CrudService<SnsUserF
 	}
 
 	@Override
+	@Transactional
 	public void delete(Long id) {
 		snsUserFavoriteTermBookmarkRepository.deleteById(id);
 	}

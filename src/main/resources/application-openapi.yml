@@ -1,7 +1,7 @@
 openapi:
   #  Vworld
   vworld:
-    clientId: 639BB1E8-313F-34AF-84C9-974C13289CFB
+    clientId: ${OPENAPI_VWORLD_CLIENT_ID}
     version: 2
     apiFormat: json
     crs: epsg:4326
@@ -13,20 +13,20 @@ openapi:
 
   # 주소기반산업지원서비스
   businessjuso:
-    secretKey: U01TX0FVVEgyMDI0MTAxMjIwNDcyMDExNTE1MDg=
+    secretKey: ${OPENAPI_BUSINESSJUSO_SECRET_KEY}
     apiFormat: json
     countPerPage: 20
     firstSort: none
 
   # 네이버 개발자 API
   naverdevelopers:
-    xNaverClientId: mAPnGY66hckCE7bqyXWs
-    xNaverClientSecret: X22pXszvqB
+    xNaverClientId: ${OPENAPI_NAVERDEVELOPERS_CLIENT_ID}
+    xNaverClientSecret: ${OPENAPI_NAVERDEVELOPERS_SECRET_KEY}
     mapLocalMaxSrchNum: 5
 
   # Discord
   discord:
     webhook:
       postReport:
-        channelId: 1304676576646008862
-        token: SbHWFsBLTceDdkv5b9kvsjmIsKyie2CIyNL7ArSzllcO6hOF3XL8VJ1NmTa5-3R2LUH9
+        channelId: ${OPENAPI_DISCORD_WEBHOOK_PORT_REPORT_CHANNEL_ID}
+        token: ${OPENAPI_DISCORD_WEBHOOK_PORT_REPORT_TOKEN}

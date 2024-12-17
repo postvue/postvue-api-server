@@ -1,13 +1,10 @@
 import { SnsPostEndpoint } from 'Frontend/generated/endpoints'
 
-import { Notification } from '@vaadin/react-components/Notification.js';
 import {AutoCrud, AutoFormLayoutRendererProps} from '@vaadin/hilla-react-crud';
 import SnsPostEndPointDtoModel from "Frontend/generated/com/postvue/feelogserver/endpoint/dto/SnsPostEndPointDtoModel";
 
 import {handleOnDeleteError, handleOnSubmitError} from "Frontend/components/utils/ErrorHandle";
-import SnsTagEndpointDtoModel from "Frontend/generated/com/postvue/feelogserver/endpoint/dto/SnsTagEndpointDtoModel";
 import {VerticalLayout} from "@vaadin/react-components/VerticalLayout";
-import PostContentType from "Frontend/generated/com/postvue/feelogserver/domain/snsposts/vo/PostContentType";
 
 import 'swiper/css';
 import { FreeMode, Navigation, Pagination, Thumbs } from 'swiper/modules';
@@ -62,8 +59,7 @@ function GroupingLayoutRenderer({ children }: AutoFormLayoutRendererProps<SnsPos
                     loop={true}
                     modules={[Pagination, Navigation, FreeMode, Navigation, Thumbs]}
                 >
-                    {postContentList.map((value, index) => {
-                        console.log(value.content,value.postContentType)
+                    {postContentList && postContentList.map((value, index) => {
                         return (
                             <SwiperSlide
                                 key={index}
@@ -74,7 +70,7 @@ function GroupingLayoutRenderer({ children }: AutoFormLayoutRendererProps<SnsPos
                                     <PostImgDiv src={value.content} />
                                 )}
                                 {value.postContentType === POST_CONTENT_TYPE.VIDEO && (
-                                    <PostVideoDiv src={value.content} playsInline webkit-playsinline="true"/>
+                                    <PostVideoDiv src={value.content} controls/>
                                 )}
                                 </PostWrap>
                             </SwiperSlide>

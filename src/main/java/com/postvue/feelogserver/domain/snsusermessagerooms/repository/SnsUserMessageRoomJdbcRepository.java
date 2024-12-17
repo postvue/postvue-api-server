@@ -2,6 +2,7 @@ package com.postvue.feelogserver.domain.snsusermessagerooms.repository;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -10,7 +11,11 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.postvue.feelogserver.core.config.SnowflakeComponent;
+import com.postvue.feelogserver.domain.snsposts.SnsPost;
+import com.postvue.feelogserver.domain.snspostuserreactions.SnsPostUserReaction;
+import com.postvue.feelogserver.domain.snsusermessageroommembers.SnsUserMessageRoomMember;
 import com.postvue.feelogserver.domain.snsusermessagerooms.SnsUserMessageRoom;
 
 import lombok.RequiredArgsConstructor;
@@ -58,6 +63,23 @@ public class SnsUserMessageRoomJdbcRepository {
 			});
 
 		return snsUserMessageRooms;
+	}
+
+	@Transactional(propagation = Propagation.REQUIRED)
+	public void updateReadAt(Long snsUserMessageRoomId, Long snsUserId, LocalDateTime readAt) {
+		String sql = "UPDATE sns_user_message_room_members_tb SET "
+			+ "read_at = ? "
+			+ "WHERE "
+			+ "sns_user_message_room_id = ? "
+			+ "AND source_user_id = ?";
+
+		jdbcTemplate.update(connection -> {
+			PreparedStatement ps = connection.prepareStatement(sql);
+			ps.setObject(1, readAt);
+			ps.setLong(2, snsUserMessageRoomId);
+			ps.setLong(3, snsUserId);
+			return ps;
+		});
 	}
 
 	private void createUserMessageRoomStatement(PreparedStatement ps, SnsUserMessageRoom snsUserMessageRoom) throws

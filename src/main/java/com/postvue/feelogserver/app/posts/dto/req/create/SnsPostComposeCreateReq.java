@@ -12,13 +12,12 @@ import lombok.Getter;
 public class SnsPostComposeCreateReq {
 	private List<String> tagList;
 	@Nullable
-	private Float latitude;
-	@Nullable
-	private Float longitude;
 	private String address;
 
 	private List<PostContent> postContentLinkList;
 
 	private String title;
 	private String bodyText;
+
+	private Integer targetAudienceValue;
 }

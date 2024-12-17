@@ -17,6 +17,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class JpaFilterCustomConverter {
+    private final String PROPERTY_SPLIT_STRING = "_";
+    private final String ID_PROPERTY = "id";
 
     @Autowired
     private EntityManager em;
@@ -69,9 +71,6 @@ public class JpaFilterCustomConverter {
                 .getJavaType();
         }
     }
-
-    private String PROPERTY_SPLIT_STRING = "_";
-    private String ID_PROPERTY = "id";
     private String convertToDotNotation(String input) {
         // "_property_"가 문자열에 포함된 경우만 변환
         if (input.contains(PROPERTY_SPLIT_STRING)) {

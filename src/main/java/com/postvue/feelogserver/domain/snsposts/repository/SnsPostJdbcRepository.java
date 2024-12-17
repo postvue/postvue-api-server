@@ -52,12 +52,47 @@ public class SnsPostJdbcRepository {
 			ps.setLong(3, snsPost.getSnsUser().getId());
 			ps.setString(4, snsPost.getPostTitle());
 			ps.setString(5, snsPost.getPostBodyText());
-			ps.setFloat(6, snsPost.getLatitude());
-			ps.setFloat(7, snsPost.getLongitude());
+			ps.setObject(6, snsPost.getLatitude() != null ? snsPost.getLatitude() : null, Types.FLOAT);
+			ps.setObject(7, snsPost.getLongitude() != null ? snsPost.getLongitude() : null, Types.FLOAT);
 			ps.setString(8, snsPost.getAddress());
 			ps.setObject(9, tagsString, Types.OTHER);
 			ps.setObject(10, localDateTime);
 			ps.setObject(11, localDateTime);
+			return ps;
+		});
+	}
+
+	@Transactional(propagation = Propagation.REQUIRED)
+	public void updatePost(SnsPost snsPost) throws JsonProcessingException {
+		String sql = "UPDATE sns_posts_tb SET "
+			+ "sns_post_contents = ?, "
+			+ "sns_user_id = ?, "
+			+ "post_title = ?, "
+			+ "post_body_text = ?, "
+			+ "latitude = ?, "
+			+ "longitude = ?, "
+			+ "address = ?, "
+			+ "tags = ?, "
+			+ "last_updated_at = ? "
+			+ "WHERE sns_post_id = ?";
+
+		String snsPostContentsString = objectMapper.writeValueAsString(snsPost.getSnsPostContents());
+		String tagsString = objectMapper.writeValueAsString(snsPost.getTags());
+
+		LocalDateTime localDateTime = LocalDateTime.now();
+
+		jdbcTemplate.update(connection -> {
+			PreparedStatement ps = connection.prepareStatement(sql);
+			ps.setObject(1, snsPostContentsString, Types.OTHER);
+			ps.setLong(2, snsPost.getSnsUser().getId());
+			ps.setString(3, snsPost.getPostTitle());
+			ps.setString(4, snsPost.getPostBodyText());
+			ps.setObject(5, snsPost.getLatitude() != null ? snsPost.getLatitude() : null, Types.FLOAT);
+			ps.setObject(6, snsPost.getLongitude() != null ? snsPost.getLongitude() : null, Types.FLOAT);
+			ps.setString(7, snsPost.getAddress());
+			ps.setObject(8, tagsString, Types.OTHER);
+			ps.setObject(9, localDateTime); // Update the `last_updated_at` field
+			ps.setLong(10, snsPost.getId()); // Use `sns_post_id` to find the record to update
 			return ps;
 		});
 	}

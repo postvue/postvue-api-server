@@ -8,20 +8,22 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.postvue.feelogserver.app.notifications.dto.ws.sub.SnsNotificationSub;
 import com.postvue.feelogserver.domain.snsnotifications.SnsNotification;
+import com.postvue.feelogserver.domain.snsnotifications.repository.SnsNotificationJdbcRepository;
 import com.postvue.feelogserver.domain.snsnotifications.repository.SnsNotificationRepository;
 import com.postvue.feelogserver.domain.snspostcommentreactions.SnsPostCommentReaction;
 import com.postvue.feelogserver.domain.snsposts.SnsPost;
 import com.postvue.feelogserver.domain.snspostuserreactions.SnsPostUserReaction;
 import com.postvue.feelogserver.domain.snsuserfollows.SnsUserFollow;
 import com.postvue.feelogserver.domain.snsusers.repository.SnsUserRepository;
+import com.postvue.feelogserver.global.constant.SnsNotificationConst;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
-	private final SnsUserRepository snsUserRepository;
 	private final SnsNotificationRepository snsNotificationRepository;
+	private final SnsNotificationJdbcRepository snsNotificationJdbcRepository;
 	private final PostLikeNotificationProcessService postLikeNotificationProcessService;
 	private final PostClipNotificationProcessService postClipNotificationProcessService;
 	private final PostCommentNotificationProcessService postCommentNotificationProcessService;
@@ -47,6 +49,14 @@ public class NotificationService {
 				.notificationContents(snsNotification.getSnsNotificationContents())
 				.build();
 		})).toList();
+	}
+
+	@Transactional
+	public boolean deleteNotificationList(LocalDateTime daysAgo) {
+		List<SnsNotification> snsNotificationList = snsNotificationRepository.findNotificationsOlderThanDays(daysAgo);
+
+		snsNotificationJdbcRepository.deleteAll(snsNotificationList);
+		return true;
 	}
 
 	public void processPostLikeNotification(SnsPost snsPost, SnsPostUserReaction snsPostUserReaction) {

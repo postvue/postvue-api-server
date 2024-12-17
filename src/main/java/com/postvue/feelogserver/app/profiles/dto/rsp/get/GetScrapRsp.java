@@ -11,5 +11,5 @@ import lombok.Setter;
 @Setter
 public class GetScrapRsp {
 	private String cursorId;
-	private List<GetMyProfilePostRsp> myScrapPostList;
+	private List<GetProfilePostRsp> scrapPostList;
 }

@@ -36,9 +36,11 @@ public class SnsTag extends BaseMixinImpl implements Serializable {
 	@Column(name = "tag_name", nullable = false, unique = true)
 	private String tagName;
 
+	// @REFER: not nullable 지정
 	@Column(name = "tag_reps_batch_content", nullable = true)
 	private String tagRepsBatchContent;
 
+	// @REFER: not nullable 지정
 	@Column(name = "tag_reps_batch_content_type", nullable = true)
 	@Enumerated(EnumType.STRING)
 	private PostContentType tagRepsBatchContentType;

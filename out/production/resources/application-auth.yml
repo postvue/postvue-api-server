@@ -2,5 +2,4 @@ security:
   service:
     auth:
       COOKIE_MAX_AGE_REFRESH_TOKEN: 2592000 # 60 * 60 * 24 * 30 : 30일
-      # 임의로 정한 값임 나중에 변경해야 됨
-      JWT_SECRET_KEY: testSecretKeytestSecretKeytestSecretKeytestSecretKeytestSecretKeytestSecretKeytestSecretKey
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}

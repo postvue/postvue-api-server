@@ -1,12 +1,8 @@
 package com.postvue.feelogserver.endpoint.dto;
 
-import java.util.List;
-
 import com.postvue.feelogserver.domain.snsposts.SnsPost;
 import com.postvue.feelogserver.domain.snsposts.vo.PostContentBusinessType;
-import com.postvue.feelogserver.domain.snsposts.vo.SnsPostContent;
 import com.postvue.feelogserver.domain.snsposts.vo.TgtAudType;
-import com.postvue.feelogserver.domain.snstags.vo.PostTag;
 import com.postvue.feelogserver.global.util.converter.JsonConverter;
 
 public record SnsPostEndPointDto(

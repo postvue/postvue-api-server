@@ -14,6 +14,7 @@ import com.postvue.feelogserver.app.notifications.service.NotificationService;
 import com.postvue.feelogserver.core.security.CustomUserDetails;
 import com.postvue.feelogserver.global.constant.SnsNotificationConst;
 import com.postvue.feelogserver.global.http.response.serverresponse.ServerGetOkRsp;
+import com.postvue.feelogserver.global.util.converter.DateConvertor;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,8 +27,9 @@ public class NotificationController {
 	@GetMapping("messages")
 	public ServerGetOkRsp<List<SnsNotificationSub>> getSnsNotificationList(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
-		@RequestParam(name = "notifiedDateTime") LocalDateTime notifiedDateTime
+		@RequestParam(name = "notifiedDateTime", required = false) String notifiedDateTimeString
 	) {
+		LocalDateTime notifiedDateTime = DateConvertor.parseOrDefault(notifiedDateTimeString);
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
 		return new ServerGetOkRsp<>(notificationService.getNotificationList(snsUserId,
 			notifiedDateTime != null ? notifiedDateTime : LocalDateTime.now().minusDays(

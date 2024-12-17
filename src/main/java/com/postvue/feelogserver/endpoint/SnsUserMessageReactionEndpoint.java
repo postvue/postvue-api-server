@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.postvue.feelogserver.domain.snsuserfollows.SnsUserFollow;
 import com.postvue.feelogserver.domain.snsusermessagereactions.SnsUserMessageReaction;
@@ -37,6 +38,7 @@ public class SnsUserMessageReactionEndpoint implements CrudService<SnsUserMessag
 	}
 
 	@Override
+	@Transactional
 	public @Nullable SnsUserMessageReactionEndpointDto save(SnsUserMessageReactionEndpointDto value) {
 		SnsUserMessageReaction snsUserMessageReaction = value.id() != null && Long.parseLong(value.id()) >0
 			? snsUserMessageReactionRepository.getReferenceById(Long.parseLong(value.id()))
@@ -46,6 +48,7 @@ public class SnsUserMessageReactionEndpoint implements CrudService<SnsUserMessag
 	}
 
 	@Override
+	@Transactional
 	public void delete(Long id) {
 		snsUserMessageReactionRepository.deleteById(id);
 	}

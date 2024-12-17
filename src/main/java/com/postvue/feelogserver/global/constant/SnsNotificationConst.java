@@ -23,6 +23,6 @@ public final class SnsNotificationConst {
 	public static String POST_COMMENT_NONE_VALUE = "NONE";
 
 	// 최대 알림 메시지 보유 기간
-	public static Integer MAX_NOTIFICATION_MSG_RETENTION_DAY = 7;
+	public static Integer MAX_NOTIFICATION_MSG_RETENTION_DAY = 14;
 }
 

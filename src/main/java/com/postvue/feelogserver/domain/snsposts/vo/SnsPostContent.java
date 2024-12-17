@@ -12,4 +12,13 @@ public class SnsPostContent {
 	private PostContentType postContentType;
 	private Integer ascSortNum;
 	private String content;
+	private Boolean isLink;
+	private String previewImg;
+	private String fileType;
+	private String bucketUrl;
+	private Boolean isUploaded;
+
+	public void setIsUploaded(Boolean isUploaded) {
+		this.isUploaded = isUploaded;
+	}
 }

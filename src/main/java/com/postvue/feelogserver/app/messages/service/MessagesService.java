@@ -1,5 +1,6 @@
 package com.postvue.feelogserver.app.messages.service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -118,9 +119,15 @@ public class MessagesService {
 			}
 
 			// @REFER: 수정 필요
+			// @REFER: 일단 Jpa로 작성함, 나중에 queryDsl로 적용 하람
 			// snsUserMessageRoomMemberRepository.updateMessageRoomMemberReadAt(
 			// 	myUserId, msgConversationDao.getSnsUserMessageRoomId(), LocalDateTime.now()
 			// );
+			snsUserMessageRoomJdbcRepository.updateReadAt(
+				msgConversationDao.getSnsUserMessageRoomId(),
+				myUserId,
+				LocalDateTime.now()
+			);
 
 			return new GetMsgDirectConversationsRsp(
 				msgConversationRspList.get(msgConversationRspList.size() - 1).getMsgId(),

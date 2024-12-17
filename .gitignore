@@ -9,6 +9,7 @@
 
 *.iml
 .DS_Store
+.env*
 
 node_modules/
 src/main/frontend/generated/
@@ -22,3 +23,13 @@ error-screenshots/
 webpack.generated.js
 
 frontend/themes/hilla-react-app/theme-editor.css
+
+# application
+src/main/resources/application-*-local.yml
+
+# dump
+src/main/resources/db/migration/
+
+# docker
+dockerfile
+docker-compose.yml

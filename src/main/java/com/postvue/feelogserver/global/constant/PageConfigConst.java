@@ -3,7 +3,7 @@ package com.postvue.feelogserver.global.constant;
 public final class PageConfigConst {
 	// Default 페이지 상수
 	public static final Integer PAGE_INIT_NUM = 0;
-	public static final Integer DEFAULT_PAGE_SIZE = 10;
+	public static final Integer DEFAULT_PAGE_SIZE = 20;
 
 	public static final String PAGE_INIT_NUM_STRING = "0";
 
@@ -40,9 +40,14 @@ public final class PageConfigConst {
 	// Post Relation
 	public static final Integer POST_RELATION_PAGE_NUM = 20;
 
+	// Follow Recomm
+	public static final Integer PAGE_NUM_BY_FOLLOW_RECOMM = 10;
+
 	// Tag Recomm
-	public static final Integer PAGE_NUM_BY_POPULAR = 6;
-	public static final Integer PAGE_NUM_BY_INTEREST = 8;
+	public static final Integer PAGE_NUM_BY_POPULAR = 10;
+	public static final Integer PAGE_NUM_BY_INTEREST = 10;
+	public static final Integer PAGE_NUM_BY_TAG_RECOMM = 14;
+	public static final Integer RECOMM_TAG_PAGE_NUM_BY_SIGNUP = 10;
 
 	// My Profile Follows
 	public static final Integer MY_PROFILE_FOLLOW_PAGE_SIZE = 20;

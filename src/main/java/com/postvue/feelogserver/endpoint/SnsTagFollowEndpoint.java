@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.postvue.feelogserver.domain.snsscrapboard.SnsScrapBoard;
 import com.postvue.feelogserver.domain.snstagfollows.SnsTagFollow;
@@ -38,6 +39,7 @@ public class SnsTagFollowEndpoint implements CrudService<SnsTagFollowEndpointDto
 	}
 
 	@Override
+	@Transactional
 	public @Nullable SnsTagFollowEndpointDto save(SnsTagFollowEndpointDto value) {
 		SnsTagFollow snsTagFollow = value.id() != null && Long.parseLong(value.id()) > 0
 			? snsTagFollowRepository.getReferenceById(Long.parseLong(value.id()))
@@ -47,6 +49,7 @@ public class SnsTagFollowEndpoint implements CrudService<SnsTagFollowEndpointDto
 	}
 
 	@Override
+	@Transactional
 	public void delete(Long id) {
 		snsTagFollowRepository.deleteById(id);
 	}

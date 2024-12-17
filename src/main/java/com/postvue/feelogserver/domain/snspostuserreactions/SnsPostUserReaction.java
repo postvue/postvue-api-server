@@ -69,12 +69,13 @@ public class SnsPostUserReaction extends BaseMixinImpl implements Serializable {
 	@Column(name = "is_reposted_at")
 	private LocalDateTime isRepostedAt;
 
-	@Column(name = "is_bookmarked", nullable = false)
-	@ColumnDefault(value = "false")
-	private Boolean isBookmarked;
-
-	@Column(name = "is_bookmarked_at")
-	private LocalDateTime isBookmarkedAt;
+	// @REFER: 북마크 제거
+	// @Column(name = "is_bookmarked", nullable = false)
+	// @ColumnDefault(value = "false")
+	// private Boolean isBookmarked;
+	//
+	// @Column(name = "is_bookmarked_at")
+	// private LocalDateTime isBookmarkedAt;
 
 	// @REFER: SnsPostCommentReaction 테이블 추가로 인해 삭제
 	// @Column(name = "is_commented", nullable = false)

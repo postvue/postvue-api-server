@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.postvue.feelogserver.app.auth.service.AuthService;
 import com.postvue.feelogserver.app.common.rsp.SnsPostFollowsGetRsp;
@@ -22,13 +24,12 @@ import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyPrivateProfileInfo
 import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfileBirthdateInfoReq;
 import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfileEmailInfoReq;
 import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfileGenderInfoReq;
-import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfileInfo;
+import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfileInfoReq;
 import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfilePasswordInfoReq;
-import com.postvue.feelogserver.app.profiles.dto.rsp.common.MyScrapListRsp;
+import com.postvue.feelogserver.app.profiles.dto.rsp.common.ScrapThumbnailRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.create.PostToScrapListRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.create.PostToScrapRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetExistenceByUsernameRsp;
-import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetMyClipListRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetMyProfileInfoRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetProfileBlockedUserRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetProfileInfoRsp;
@@ -75,9 +76,10 @@ public class ProfilesController {
 	@PutMapping("/me/info")
 	public ServerGetOkRsp<GetMyProfileInfoRsp> putMyProfileInfo(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
-		@Valid @RequestBody PutMyProfileInfo putMyProfileInfo) {
+		@RequestPart("putMyProfileInfoReq") PutMyProfileInfoReq putMyProfileInfoReq,
+		@RequestPart(value = "profileImgFile", required = false) MultipartFile profileImgFile) {
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
-		return new ServerGetOkRsp<>(profilesService.putMyProfileInfo(snsUserId, putMyProfileInfo));
+		return new ServerGetOkRsp<>(profilesService.putMyProfileInfo(snsUserId, putMyProfileInfoReq, profileImgFile));
 	}
 
 	@PutMapping("/me/info/email")
@@ -154,13 +156,14 @@ public class ProfilesController {
 	public ServerGetOkRsp<GetProfileUserRsp> getProfileUserListByUsername(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@PathVariable("username") String username,
-		@RequestParam(value = "cursor", defaultValue = PageConfigConst.LAST_POST_ID) Long cursorId
+		@RequestParam(value = "cursor", defaultValue = PageConfigConst.LAST_POST_ID) Long cursorId,
+		@RequestParam(value = "hasFollowInfo", required = false) Boolean hasFollowInfo
 	) {
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
 		if (snsUserId == null) {
 			throw new JwtTokenValidException(new Exception());
 		}
-		return new ServerGetOkRsp<>(profilesService.getProfileUserListByUsername(username, snsUserId, cursorId));
+		return new ServerGetOkRsp<>(profilesService.getProfileUserListByUsername(username, snsUserId, cursorId, hasFollowInfo));
 	}
 
 	@GetMapping("/{username}/followers")
@@ -182,11 +185,20 @@ public class ProfilesController {
 	}
 
 	@GetMapping("/scraps")
-	public ServerGetOkRsp<List<MyScrapListRsp>> getProfileScraps(
+	public ServerGetOkRsp<List<ScrapThumbnailRsp>> getProfileScraps(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@RequestParam(value = "page", defaultValue = PageConfigConst.PAGE_INIT_NUM_STRING) Integer page) {
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
 		return new ServerGetOkRsp<>(profilesService.getScrapLists(snsUserId, page));
+	}
+
+	@GetMapping("/search/scraps/{scrapName}")
+	public ServerGetOkRsp<List<ScrapThumbnailRsp>> getProfileScrapsBySearchQuery(
+		@AuthenticationPrincipal CustomUserDetails userDetails,
+		@PathVariable("scrapName") String scrapName,
+		@RequestParam(value = "page", defaultValue = PageConfigConst.PAGE_INIT_NUM_STRING) Integer page) {
+		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
+		return new ServerGetOkRsp<>(profilesService.getScrapListsBySearchQuery(snsUserId, scrapName, page));
 	}
 
 	@GetMapping("/scraps/previews")
@@ -194,7 +206,7 @@ public class ProfilesController {
 		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@RequestParam(value = "postId", required = false) Long postId) {
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
-		return new ServerGetOkRsp<>(profilesService.getMyScrapPreviewList(snsUserId, postId));
+		return new ServerGetOkRsp<>(profilesService.getScrapPreviewList(snsUserId, postId));
 	}
 
 	@GetMapping("/scraps/{scrapId}/info")
@@ -215,7 +227,7 @@ public class ProfilesController {
 	}
 
 	@GetMapping("/clips")
-	public ServerGetOkRsp<GetMyClipListRsp> getProfileClips(
+	public ServerGetOkRsp<GetProfilePostListRsp> getProfileClips(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@RequestParam(value = "cursor", defaultValue = PageConfigConst.LAST_POST_ID) Long cursorId) {
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
@@ -240,7 +252,7 @@ public class ProfilesController {
 	}
 
 	@PostMapping("/scraps")
-	public ServerPostCreatedRsp<MyScrapListRsp> postProfileScraps(
+	public ServerPostCreatedRsp<ScrapThumbnailRsp> postProfileScraps(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@RequestBody CreateProfileScrapReq createProfileScrapReq,
 		@RequestParam(value = "postId", required = false) Long postId) {
@@ -284,6 +296,16 @@ public class ProfilesController {
 		return new ServerPostCreatedRsp<>(profilesService.createUserToBlockList(snsUserId, blockedUserId));
 	}
 
+	@PutMapping("/scraps/{scrapId}")
+	public ServerPostCreatedRsp<ScrapThumbnailRsp> putProfileScraps(
+		@PathVariable("scrapId") Long scrapId,
+		@AuthenticationPrincipal CustomUserDetails userDetails,
+		@RequestBody CreateProfileScrapReq createProfileScrapReq,
+		@RequestParam(value = "postId", required = false) Long postId) {
+		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
+		return new ServerPostCreatedRsp<>(profilesService.updateProfileScrap(scrapId, snsUserId, createProfileScrapReq, postId));
+	}
+
 	@DeleteMapping("/blocks/{blockedUserId}")
 	public ServerDeleteRsp<Boolean> deleteBlocUser(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
@@ -307,6 +329,14 @@ public class ProfilesController {
 		@PathVariable("postId") Long postId) {
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
 		return new ServerDeleteRsp<>(profilesService.deletePostToScrap(snsUserId, scrapId, postId));
+	}
+
+	@DeleteMapping("/scraps/{scrapId}")
+	public ServerDeleteRsp<Boolean> deleteProfileScrapBoard(
+		@AuthenticationPrincipal CustomUserDetails userDetails,
+		@PathVariable("scrapId") Long scrapId) {
+		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
+		return new ServerDeleteRsp<>(profilesService.deleteScrapBoard(snsUserId,scrapId));
 	}
 
 }

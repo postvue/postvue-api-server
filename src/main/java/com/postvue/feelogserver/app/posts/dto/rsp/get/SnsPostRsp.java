@@ -25,7 +25,6 @@ public class SnsPostRsp {
 	private Boolean isLiked;
 	private Boolean isClipped;
 	private Boolean isReposted;
-	private Boolean isBookmarked;
 	private List<PostContent> postContents;
 	private String postTitle;
 	private String postBodyText;

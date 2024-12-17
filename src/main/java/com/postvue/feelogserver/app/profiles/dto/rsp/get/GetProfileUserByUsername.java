@@ -12,4 +12,5 @@ public class GetProfileUserByUsername {
 	private String username;
 	private String nickname;
 	private String profilePath;
+	private Boolean isFollowed;
 }

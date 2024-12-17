@@ -18,8 +18,6 @@ export default function SnsPostUserReactionCrudView() {
             visibleFields:[
                 'snsPost_id',
                 'snsUser_id',
-                'isBookmarked',
-                'isBookmarkedAt',
                 'isShown',
                 'notShownAt',
                 'createdAt',]

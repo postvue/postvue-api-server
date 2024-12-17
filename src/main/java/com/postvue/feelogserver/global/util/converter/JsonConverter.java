@@ -1,10 +1,11 @@
 package com.postvue.feelogserver.global.util.converter;
 
+import java.util.Collections;
 import java.util.List;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jose.shaded.gson.Gson;
 
 public class JsonConverter {
     
@@ -29,13 +30,8 @@ public class JsonConverter {
         }
     }
 
-    public static <T> List<T> convertToList(String json, Class<T> clazz) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            return objectMapper.readValue(json, new TypeReference<List<T>>() {});
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            return null;
-        }
+    public static <T> T convertToList(String json, Class<T> clazz) {
+        Gson gson = new Gson();
+        return gson.fromJson(json, clazz);
     }
 }

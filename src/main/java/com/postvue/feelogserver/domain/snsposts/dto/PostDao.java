@@ -20,7 +20,6 @@ public class PostDao {
 	private Boolean isLiked;
 	private Boolean isReposted;
 	private Boolean isClipped;
-	private Boolean isBookmarked;
 	private Boolean followable;
 	private Long followingId;
 	private Float latitude;

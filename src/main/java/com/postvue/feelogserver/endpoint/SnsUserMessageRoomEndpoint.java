@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.postvue.feelogserver.domain.snsusermessagereactions.SnsUserMessageReaction;
 import com.postvue.feelogserver.domain.snsusermessagereactions.repository.SnsUserMessageReactionRepository;
@@ -39,6 +40,7 @@ public class SnsUserMessageRoomEndpoint implements CrudService<SnsUserMessageRoo
 	}
 
 	@Override
+	@Transactional
 	public @Nullable SnsUserMessageRoomEndpointDto save(SnsUserMessageRoomEndpointDto value) {
 		SnsUserMessageRoom snsUserMessageRoom = value.id() != null && Long.parseLong(value.id()) > 0
 			? snsUserMessageRoomRepository.getReferenceById(Long.parseLong(value.id()))
@@ -49,6 +51,7 @@ public class SnsUserMessageRoomEndpoint implements CrudService<SnsUserMessageRoo
 	}
 
 	@Override
+	@Transactional
 	public void delete(Long id) {
 		snsUserMessageRoomRepository.deleteById(id);
 	}

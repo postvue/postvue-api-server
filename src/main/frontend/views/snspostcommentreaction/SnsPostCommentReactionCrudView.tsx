@@ -7,6 +7,7 @@ import {handleOnDeleteError, handleOnSubmitError} from "Frontend/components/util
 import {VerticalLayout} from "@vaadin/react-components/VerticalLayout";
 import PostCommentMediaType
     from "Frontend/generated/com/postvue/feelogserver/domain/snspostcommentreactions/vo/PostCommentMediaType";
+import styled from "styled-components";
 
 export default function SnsPostCommentReactionCrudView() {
 
@@ -30,11 +31,13 @@ export default function SnsPostCommentReactionCrudView() {
                     {fieldsMapping.get('commentMediaContent')}
                     {fieldsMapping.get('isSource')}
                     {fieldsMapping.get('createdAt')}
+                    <PostWrap>
                     {fieldsMapping.get('id')?.props.form.defaultValue.commentMediaType === PostCommentMediaType.IMAGE
                         ?
-                        <img src={fieldsMapping.get('id')?.props.form.defaultValue.commentMediaContent} />
-                        : <video src={fieldsMapping.get('id')?.props.form.defaultValue.commentMediaContent} />
+                        <PostImgDiv src={fieldsMapping.get('id')?.props.form.defaultValue.commentMediaContent} />
+                        : <PostVideoDiv src={fieldsMapping.get('id')?.props.form.defaultValue.commentMediaContent} />
                     }
+                    </PostWrap>
                 </VerticalLayout>
             </VerticalLayout>
         );
@@ -46,16 +49,25 @@ export default function SnsPostCommentReactionCrudView() {
           formProps={{
             onDeleteError: handleOnDeleteError,
             onSubmitError:handleOnSubmitError,
-            visibleFields:[
-              'snsPost_id',
-              'sourceComment_id',
-              'commentUser_id',
-              'postCommentType',
-              'postCommentContent',
-              'isSource',
-              'createdAt',
-            ]
+            layoutRenderer:GroupingLayoutRenderer,
       }}/>
 
     );
 }
+
+const PostWrap = styled.div`
+  width: 100%;
+  max-width: 360px;
+`;
+
+const PostImgDiv = styled.img`
+  border-radius: 8px;
+  width: 100%;
+`;
+
+const PostVideoDiv = styled.video`
+  width: 100%;
+  height: auto;
+  vertical-align: bottom;
+  border-radius: 8px;
+`;

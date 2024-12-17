@@ -10,7 +10,10 @@ public record SnsScrapBoardEndpointDto(
 	String snsUser_id,
 	String scrapName,
 	ScrapTargetAudience targetAudience,
-	LocalDateTime createdAt
+	LocalDateTime createdAt,
+	LocalDateTime lastUpdatedAt,
+	String lastUpdatedBy,
+	LocalDateTime deletedAt
 ) {
 	public static SnsScrapBoardEndpointDto fromEntity(SnsScrapBoard snsScrapBoard){
 		return new SnsScrapBoardEndpointDto(
@@ -18,7 +21,10 @@ public record SnsScrapBoardEndpointDto(
 			snsScrapBoard.getSnsUser().getId().toString(),
 			snsScrapBoard.getScrapName(),
 			snsScrapBoard.getTargetAudience(),
-			snsScrapBoard.getCreatedAt()
+			snsScrapBoard.getCreatedAt(),
+			snsScrapBoard.getLastUpdatedAt(),
+			snsScrapBoard.getLastUpdatedBy() != null ? snsScrapBoard.getLastUpdatedBy().toString() : null,
+			snsScrapBoard.getDeleted_at()
 		);
 	}
 }

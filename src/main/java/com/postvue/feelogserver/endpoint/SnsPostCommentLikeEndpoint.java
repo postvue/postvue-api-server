@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.postvue.feelogserver.domain.snsblockusers.SnsBlockUser;
 import com.postvue.feelogserver.domain.snsnotifications.SnsNotification;
@@ -42,6 +43,7 @@ public class SnsPostCommentLikeEndpoint implements CrudService<SnsPostCommentLik
 
 
 	@Override
+	@Transactional
 	public @Nullable SnsPostCommentLikeEndpointDto save(SnsPostCommentLikeEndpointDto value) {
 		SnsPostCommentLike snsPostCommentLike = value.id() != null && Long.parseLong(value.id()) > 0
 			? snsPostCommentLikeRepository.getReferenceById(Long.parseLong(value.id()))
@@ -56,6 +58,7 @@ public class SnsPostCommentLikeEndpoint implements CrudService<SnsPostCommentLik
 	}
 
 	@Override
+	@Transactional
 	public void delete(Long id) {
 		snsPostCommentLikeRepository.deleteById(id);
 	}

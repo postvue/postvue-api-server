@@ -8,4 +8,18 @@ cloud:
         bucketPublicUrl: https://pub-9af3169148db4fca962525cd0fc72f60.r2.dev/
         bucketName: feelog-content-bucket
         imageContentStoragePath: images/
-        imageCommentContentPath: comments/
+        imagePostContentPath: posts/
+        imageCommentContentPath: posts/comments/
+        imageProfilePath: profiles/
+
+  minio:
+    service:
+      videos:
+        endpoint: https://media.feelog.net
+        access-key: xvOaM9NaZDK3nZjnJBpw
+        secret-key: b58ZubcFti0kgcwqngPTTryHlAUXKUfZXM7uXVmq
+        bucket-name: videos
+        hls-dir-path: hls/
+        poster-dir-path: poster/
+        bucketPublicUrl: https://media.feelog.net/
+        m3u8-file-name: output.m3u8

@@ -14,17 +14,27 @@ spring:
     check-template-location: false
 
   profiles:
-    active:
-      - prod
-
     group:
       prod:
         - db
         - cloud
         - swagger
         - websocket
+        - rabbitmq
         - redis
         - auth
         - openapi
         - vaadin
         - config
+
+      local:
+        - db-local
+        - cloud
+        - swagger
+        - websocket
+        - rabbitmq-local
+        - redis-local
+        - auth
+        - openapi
+        - vaadin
+        - config-local

@@ -21,8 +21,11 @@ public class SnsTagJdbcRepository {
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void saveAll(List<SnsTag> snsTags) {
-		String sql = "INSERT INTO sns_tags_tb (sns_tag_id, tag_name) VALUES (?, ?)";
-		
+		String sql = "INSERT INTO sns_tags_tb (sns_tag_id, tag_name, tag_reps_batch_content, tag_reps_batch_content_type) VALUES (?, ?, ?, ?)";
+
+		System.out.println("호잇:");
+		snsTags.forEach(snsTag -> System.out.println(snsTag.getTagRepsBatchContentType().toString()));
+
 		jdbcTemplate.batchUpdate(sql,
 			snsTags,
 			snsTags.size(),
@@ -30,6 +33,8 @@ public class SnsTagJdbcRepository {
 				snsTag.setId(snowflakeComponent.nextId());
 				ps.setLong(1, snsTag.getId());
 				ps.setString(2, snsTag.getTagName());
+				ps.setString(3, snsTag.getTagRepsBatchContent());
+				ps.setString(4, snsTag.getTagRepsBatchContentType().toString());
 			});
 	}
 }

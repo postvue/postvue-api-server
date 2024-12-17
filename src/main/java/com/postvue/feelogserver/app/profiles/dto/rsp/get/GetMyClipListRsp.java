@@ -11,5 +11,5 @@ import lombok.Setter;
 @Getter
 public class GetMyClipListRsp {
 	private String cursorId;
-	private List<GetMyProfilePostRsp> myClipRspList;
+	private List<GetProfilePostRsp> myClipRspList;
 }

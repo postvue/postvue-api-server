@@ -17,9 +17,6 @@ public record SnsPostUserReactionEndpointDto(
 	Boolean isReposted,
 	LocalDateTime isRepostedAt,
 
-	Boolean isBookmarked,
-
-	LocalDateTime isBookmarkedAt,
 	Boolean isShown,
 
 	LocalDateTime notShownAt,
@@ -38,8 +35,6 @@ public record SnsPostUserReactionEndpointDto(
 			snsUserCommentReaction.getIsClippedAt(),
 			snsUserCommentReaction.getIsReposted(),
 			snsUserCommentReaction.getIsRepostedAt(),
-			snsUserCommentReaction.getIsBookmarked(),
-			snsUserCommentReaction.getIsBookmarkedAt(),
 			snsUserCommentReaction.getIsShown(),
 			snsUserCommentReaction.getNotShownAt(),
 			snsUserCommentReaction.getCreatedAt());

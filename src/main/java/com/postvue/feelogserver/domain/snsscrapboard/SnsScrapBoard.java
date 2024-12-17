@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.Where;
 
 import com.postvue.feelogserver.core.config.SnowflakeId;
 import com.postvue.feelogserver.domain.snsscrap.SnsScrap;
@@ -32,6 +33,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name = "SNS_SCRAP_BOARDS_TB")
+@Where(clause = "deleted_at IS NULL")
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

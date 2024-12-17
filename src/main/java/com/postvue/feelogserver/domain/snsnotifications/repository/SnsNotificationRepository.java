@@ -23,6 +23,10 @@ public interface SnsNotificationRepository extends JpaRepository<SnsNotification
 		@Param("snsUserId") Long snsUserId,
 		@Param("notifiedDateTime") LocalDateTime notifiedDateTime);
 
+	@Query(value = "SELECT SNS_S FROM SnsNotification SNS_S WHERE SNS_S.createdAt < :daysAgo ORDER BY SNS_S.createdAt DESC")
+	List<SnsNotification> findNotificationsOlderThanDays(
+		@Param("daysAgo") LocalDateTime daysAgo);
+
 	@Query("SELECT SNS_N FROM SnsNotification SNS_N WHERE "
 		+ "SNS_N.snsUser.id = :userId "
 		+ "AND SNS_N.snsPost.id = :snsPostId "

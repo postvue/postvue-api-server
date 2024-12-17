@@ -21,7 +21,6 @@ public class SnsTagPostJdbcRepository {
 	@Transactional
 	public void saveAll(List<SnsTagPost> snsTagPosts) {
 		String sql = "INSERT INTO sns_tag_posts_tb (sns_tag_post_id, sns_tag_id, sns_post_id) VALUES (?, ?, ?)";
-
 		jdbcTemplate.batchUpdate(sql,
 			snsTagPosts,
 			snsTagPosts.size(),
@@ -31,5 +30,11 @@ public class SnsTagPostJdbcRepository {
 				ps.setLong(2, snsTagPost.getSnsTag().getId());
 				ps.setLong(3, snsTagPost.getSnsPost().getId());
 			});
+	}
+
+	@Transactional
+	public void deleteByPostId(Long postId) {
+		String sql = "DELETE FROM sns_tag_posts_tb WHERE sns_post_id = ?";
+		jdbcTemplate.update(sql, postId);
 	}
 }

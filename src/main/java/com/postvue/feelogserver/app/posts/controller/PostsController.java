@@ -1,12 +1,7 @@
 package com.postvue.feelogserver.app.posts.controller;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
-import org.apache.commons.io.FilenameUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.postvue.feelogserver.app.cloud.service.R2CloudService;
 import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostCmntCreateReq;
 import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostCmntUpdateReq;
 import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostComposeCreateReq;
@@ -51,13 +45,10 @@ import com.postvue.feelogserver.core.security.exception.JwtTokenExpiredException
 import com.postvue.feelogserver.core.security.exception.JwtTokenValidException;
 import com.postvue.feelogserver.global.constant.PageConfigConst;
 import com.postvue.feelogserver.global.constant.QueryParamConst;
-import com.postvue.feelogserver.global.constant.ServerConfig;
-import com.postvue.feelogserver.global.exception.BadRequestErrorException;
 import com.postvue.feelogserver.global.exception.UnauthorizedErrorException;
 import com.postvue.feelogserver.global.http.response.serverresponse.ServerGetOkRsp;
 import com.postvue.feelogserver.global.http.response.serverresponse.ServerPostCreatedRsp;
 import com.postvue.feelogserver.global.http.response.serverresponse.ServerPutOkRsp;
-import com.postvue.feelogserver.global.util.validation.UploadFileValidationUtils;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -67,13 +58,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PostsController {
 	private final PostsService postsService;
-	private final R2CloudService r2CloudService;
 
-	@Value("${file.imageSize}")
-	private Integer imageFileSize;
-
-	@Value("${file.videoSize}")
-	private Integer videoFileSize;
 
 	@GetMapping("/{postId}")
 	public ServerGetOkRsp<SnsPostRsp> getPostDetail(
@@ -96,7 +81,6 @@ public class PostsController {
 	@GetMapping("/taste_for_me")
 	public ServerGetOkRsp<GetTasteForMeRsp> getTasteForMe(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
-		@RequestParam(name = "post_category", defaultValue = "all") String postCategory,
 		@RequestParam(name = "cursor", defaultValue = PageConfigConst.LAST_POST_ID) Long cursorId,
 		@RequestParam(name = "page", defaultValue = "0") Integer page) {
 
@@ -107,7 +91,6 @@ public class PostsController {
 	@GetMapping("/follow_for_me")
 	public ServerGetOkRsp<GetTasteForMeRsp> getFollowForMe(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
-		@RequestParam(name = "post_category", defaultValue = "all") String postCategory,
 		@RequestParam(name = "cursor", defaultValue = PageConfigConst.LAST_POST_ID) Long cursorId) {
 
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
@@ -117,7 +100,6 @@ public class PostsController {
 	@GetMapping("/tag_for_me")
 	public ServerGetOkRsp<List<SnsPostRsp>> getTagForMe(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
-		@RequestParam(name = "post_category", defaultValue = "all") String postCategory,
 		@RequestParam(name = "cursor", defaultValue = PageConfigConst.LAST_POST_ID) Long postId) {
 
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
@@ -127,7 +109,6 @@ public class PostsController {
 	@GetMapping("/near_for_me")
 	public ServerGetOkRsp<List<SnsPostRsp>> getNearForMe(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
-		@RequestParam(name = "post_category", defaultValue = "all") String postCategory,
 		@RequestParam(name = "filter", defaultValue = NearFilterType.NEAR_FILTER_ALL_TYPE) String filter,
 		@RequestParam(name = "page", defaultValue = PageConfigConst.PAGE_INIT_NUM_STRING) Integer page,
 		@RequestParam(name = "lat") Float latitude,
@@ -185,24 +166,24 @@ public class PostsController {
 		return new ServerGetOkRsp<>(postsService.findPostIsRepostedListByPost(postId, cursorId, snsUserId));
 	}
 
-	@PostMapping("/file")
-	public ServerPostCreatedRsp<SnsPostCreateRsp> createPostByFile(
-		@AuthenticationPrincipal CustomUserDetails userDetails,
-		@RequestBody SnsPostCreateByFileReq snsPostCreateReqFile) throws
-		JsonProcessingException {
-		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
-		return new ServerPostCreatedRsp<>(postsService.savePostByFile(snsUserId, snsPostCreateReqFile));
-	}
+	// @PostMapping("/file")
+	// public ServerPostCreatedRsp<SnsPostCreateRsp> createPostByFile(
+	// 	@AuthenticationPrincipal CustomUserDetails userDetails,
+	// 	@RequestBody SnsPostCreateByFileReq snsPostCreateReqFile) throws
+	// 	JsonProcessingException {
+	// 	Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
+	// 	return new ServerPostCreatedRsp<>(postsService.savePostByFile(snsUserId, snsPostCreateReqFile));
+	// }
 
-	@PostMapping("/resource-link")
-	public ServerPostCreatedRsp<SnsPostCreateRsp> createPostByResourceLink(
-		@AuthenticationPrincipal CustomUserDetails userDetails,
-		@Valid @RequestBody SnsPostCreateByResourceLinkReq snsPostCreateByResourceLinkReq) throws
-		JsonProcessingException {
-		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
-		return new ServerPostCreatedRsp<>(
-			postsService.savePostByResourceLink(snsUserId, snsPostCreateByResourceLinkReq));
-	}
+	// @PostMapping("/resource-link")
+	// public ServerPostCreatedRsp<SnsPostCreateRsp> createPostByResourceLink(
+	// 	@AuthenticationPrincipal CustomUserDetails userDetails,
+	// 	@Valid @RequestBody SnsPostCreateByResourceLinkReq snsPostCreateByResourceLinkReq) throws
+	// 	JsonProcessingException {
+	// 	Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
+	// 	return new ServerPostCreatedRsp<>(
+	// 		postsService.savePostByResourceLink(snsUserId, snsPostCreateByResourceLinkReq));
+	// }
 
 	@PostMapping("/{postId}/repost")
 	public ServerPostCreatedRsp<SnsPostCreateRsp> createRepost(
@@ -218,7 +199,7 @@ public class PostsController {
 		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@PathVariable() Long postId,
 		@RequestPart("snsPostCmntCreateReq") SnsPostCmntCreateReq snsPostCmntCreateReq,
-		@RequestPart(value = "file", required = true) MultipartFile file) {
+		@RequestPart(value = "file", required = false) MultipartFile file) {
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
 		return new ServerPostCreatedRsp<>(postsService.savePostComment(postId, snsUserId, snsPostCmntCreateReq, file));
 	}
@@ -230,7 +211,7 @@ public class PostsController {
 		@PathVariable() Long commentId,
 		@RequestParam(value = "isThread", defaultValue = "false", required = false) Boolean isThread,
 		@RequestPart("snsPostCmntCreateReq") SnsPostCmntCreateReq snsPostCmntCreateReq,
-		@RequestPart(value = "file", required = true) MultipartFile file) {
+		@RequestPart(value = "file", required = false) MultipartFile file) {
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
 		return new ServerPostCreatedRsp<>(
 			postsService.savePostCommentReply(postId, snsUserId, commentId, snsPostCmntCreateReq, isThread, file));
@@ -310,7 +291,6 @@ public class PostsController {
 	public ServerGetOkRsp<GetSearchPostsRsp> getSearchPosts(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@RequestParam(name = "srch_qry") String srchQry,
-		@RequestParam(name = "post_category", defaultValue = "all", required = false) String postCategory,
 		@RequestParam(name = "isFetchFavorite", defaultValue = QueryParamConst.QUERY_FALSE_VALUE, required = false) Boolean isFetchFavorite,
 		@RequestParam(name = "page", defaultValue = PageConfigConst.PAGE_INIT_NUM_STRING) Integer page) {
 
@@ -323,7 +303,6 @@ public class PostsController {
 	public ServerGetOkRsp<GetSearchPostsRsp> getSearchPostsByRecently(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@RequestParam(name = "srch_qry") String srchQry,
-		@RequestParam(name = "post_category", defaultValue = "all", required = false) String postCategory,
 		@RequestParam(name = "isFetchFavorite", defaultValue = QueryParamConst.QUERY_FALSE_VALUE, required = false) Boolean isFetchFavorite,
 		@RequestParam(name = "page", defaultValue = PageConfigConst.PAGE_INIT_NUM_STRING) Integer page) {
 
@@ -336,13 +315,14 @@ public class PostsController {
 	public ServerGetOkRsp<GetSearchPostsRsp> getSearchPostsByNear(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@RequestParam(name = "srch_qry") String srchQry,
-		@RequestParam(name = "post_category", defaultValue = "all", required = false) String postCategory,
+		@RequestParam(name = "latitude") Float latitude,
+		@RequestParam(name = "longitude") Float longitude,
 		@RequestParam(name = "isFetchFavorite", defaultValue = QueryParamConst.QUERY_FALSE_VALUE, required = false) Boolean isFetchFavorite,
 		@RequestParam(name = "page", defaultValue = PageConfigConst.PAGE_INIT_NUM_STRING) Integer page) {
 
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
 		return new ServerGetOkRsp<>(
-			postsService.findPostBySearchQueryByRecently(snsUserId, page, srchQry, isFetchFavorite));
+			postsService.findPostBySearchQueryByNear(snsUserId, page, srchQry, latitude, longitude, isFetchFavorite));
 	}
 
 	@GetMapping("/resources/documents/images")
@@ -367,9 +347,9 @@ public class PostsController {
 	}
 
 	@PostMapping("/compose")
-	public ServerPostCreatedRsp<String> composePost(
+	public ServerPostCreatedRsp<Boolean> composePost(
 		@RequestPart("snsPostComposeCreateReq") SnsPostComposeCreateReq snsPostComposeCreateReq,
-		@RequestPart(value = "files", required = true) List<MultipartFile> files,
+		@RequestPart(value = "files", required = false) List<MultipartFile> files,
 		@AuthenticationPrincipal CustomUserDetails userDetails
 	){
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
@@ -378,21 +358,50 @@ public class PostsController {
 			throw new UnauthorizedErrorException("인증되지 않았습니다.");
 		}
 
-		return new ServerPostCreatedRsp<>(postsService.createPostCompose(snsPostComposeCreateReq,files,snsUserId));
+		return new ServerPostCreatedRsp<>(postsService.composePost(snsPostComposeCreateReq,files,snsUserId));
+	}
+
+	@PutMapping("/compose/edit/{postId}")
+	public ServerPostCreatedRsp<Boolean> editComposePost(
+		@PathVariable("postId") Long postId,
+		@RequestPart("snsPostComposeCreateReq") SnsPostComposeCreateReq snsPostComposeCreateReq,
+		@RequestPart(value = "files", required = false) List<MultipartFile> files,
+		@AuthenticationPrincipal CustomUserDetails userDetails
+	){
+		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
+		// 유저 불러오기
+		if(snsUserId == null){
+			throw new UnauthorizedErrorException("인증되지 않았습니다.");
+		}
+
+		return new ServerPostCreatedRsp<>(postsService.editPost(postId, snsPostComposeCreateReq,files,snsUserId));
 	}
 
 	@PostMapping("/{postId}/report")
 	public ServerPostCreatedRsp<Boolean> postSnsPostReport(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
-		@PathVariable() Long postId,
+		@PathVariable("postId") Long postId,
 		@RequestBody SnsPostReportCreateReq snsPostReportCreateReq
 		) {
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
 		if (snsUserId == null) {
 			throw new JwtTokenValidException(new Exception());
 		}
-
 		return new ServerPostCreatedRsp<>(postsService.createPostReport(postId,snsUserId,snsPostReportCreateReq));
+	}
+
+	@PostMapping("/{postId}/comments/{commentId}/report")
+	public ServerPostCreatedRsp<Boolean> postSnsPostCommentReport(
+		@AuthenticationPrincipal CustomUserDetails userDetails,
+		@PathVariable("postId") Long postId,
+		@PathVariable("commentId") Long commentId,
+		@RequestBody SnsPostReportCreateReq snsPostReportCreateReq
+	) {
+		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
+		if (snsUserId == null) {
+			throw new JwtTokenValidException(new Exception());
+		}
+		return new ServerPostCreatedRsp<>(postsService.createPostCommentReport(postId, commentId, snsUserId, snsPostReportCreateReq));
 	}
 
 }

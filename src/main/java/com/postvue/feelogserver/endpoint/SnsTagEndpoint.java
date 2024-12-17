@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.postvue.feelogserver.domain.snsscrap.SnsScrap;
 import com.postvue.feelogserver.domain.snstagposts.SnsTagPost;
@@ -40,23 +41,31 @@ public class SnsTagEndpoint implements CrudService<SnsTagEndpointDto, Long> {
 	}
 
 	@Override
+	@Transactional
 	public @Nullable SnsTagEndpointDto save(SnsTagEndpointDto value) {
 		SnsTag snsTag = value.id() != null && Long.parseLong(value.id()) > 0
 			? snsTagRepository.getReferenceById(Long.parseLong(value.id()))
 			: new SnsTag();
 
-		snsTag.setTagName(value.tagName());
-		snsTag.setIsExposed(value.isExposed());
-		snsTag.setTagRepsBatchContent(value.tagRepsBatchContent());
-		snsTag.setTagRepsBatchContentType(value.tagRepsBatchContentType());
-		snsTag.setCreatedAt(value.createdAt());
-		snsTag.setLastUpdatedAt(LocalDateTime.now());
+		try {
+			String a = value.tagName();
+			snsTag.setTagName(a);
+			snsTag.setIsExposed(value.isExposed());
+			snsTag.setTagRepsBatchContent(value.tagRepsBatchContent());
+			snsTag.setTagRepsBatchContentType(value.tagRepsBatchContentType());
+			snsTag.setCreatedAt(value.createdAt());
+			snsTag.setLastUpdatedAt(LocalDateTime.now());
+		}
+		catch (Exception e){
+			System.out.println(e.getMessage());
+		}
 
 
 		return SnsTagEndpointDto.fromEntity(snsTagRepository.save(snsTag));
 	}
 
 	@Override
+	@Transactional
 	public void delete(Long id) {
 		snsTagRepository.deleteById(id);
 	}

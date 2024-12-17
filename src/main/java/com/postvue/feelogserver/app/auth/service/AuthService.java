@@ -1,5 +1,6 @@
 package com.postvue.feelogserver.app.auth.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,6 +14,7 @@ import com.postvue.feelogserver.app.search.service.SearchService;
 import com.postvue.feelogserver.core.security.JwtTokenProvider;
 import com.postvue.feelogserver.core.security.exception.JwtTokenExpiredException;
 import com.postvue.feelogserver.core.security.exception.JwtTokenValidException;
+import com.postvue.feelogserver.domain.snsnotifications.SnsNotification;
 import com.postvue.feelogserver.domain.snstagfollows.SnsTagFollow;
 import com.postvue.feelogserver.domain.snstagfollows.repository.SnsTagFollowJdbcRepository;
 import com.postvue.feelogserver.domain.snstags.SnsTag;
@@ -21,6 +23,7 @@ import com.postvue.feelogserver.domain.snsuserfavoritetermbookmarks.SnsUserFavor
 import com.postvue.feelogserver.domain.snsuserfavoritetermbookmarks.respository.SnsUserFavoriteTermBookmarkJdbcRepository;
 import com.postvue.feelogserver.domain.snsusers.SnsUser;
 import com.postvue.feelogserver.domain.snsusers.dto.SnsUserDto;
+import com.postvue.feelogserver.domain.snsusers.repository.SnsUserJdbcRepository;
 import com.postvue.feelogserver.domain.snsusers.repository.SnsUserRepository;
 import com.postvue.feelogserver.domain.snsusers.vo.SignUpType;
 import com.postvue.feelogserver.domain.snsusers.vo.SnsAppRole;
@@ -46,6 +49,7 @@ public class AuthService {
 	private final SnsUserFavoriteTermBookmarkJdbcRepository snsUserFavoriteTermBookmarkJdbcRepository;
 	private final SearchService searchService;
 	private final BCryptPasswordEncoder passwordEncoder;
+	private final SnsUserJdbcRepository snsUserJdbcRepository;
 
 	private final int COOKIE_EXPIRED_TIME = (int)(long)SystemTimeConst.SYSTEM_1_HOUR_TIME_BY_SECOND;
 
@@ -194,6 +198,14 @@ public class AuthService {
 			.orElseThrow(() -> new SnsUserIdNotFoundException(userId));
 
 		snsUser.deleteRefreshToken();
+	}
+
+	@Transactional
+	public boolean updateDeletedUserToFullDeletedUser(LocalDateTime daysAgo) {
+		List<SnsUser> snsUserList =  snsUserRepository.findUserOlderThanDays(daysAgo);
+		snsUserJdbcRepository.updateAllFullDelete(snsUserList);
+
+		return true;
 	}
 
 	// 가입 된 정보 없을 시, 오류 발생 시켜서, 회원 가입 페이지로 이동하게

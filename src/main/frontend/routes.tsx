@@ -22,6 +22,7 @@ import SnsUserMessageRoomMemberCrudView from "Frontend/views/snsusermessageroomm
 import SnsUserMessageRoomCrudView from "Frontend/views/snsusermessageroom/SnsUserMessageRoomCrudView";
 import SnsUserMessageCrudView from "Frontend/views/snsusermessage/SnsUserMessageCrudView";
 import SnsPostReportCrudView from "Frontend/views/snspostreport/SnsPostReportCrudView";
+import AdminServiceAdjustmentCrudView from "Frontend/views/adminserviceadjustment/AdminServiceAdjustmentCrudView";
 
 const AboutView = lazy(async () => import('Frontend/views/about/AboutView.js'));
 export type MenuProps = Readonly<{
@@ -48,32 +49,34 @@ export type ViewRouteMatch = Readonly<Override<RouteMatch, ViewMeta>>;
 
 export const useViewMatches = useMatches as () => readonly ViewRouteMatch[];
 
+
 export const routes: readonly ViewRouteObject[] = [
   {
     element: <MainLayout />,
     handle: { icon: 'null', title: 'Main' },
     children: [
-      { path: '/', element: <HomeView/>, handle: { icon: 'home-solid', title: 'Home' } },
-      { path: '/about', element: <AboutView />, handle: { icon: 'info-solid', title: 'About' } },
-      { path:'/snsusers',element:<SnsUserCrudView/>,handle:{title: 'SnsUser', icon: 'user'} },
-      { path:'/snsuserfollows',element:<SnsUserFollowCrudView/>,handle:{title: 'SnsUserFollow', icon: 'user'} },
-      { path:'/snsblockusers',element:<SnsBlockUserCrudView/>,handle:{title: 'SnsBlockUser', icon: 'user'} },
-      { path:'/snsnotifications',element:<SnsNotificationCrudView/>,handle:{title: 'SnsNotification', icon: 'bell'} },
-      { path:'/snsposts',element:<SnsPostCrudView/>,handle:{title: 'SnsPost', icon: 'edit'} },
-      { path:'/snspostuserreactions',element:<SnsPostUserReactionCrudView/>,handle:{title: 'SnsPostUserReaction', icon: 'edit'} },
-      { path:'/snspostcommentreactions',element:<SnsPostCommentReactionCrudView/>,handle:{title: 'SnsPostCommentReaction', icon: 'edit'} },
-      { path:'/snspostcommentlikes',element:<SnsPostCommentLikeCrudView/>,handle:{title: 'SnsPostCommentLike', icon: 'edit'} },
-      { path:'/snspostreports',element:<SnsPostReportCrudView/>,handle:{title: 'SnsPostReport', icon: 'headset-solid'} },
-      { path:'/snsscraps',element:<SnsScrapCrudView/>,handle:{title: 'SnsScrap', icon: 'archive-solid'} },
-      { path:'/snsscrapboards',element:<SnsScrapBoardCrudView/>,handle:{title: 'SnsScrapBoard', icon: 'archive-solid'} },
-      { path:'/snstags',element:<SnsTagCrudView/>,handle:{title: 'SnsTag', icon: 'bookmark'} },
-      { path:'/snstagfollows',element:<SnsTagFollowCrudView/>,handle:{title: 'SnsTagFollow', icon: 'bookmark'} },
-      { path:'/snstagposts',element:<SnsTagPostCrudView/>,handle:{title: 'SnsTagPost', icon: 'bookmark'} },
-      { path:'/snsuserfavoritetermbookmarks',element:<SnsUserFavoriteTermBookmarkCrudView/>,handle:{title: 'SnsUserFavoriteTermBookmark', icon: 'bookmark'} },
-      { path:'/snsusermessagereactions',element:<SnsUserMessageReactionCrudView/>,handle:{title: 'SnsUserMessageReaction', icon: 'comment'} },
-      { path:'/snsusermessageroommembers',element:<SnsUserMessageRoomMemberCrudView/>,handle:{title: 'SnsUserMessageRoomMember', icon: 'comment'} },
-      { path:'/snsusermessagerooms',element:<SnsUserMessageRoomCrudView/>,handle:{title: 'SnsUserMessageRoom', icon: 'comment'} },
-      { path:'/snsusermessages',element:<SnsUserMessageCrudView/>,handle:{title: 'SnsUserMessage', icon: 'comment'} },
+      { path: '/admin', element: <HomeView/>, handle: { icon: 'home-solid', title: 'Home' } },
+      { path: '/admin/about', element: <AboutView />, handle: { icon: 'info-solid', title: 'About' } },
+      { path:'/admin/service/adjustment',element:<AdminServiceAdjustmentCrudView/>,handle:{title: 'Admin-Adjustment', icon: 'cog-solid'} },
+      { path:'/admin/snsusers',element:<SnsUserCrudView/>,handle:{title: 'SnsUser', icon: 'user'} },
+      { path:'/admin/snsuserfollows',element:<SnsUserFollowCrudView/>,handle:{title: 'SnsUserFollow', icon: 'user'} },
+      { path:'/admin/snsblockusers',element:<SnsBlockUserCrudView/>,handle:{title: 'SnsBlockUser', icon: 'user'} },
+      { path:'/admin/snsnotifications',element:<SnsNotificationCrudView/>,handle:{title: 'SnsNotification', icon: 'bell'} },
+      { path:'/admin/snsposts',element:<SnsPostCrudView/>,handle:{title: 'SnsPost', icon: 'edit'} },
+      { path:'/admin/snspostuserreactions',element:<SnsPostUserReactionCrudView/>,handle:{title: 'SnsPostUserReaction', icon: 'edit'} },
+      { path:'/admin/snspostcommentreactions',element:<SnsPostCommentReactionCrudView/>,handle:{title: 'SnsPostCommentReaction', icon: 'edit'} },
+      { path:'/admin/snspostcommentlikes',element:<SnsPostCommentLikeCrudView/>,handle:{title: 'SnsPostCommentLike', icon: 'edit'} },
+      { path:'/admin/snspostreports',element:<SnsPostReportCrudView/>,handle:{title: 'SnsPostReport', icon: 'headset-solid'} },
+      { path:'/admin/snsscraps',element:<SnsScrapCrudView/>,handle:{title: 'SnsScrap', icon: 'archive-solid'} },
+      { path:'/admin/snsscrapboards',element:<SnsScrapBoardCrudView/>,handle:{title: 'SnsScrapBoard', icon: 'archive-solid'} },
+      { path:'/admin/snstags',element:<SnsTagCrudView/>,handle:{title: 'SnsTag', icon: 'bookmark'} },
+      { path:'/admin/snstagfollows',element:<SnsTagFollowCrudView/>,handle:{title: 'SnsTagFollow', icon: 'bookmark'} },
+      { path:'/admin/snstagposts',element:<SnsTagPostCrudView/>,handle:{title: 'SnsTagPost', icon: 'bookmark'} },
+      { path:'/admin/snsuserfavoritetermbookmarks',element:<SnsUserFavoriteTermBookmarkCrudView/>,handle:{title: 'SnsUserFavoriteTermBookmark', icon: 'bookmark'} },
+      { path:'/admin/snsusermessagereactions',element:<SnsUserMessageReactionCrudView/>,handle:{title: 'SnsUserMessageReaction', icon: 'comment'} },
+      { path:'/admin/snsusermessageroommembers',element:<SnsUserMessageRoomMemberCrudView/>,handle:{title: 'SnsUserMessageRoomMember', icon: 'comment'} },
+      { path:'/admin/snsusermessagerooms',element:<SnsUserMessageRoomCrudView/>,handle:{title: 'SnsUserMessageRoom', icon: 'comment'} },
+      { path:'/admin/snsusermessages',element:<SnsUserMessageCrudView/>,handle:{title: 'SnsUserMessage', icon: 'comment'} },
     ],
   },
 ];

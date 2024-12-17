@@ -2,17 +2,17 @@ spring:
   servlet:
     multipart:
       enabled: true
-      file-size-threshold: 10485760 #메모리 대신 임시 파일에 저장
-      max-file-size: 10485760 #10mb
-      max-request-size: 10485760 #10mb
+      file-size-threshold: 209715200 #메모리 대신 임시 파일에 저장, 200mb
+      max-file-size: 209715200 #200mb
+      max-request-size: 209715200 #200mb
 
 server:
   tomcat:
-    max-http-form-post-size: 10485760 # 10mb
+    max-http-form-post-size: 209715200 # 10mb
 
 file:
   imageSize: 2097152 # 1mb
-  videoSize: 10485760
+  videoSize: 209715200
 
 
 service:
@@ -20,3 +20,16 @@ service:
     snowflake:
       datacenterId: 3
       workerId: 29
+
+external-library:
+  ffmpeg:
+    path: /usr/bin/ffmpeg
+  ffprobe:
+    path: /usr/bin/ffprobe
+
+# Spring Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus #prometheus 설정

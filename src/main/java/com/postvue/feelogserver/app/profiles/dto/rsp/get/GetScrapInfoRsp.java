@@ -14,4 +14,11 @@ public class GetScrapInfoRsp {
 	private String scrapName;
 	private Integer scrapNum;
 	private LocalDateTime lastPostedAt;
+	private Boolean isMe;
+	private String targetAudience;
+
+	private String userId;
+	private String username;
+	private String nickname;
+	private String profilePath;
 }

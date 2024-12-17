@@ -1,5 +1,6 @@
 package com.postvue.feelogserver.app.messages.controller;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -35,7 +36,13 @@ public class MessagesController {
 		@RequestParam(name = "page", defaultValue = PageConfigConst.ZERO_ID) Integer page
 	) {
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
-		return new ServerGetOkRsp<>(messagesService.findMsgInboxMessage(snsUserId, page));
+
+		if (snsUserId == null){
+			return new ServerGetOkRsp<>(List.of());
+		}
+		else{
+			return new ServerGetOkRsp<>(messagesService.findMsgInboxMessage(snsUserId, page));
+		}
 	}
 
 	// DM

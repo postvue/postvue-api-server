@@ -12,6 +12,5 @@ public class SnsPostUserTagDto {
 	private Long followingId;
 	private Boolean isLiked;
 	private Boolean isClipped;
-	private Boolean isBookmarked;
 	private Boolean isReposted;
 }

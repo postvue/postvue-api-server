@@ -1,10 +1,16 @@
 package com.postvue.feelogserver.endpoint;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jose.shaded.gson.Gson;
 import com.postvue.feelogserver.domain.snsposts.SnsPost;
 import com.postvue.feelogserver.domain.snsposts.repository.SnsPostRepository;
 import com.postvue.feelogserver.domain.snsposts.vo.SnsPostContent;
@@ -40,6 +46,7 @@ public class SnsPostEndpoint implements CrudService<SnsPostEndPointDto, Long> {
 	}
 
 	@Override
+	@Transactional
 	public @Nullable SnsPostEndPointDto save(SnsPostEndPointDto value) {
 		SnsPost snsPost = value.id() != null && Long.parseLong(value.id()) > 0
 			? snsPostRepository.getReferenceById(Long.parseLong(value.id()))
@@ -62,19 +69,23 @@ public class SnsPostEndpoint implements CrudService<SnsPostEndPointDto, Long> {
 		snsPost.setTgtAudType(value.tgtAudType());
 		snsPost.setPostContentBusinessType(value.postContentBusinessType());
 
-		snsPost.setSnsPostContents(JsonConverter.convertToList(value.snsPostContents(),SnsPostContent.class));
-		snsPost.setTags(JsonConverter.convertToList(value.tags(),PostTag.class));
+		snsPost.setSnsPostContents(Arrays.asList(JsonConverter.convertToList(value.snsPostContents(),SnsPostContent[].class)));
+		snsPost.setTags(Arrays.asList(JsonConverter.convertToList(value.tags(),PostTag[].class)));
 
 		try{
+			System.out.println("영역 전개");
+			System.out.println(snsPost.getSnsPostContents());
 			return SnsPostEndPointDto.fromEntity(snsPostRepository.save(snsPost));
 		}
 		catch (Exception e){
+			System.out.println(e);
 			throw e;
 		}
 
 	}
 
 	@Override
+	@Transactional
 	public void delete(Long id) {
 
 		snsPostRepository.deleteById(id);
