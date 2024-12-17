@@ -33,6 +33,9 @@ jobs:
         SERVICE_DIR: ${{ secrets.SERVICE_DIR }}
       run: |
         echo "Password length: ${#REMOTE_PASSWORD}"
+        echo "port length: ${#REMOTE_PORT}"
+        echo "username length: ${#REMOTE_USER}"
+        echo "REMOTE_HOST length: ${#REMOTE_HOST}"
         sshpass -p "$REMOTE_PASSWORD" ssh -o StrictHostKeyChecking=no -p ${REMOTE_PORT} "${REMOTE_USER}@${REMOTE_HOST}" << EOF
           cd ${SERVICE_DIR}
           echo "Logging into Docker Hub..."
