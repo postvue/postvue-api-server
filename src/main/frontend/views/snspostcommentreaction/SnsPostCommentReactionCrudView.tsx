@@ -31,6 +31,7 @@ export default function SnsPostCommentReactionCrudView() {
                     {fieldsMapping.get('commentMediaContent')}
                     {fieldsMapping.get('isSource')}
                     {fieldsMapping.get('createdAt')}
+                    {fieldsMapping.get('deletedAt')}
                     <PostWrap>
                     {fieldsMapping.get('id')?.props.form.defaultValue.commentMediaType === PostCommentMediaType.IMAGE
                         ?
@@ -46,6 +47,7 @@ export default function SnsPostCommentReactionCrudView() {
       <AutoCrud
           service={SnsPostCommentReactionEndpoint}
           model={SnsPostCommentReactionEndpointDtoModel}
+          style={{height:"100%"}}
           formProps={{
             onDeleteError: handleOnDeleteError,
             onSubmitError:handleOnSubmitError,

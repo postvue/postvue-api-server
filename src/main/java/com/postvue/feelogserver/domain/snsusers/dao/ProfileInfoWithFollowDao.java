@@ -16,6 +16,9 @@ public interface ProfileInfoWithFollowDao {
 	Boolean getIsFollowed();
 
 	Boolean getIsBlocked();
+	Boolean getIsBlockerUser();
+
+	Boolean getIsPrivate();
 
 	Integer getFollowingNum();
 

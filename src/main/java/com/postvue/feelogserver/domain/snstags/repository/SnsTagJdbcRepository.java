@@ -23,9 +23,6 @@ public class SnsTagJdbcRepository {
 	public void saveAll(List<SnsTag> snsTags) {
 		String sql = "INSERT INTO sns_tags_tb (sns_tag_id, tag_name, tag_reps_batch_content, tag_reps_batch_content_type) VALUES (?, ?, ?, ?)";
 
-		System.out.println("호잇:");
-		snsTags.forEach(snsTag -> System.out.println(snsTag.getTagRepsBatchContentType().toString()));
-
 		jdbcTemplate.batchUpdate(sql,
 			snsTags,
 			snsTags.size(),

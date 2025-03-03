@@ -13,6 +13,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,7 +24,10 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "SNS_TAGS_TB")
+@Table(name = "SNS_TAGS_TB", indexes = {
+	// 해당 게시물의 유저 빠르게 찾기
+	@Index(name = "IDX__TAG_NAME_UNIQUE_BY_SNS_TAGS", columnList = "tag_name", unique = true),
+})
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

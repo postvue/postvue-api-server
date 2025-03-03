@@ -31,6 +31,7 @@ public class SnsTagPostEndpoint implements CrudService<SnsTagPostEndpointDto, Lo
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull SnsTagPostEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<SnsTagPost> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, SnsTagPost.class)

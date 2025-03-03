@@ -4,3 +4,12 @@ spring:
     port: ${RABBITMQ_PORT}
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
+    listener:
+      direct:
+        acknowledge-mode: manual
+      simple:
+        retry:
+          enabled: true
+          max-attempts: 3
+        acknowledge-mode: manual
+    publisher-returns: true

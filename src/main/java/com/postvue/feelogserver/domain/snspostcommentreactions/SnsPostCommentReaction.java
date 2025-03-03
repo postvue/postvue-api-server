@@ -6,8 +6,10 @@ import java.util.List;
 
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
+import org.hibernate.annotations.ParamDef;
 import org.hibernate.annotations.SQLRestriction;
-import org.hibernate.annotations.Where;
 
 import com.postvue.feelogserver.core.config.SnowflakeId;
 import com.postvue.feelogserver.domain.snspostcommentlikes.SnsPostCommentLike;
@@ -45,7 +47,8 @@ import lombok.Setter;
 @DynamicInsert
 @NoArgsConstructor
 @AllArgsConstructor
-@SQLRestriction("deleted_at is NULL")
+@FilterDef(name = "deletedFilter", parameters = @ParamDef(name = "showDeleted", type = Boolean.class))
+@Filter(name = "deletedFilter", condition = "(:showDeleted = true OR deleted_at IS NULL)")
 public class SnsPostCommentReaction extends BaseMixinImpl implements Serializable {
 	@Id
 	@SnowflakeId
@@ -100,8 +103,9 @@ public class SnsPostCommentReaction extends BaseMixinImpl implements Serializabl
 	private Boolean isSource;
 
 	//@REFER: comment(댓글) 행이 있냐 없냐로 구분할 수 있는 데, 굳이 is_commented이 필요 할까?
-	@Column(name = "is_commented")
-	private Boolean isCommented;
+	// => is_commented 제거
+	// @Column(name = "is_commented")
+	// private Boolean isCommented;
 
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;

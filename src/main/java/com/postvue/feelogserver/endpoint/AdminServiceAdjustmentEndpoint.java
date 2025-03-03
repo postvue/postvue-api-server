@@ -31,11 +31,14 @@ public class AdminServiceAdjustmentEndpoint implements CrudService<AdminServiceA
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull AdminServiceAdjustmentEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<AdminServiceAdjustment> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, AdminServiceAdjustment.class)
 			: Specification.anyOf();
-		return adminServiceAdjustmentRepository.findAll(spec,pageable).map((AdminServiceAdjustmentEndpointDto::fromEntity)).toList();
+		return adminServiceAdjustmentRepository.findAll(spec, pageable)
+			.map((AdminServiceAdjustmentEndpointDto::fromEntity))
+			.toList();
 	}
 
 	@Override
@@ -46,15 +49,14 @@ public class AdminServiceAdjustmentEndpoint implements CrudService<AdminServiceA
 			: AdminServiceAdjustment.builder().id(snowflakeComponent.nextId()).build();
 
 		adminServiceAdjustment.setServiceType(value.serviceType());
-		adminServiceAdjustment.setPropLong1(value.propLong1());
-		adminServiceAdjustment.setPropLong2(value.propLong2());
-		adminServiceAdjustment.setPropLong3(value.propLong3());
-		adminServiceAdjustment.setPropLong4(value.propLong4());
+		adminServiceAdjustment.setPropLong1(value.propLong1() != null ? Long.parseLong(value.propLong1()) : null);
+		adminServiceAdjustment.setPropLong2(value.propLong2() != null ? Long.parseLong(value.propLong2()) : null);
+		adminServiceAdjustment.setPropLong3(value.propLong3() != null ? Long.parseLong(value.propLong3()) : null);
+		adminServiceAdjustment.setPropLong4(value.propLong4() != null ? Long.parseLong(value.propLong4()) : null);
 		adminServiceAdjustment.setPropString1(value.propString1());
-		adminServiceAdjustment.setPropString1(value.propString2());
-		adminServiceAdjustment.setPropString1(value.propString3());
-		adminServiceAdjustment.setPropString1(value.propString4());
-
+		adminServiceAdjustment.setPropString2(value.propString2());
+		adminServiceAdjustment.setPropString3(value.propString3());
+		adminServiceAdjustment.setPropString4(value.propString4());
 
 		return AdminServiceAdjustmentEndpointDto.fromEntity(adminServiceAdjustmentRepository.save(adminServiceAdjustment));
 	}

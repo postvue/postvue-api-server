@@ -285,10 +285,10 @@ create table sns_users_tb (
 );
 
 alter table if exists sns_block_users_tb
-drop constraint if exists UKfatomlpd9japkrmjbbrn356u9;
+drop constraint if exists IDX_UNIQUE_BLOCKER_BLOCKED_USER_SNS_BLOCK_USERS;
 
 alter table if exists sns_block_users_tb
-add constraint UKfatomlpd9japkrmjbbrn356u9 unique (sns_blocker_user_id, sns_blocked_user_id);
+add constraint IDX_UNIQUE_BLOCKER_BLOCKED_USER_SNS_BLOCK_USERS unique (sns_blocker_user_id, sns_blocked_user_id);
 
 create index IDX__USER_BY_SNS_NOTIFICATIONS on sns_notifications_tb (sns_user_id);
 
@@ -296,10 +296,10 @@ create index IDX__sns_post_comment_reaction_id_BY_SNS_POST_COMMENT_LIKES
 on sns_post_comment_likes_tb (sns_post_comment_reaction_id, is_liked);
 
 alter table if exists sns_post_comment_likes_tb
-drop constraint if exists UK82sc2byv4ds2wc87dwax9lpu1;
+drop constraint if exists IDX_UNIQUE_POST_COMMENT_USER_ID_BY_SNS_POST_COMMENT_LIKES;
 
 alter table if exists sns_post_comment_likes_tb
-add constraint UK82sc2byv4ds2wc87dwax9lpu1 unique (sns_post_comment_reaction_id, sns_user_id);
+add constraint IDX_UNIQUE_POST_COMMENT_USER_ID_BY_SNS_POST_COMMENT_LIKES unique (sns_post_comment_reaction_id, sns_user_id);
 
 create index IDX__SOURCE_COMMENTS_BY_SNS_POST_COMMENT_REACTIONS
 on sns_post_comment_reactions_tb (source_comment_id, is_commented);
@@ -323,10 +323,10 @@ create index IDX__LATITUDE_BY_SNS_POSTS
 on sns_posts_tb (latitude);
 
 alter table if exists sns_scraps_tb
-drop constraint if exists UK6al5inu4n1x54kpe0s6nwwjy4;
+drop constraint if exists IDX_UNIQUE_SCRAP_BOARD_USER_POST_ID_BY_SNS_SCRAPS;
 
 alter table if exists sns_scraps_tb
-add constraint UK6al5inu4n1x54kpe0s6nwwjy4 unique (sns_scrap_board_id, sns_user_id, sns_post_id);
+add constraint IDX_UNIQUE_SCRAP_BOARD_USER_POST_ID_BY_SNS_SCRAPS unique (sns_scrap_board_id, sns_user_id, sns_post_id);
 
 create index IDX__TAG_BY_SNS_TAG_FOLLOWS
 on sns_tag_follows_tb (sns_tag_id);
@@ -338,28 +338,28 @@ create index IDX__POST_BY_SNS_TAG_POSTS
 on sns_tag_posts_tb (sns_post_id);
 
 alter table if exists sns_tags_tb
-drop constraint if exists UK2ilvya62qau6q64bga2407qur;
+drop constraint if exists IDX__TAG_NAME_UNIQUE_BY_SNS_TAGS;
 
 alter table if exists sns_tags_tb
-add constraint UK2ilvya62qau6q64bga2407qur unique (tag_name);
+add constraint IDX__TAG_NAME_UNIQUE_BY_SNS_TAGS unique (tag_name);
 
 create index IDX__USER_TERM_NAME_BY_SNS_USER_FAVORITE_TERM_BOOKMARKS
 on sns_user_favorite_term_bookmarks_tb (sns_user_id, favorite_term_name);
 
 alter table if exists sns_user_favorite_term_bookmarks_tb
-drop constraint if exists UKcosfawj33ucu3f00t9qj0hyxv;
+drop constraint if exists IDX_UNIQUE_USER_ID_FAVORITE_TERM_NAME_BY_SNS_USER_FAVORITE_TERM_BOOKMARKS;
 
 alter table if exists sns_user_favorite_term_bookmarks_tb
-add constraint UKcosfawj33ucu3f00t9qj0hyxv unique (sns_user_id, favorite_term_name);
+add constraint IDX_UNIQUE_USER_ID_FAVORITE_TERM_NAME_BY_SNS_USER_FAVORITE_TERM_BOOKMARKS unique (sns_user_id, favorite_term_name);
 
 create index IDX__FOLLOWER_BY_SNS_USER_FOLLOWS
 on sns_user_follows_tb (follower_id);
 
 alter table if exists sns_user_follows_tb
-drop constraint if exists UK1huub6qnitiknaqqcwebqcs0c;
+drop constraint if exists IDX_FOLLOWING_FOLLOWER_ID_BY_SNS_USER_FOLLOWS;
 
 alter table if exists sns_user_follows_tb
-add constraint UK1huub6qnitiknaqqcwebqcs0c unique (following_id, follower_id);
+add constraint IDX_FOLLOWING_FOLLOWER_ID_BY_SNS_USER_FOLLOWS unique (following_id, follower_id);
 
 create index IDX__ROOM_BY_SNS_USER_MESSAGE_ROOM_MEMBERS
 on sns_user_message_room_members_tb (sns_user_message_room_id);
@@ -368,25 +368,25 @@ create index IDX__SOURCE_TARGET_USER_BY_SNS_USER_MESSAGE_ROOM_MEMBERS
 on sns_user_message_room_members_tb (source_user_id, target_user_id, sns_user_message_room_id);
 
 alter table if exists sns_user_message_room_members_tb
-drop constraint if exists UKdu7r8fwd40waoa4jyj4od5kjg;
+drop constraint if exists IDX_SOURCE_TARGET_USER_ID_BY_SNS_USER_MESSAGE_ROOM_MEMBERS;
 
 alter table if exists sns_user_message_room_members_tb
-add constraint UKdu7r8fwd40waoa4jyj4od5kjg unique (source_user_id, target_user_id);
+add constraint IDX_SOURCE_TARGET_USER_ID_BY_SNS_USER_MESSAGE_ROOM_MEMBERS unique (source_user_id, target_user_id);
 
 create index IDX__SOURCE_TARGET_MSG_READ_BY_SNS_USER_MESSAGES
 on sns_user_messages_tb (source_user_id, sns_user_message_room_id, msg_type, msg_content, created_at);
 
 alter table if exists sns_users_tb
-drop constraint if exists UKlrjuv95fgeo0l516w961fcp19;
+drop constraint if exists IDX_UNIQUE_SIGNUP_TYPE_EMAIL_BY_SNS_USERS_TB;
 
 alter table if exists sns_users_tb
-add constraint UKlrjuv95fgeo0l516w961fcp19 unique (signup_email);
+add constraint IDX_UNIQUE_SIGNUP_TYPE_EMAIL_BY_SNS_USERS_TB unique (signup_email, sign_up_type);
 
 alter table if exists sns_users_tb
-drop constraint if exists UKj3ekdwvhxqyledtbc3e315cpj;
+drop constraint if exists IDX__USERNAME_UNIQUE_BY_SNS_USERS;
 
 alter table if exists sns_users_tb
-add constraint UKj3ekdwvhxqyledtbc3e315cpj unique (username);
+add constraint IDX__USERNAME_UNIQUE_BY_SNS_USERS unique (username);
 
 alter table if exists sns_block_users_tb
 add constraint FKqwasndattg2gslxa1yhh2y5ou

@@ -1,6 +1,7 @@
 package com.postvue.feelogserver.endpoint;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
@@ -32,6 +33,7 @@ public class SnsNotificationEndpoint implements CrudService<SnsNotificationEndpo
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull SnsNotificationEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<SnsNotification> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, SnsNotification.class)
@@ -47,7 +49,8 @@ public class SnsNotificationEndpoint implements CrudService<SnsNotificationEndpo
 			: new SnsNotification();
 
 		snsNotification.setSnsNotificationType(value.snsNotificationType());
-		snsNotification.setSnsNotificationContents(Arrays.asList(JsonConverter.convertToList(value.snsNotificationContents(),SnsNotificationContent.class)));
+		snsNotification.setSnsNotificationContents(Collections.singletonList(
+			JsonConverter.convertToList(value.snsNotificationContents(), SnsNotificationContent.class)));
 		return SnsNotificationEndpointDto.fromEntity(snsNotificationRepository.save(snsNotification));
 	}
 

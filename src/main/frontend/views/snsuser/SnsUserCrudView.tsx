@@ -30,6 +30,7 @@ function GroupingLayoutRenderer({ children }: AutoFormLayoutRendererProps<SnsUse
                 {fieldsMapping.get('snsAppRole')}
                 {fieldsMapping.get('isPrivateProfile')}
                 {fieldsMapping.get('profilePath')}
+                {fieldsMapping.get('createdAt')}
                 {fieldsMapping.get('deletedAt')}
                 {fieldsMapping.get('hasFollowerNotification')}
                 <img src={fieldsMapping.get('id')?.props.form.defaultValue.profilePath} style={{width:'100%',maxWidth:'400px',borderRadius:'5px'}}/>
@@ -38,12 +39,17 @@ function GroupingLayoutRenderer({ children }: AutoFormLayoutRendererProps<SnsUse
     );
 }
   return (
-      <AutoCrud service={SnsUserEndpoint} model={SnsUserEndpointDtoModel} formProps={
-        {
-        onDeleteError: handleOnDeleteError,
-        onSubmitError:handleOnSubmitError,
-        layoutRenderer:GroupingLayoutRenderer,
-        }
-      } />
+      <AutoCrud
+          service={SnsUserEndpoint}
+          style={{height:"100%"}}
+          model={SnsUserEndpointDtoModel}
+          formProps={
+            {
+            onDeleteError: handleOnDeleteError,
+            onSubmitError:handleOnSubmitError,
+            layoutRenderer:GroupingLayoutRenderer,
+            }
+          }
+      />
   );
 }

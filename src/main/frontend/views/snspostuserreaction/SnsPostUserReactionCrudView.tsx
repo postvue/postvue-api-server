@@ -12,6 +12,7 @@ export default function SnsPostUserReactionCrudView() {
       <AutoCrud
           service={SnsPostUserReactionEndpoint}
           model={SnsPostUserReactionEndpointDtoModel}
+          style={{height:"100%"}}
           formProps={{
             onDeleteError: handleOnDeleteError,
             onSubmitError:handleOnSubmitError,
@@ -20,7 +21,12 @@ export default function SnsPostUserReactionCrudView() {
                 'snsUser_id',
                 'isShown',
                 'notShownAt',
-                'createdAt',]
+                'isClipped',
+                'isClippedAt',
+                'isLiked',
+                'isLikedAt',
+                'createdAt',
+            ]
             }}
       />
           </>

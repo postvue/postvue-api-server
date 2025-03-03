@@ -27,7 +27,7 @@ import lombok.Setter;
 @Table(name = "SNS_USER_FOLLOWS_TB", indexes = {
 	@Index(name = "IDX__FOLLOWER_BY_SNS_USER_FOLLOWS", columnList = "follower_id")},
 	uniqueConstraints = {
-		@UniqueConstraint(columnNames = {"following_id", "follower_id"})
+		@UniqueConstraint(columnNames = {"following_id", "follower_id"}, name = "IDX_FOLLOWING_FOLLOWER_ID_BY_SNS_USER_FOLLOWS")
 	})
 @Builder
 @NoArgsConstructor

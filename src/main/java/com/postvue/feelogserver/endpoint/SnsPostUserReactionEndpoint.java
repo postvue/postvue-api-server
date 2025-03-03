@@ -30,6 +30,7 @@ public class SnsPostUserReactionEndpoint implements CrudService<SnsPostUserReact
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull SnsPostUserReactionEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<SnsPostUserReaction> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, SnsPostUserReaction.class)
@@ -48,6 +49,8 @@ public class SnsPostUserReactionEndpoint implements CrudService<SnsPostUserReact
 		snsPostUserReaction.setSnsUser(SnsUser.builder().id(Long.parseLong(value.id())).build());
 		snsPostUserReaction.setIsShown(value.isShown());
 		snsPostUserReaction.setNotShownAt(value.notShownAt());
+		snsPostUserReaction.setIsClipped(value.isClipped());
+		snsPostUserReaction.setIsLiked(value.isLiked());
 
 		return SnsPostUserReactionEndpointDto.fromEntity(snsPostUserReactionRepository.save(snsPostUserReaction));
 	}

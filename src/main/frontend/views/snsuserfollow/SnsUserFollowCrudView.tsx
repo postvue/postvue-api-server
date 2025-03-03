@@ -8,6 +8,7 @@ export default function SnsUserFollowCrudView() {
   return (
       <AutoGrid
           service={SnsUserFollowEndpoint}
+          style={{height:"100%"}}
           model={SnsUserFollowEndpointDtoModel}
       />
   );

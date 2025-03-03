@@ -52,7 +52,7 @@ public class SwaggerConfig {
 	private Info apiInfo() {
 		return new Info()
 			.title("Feelog API")
-			.description("지도 기반 소셜미디어 플랫폼")
+			.description("지도 위에 남기는 나의 기록")
 			.version("0.0.1");
 	}
 }

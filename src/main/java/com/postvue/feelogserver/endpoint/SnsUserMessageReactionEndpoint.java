@@ -30,6 +30,7 @@ public class SnsUserMessageReactionEndpoint implements CrudService<SnsUserMessag
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull SnsUserMessageReactionEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<SnsUserMessageReaction> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, SnsUserMessageReaction.class)

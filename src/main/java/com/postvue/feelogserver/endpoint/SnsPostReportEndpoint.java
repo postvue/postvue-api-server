@@ -28,10 +28,12 @@ public class SnsPostReportEndpoint implements CrudService<SnsPostReportEndpointD
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull SnsPostReportEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<SnsPostReport> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, SnsPostReport.class)
 			: Specification.anyOf();
+
 		return snsPostReportRepository.findAll(spec,pageable).stream().map((SnsPostReportEndpointDto::fromEntity)).toList();
 	}
 
@@ -39,10 +41,15 @@ public class SnsPostReportEndpoint implements CrudService<SnsPostReportEndpointD
 	@Override
 	@Transactional
 	public @Nullable SnsPostReportEndpointDto save(SnsPostReportEndpointDto value) {
-		SnsPostReport snsBlockUser = value.id() != null && Long.parseLong(value.id()) > 0
+		SnsPostReport snsPostReport = value.id() != null && Long.parseLong(value.id()) > 0
 			? snsPostReportRepository.getReferenceById(Long.parseLong(value.id()))
 			: new SnsPostReport();
-		return SnsPostReportEndpointDto.fromEntity(snsPostReportRepository.save(snsBlockUser));
+
+		snsPostReport.setCreatedAt(value.createdAt());
+		snsPostReport.setLastUpdatedAt(value.lastUpdatedAt());
+		snsPostReport.setPostReportStatus(value.postReportStatus());
+
+		return SnsPostReportEndpointDto.fromEntity(snsPostReportRepository.save(snsPostReport));
 	}
 
 	@Override

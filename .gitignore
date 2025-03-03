@@ -33,3 +33,6 @@ src/main/resources/db/migration/
 # docker
 #dockerfile
 docker-compose.yml
+
+# production
+out/

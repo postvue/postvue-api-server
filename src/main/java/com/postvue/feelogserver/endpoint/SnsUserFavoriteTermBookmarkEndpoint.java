@@ -30,6 +30,7 @@ public class SnsUserFavoriteTermBookmarkEndpoint implements CrudService<SnsUserF
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull SnsUserFavoriteTermBookmarkEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<SnsUserFavoriteTermBookmark> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, SnsUserFavoriteTermBookmark.class)

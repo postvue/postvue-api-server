@@ -3,14 +3,15 @@ package com.postvue.feelogserver.endpoint.dto;
 import java.time.LocalDateTime;
 
 import com.postvue.feelogserver.domain.snsusermessages.SnsUserMessage;
-import com.postvue.feelogserver.domain.snsusermessages.vo.SnsMsgType;
+import com.postvue.feelogserver.domain.snsusermessages.vo.MsgMediaType;
 
 public record SnsUserMessageEndpointDto(
 	String id,
 	String sourceUser_id,
 	String snsUserMessageRoom_id,
-	SnsMsgType msgType,
-	String msgContent,
+	String msgTextContent,
+	MsgMediaType msgMediaType,
+	String msgMediaContent,
 	LocalDateTime createdAt
 ) {
 
@@ -19,8 +20,9 @@ public record SnsUserMessageEndpointDto(
 			snsUserMessage.getId().toString(),
 			snsUserMessage.getSourceUser().getId().toString(),
 			snsUserMessage.getSnsUserMessageRoom().getId().toString(),
-			snsUserMessage.getMsgType(),
-			snsUserMessage.getMsgContent(),
+			snsUserMessage.getMsgTextContent(),
+			snsUserMessage.getMsgMediaType(),
+			snsUserMessage.getMsgMediaContent(),
 			snsUserMessage.getCreatedAt()
 			);
 	}

@@ -14,6 +14,7 @@ import com.postvue.feelogserver.domain.snsusermessages.repository.SnsUserMessage
 import com.postvue.feelogserver.domain.snsusers.SnsUser;
 import com.postvue.feelogserver.endpoint.converter.JpaFilterCustomConverter;
 import com.postvue.feelogserver.endpoint.dto.SnsUserMessageEndpointDto;
+import com.postvue.feelogserver.global.exception.BadRequestErrorException;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.hilla.BrowserCallable;
 import com.vaadin.hilla.Nonnull;
@@ -32,6 +33,7 @@ public class SnsUserMessageEndpoint implements CrudService<SnsUserMessageEndpoin
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull SnsUserMessageEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<SnsUserMessage> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, SnsUserMessage.class)
@@ -42,14 +44,17 @@ public class SnsUserMessageEndpoint implements CrudService<SnsUserMessageEndpoin
 	@Override
 	@Transactional
 	public @Nullable SnsUserMessageEndpointDto save(SnsUserMessageEndpointDto value) {
-		SnsUserMessage snsUserMessage = value.id() != null && Long.parseLong(value.id()) > 0
-			? snsUserMessageRepository.getReferenceById(Long.parseLong(value.id()))
-			: new SnsUserMessage();
+		SnsUserMessage snsUserMessage;
+		if (value.id() != null && Long.parseLong(value.id()) > 0){
+			 snsUserMessage = snsUserMessageRepository.getReferenceById(Long.parseLong(value.id()));
+		}
+		else {
+			throw new BadRequestErrorException("해당 메시지는 없습니다.");
+		}
 
-		snsUserMessage.setSourceUser(SnsUser.builder().id(Long.parseLong(value.sourceUser_id())).build());
-		snsUserMessage.setSnsUserMessageRoom(SnsUserMessageRoom.builder().id(Long.parseLong(value.id())).build());
-		snsUserMessage.setMsgType(value.msgType());
-		snsUserMessage.setMsgContent(value.msgContent());
+		snsUserMessage.setMsgTextContent(value.msgTextContent());
+		snsUserMessage.setMsgMediaType(value.msgMediaType());
+		snsUserMessage.setMsgMediaContent(value.msgMediaContent());
 
 		return SnsUserMessageEndpointDto.fromEntity(snsUserMessageRepository.save(snsUserMessage));
 	}

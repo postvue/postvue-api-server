@@ -14,6 +14,7 @@ import com.postvue.feelogserver.global.constant.AccountConst;
 public record SnsUserDto(
 	Long snsUserId,
 	String email,
+	String signupEmail,
 	String nickname,
 	String profilePath,
 	SnsAppRole snsAppRole,
@@ -22,6 +23,7 @@ public record SnsUserDto(
 	SnsUserGender snsUserGender,
 	LocalDate birthDate,
 	String socialId,
+	String password,
 	String refreshToken,
 	LocalDateTime deletedAt
 ) {
@@ -29,6 +31,7 @@ public record SnsUserDto(
 	public static SnsUserDto of(
 		Long snsUserId,
 		String email,
+		String signupEmail,
 		String nickname,
 		String profilePath,
 		SnsAppRole snsAppRole,
@@ -37,12 +40,13 @@ public record SnsUserDto(
 		SnsUserGender gender,
 		LocalDate birthDate,
 		String socialId,
+		String password,
 		String refreshToken,
 		LocalDateTime deletedAt
 	) {
 		return new SnsUserDto(
-			snsUserId, email, nickname, profilePath, snsAppRole, signUpType, snsUserState,
-			gender, birthDate, socialId, refreshToken, deletedAt
+			snsUserId, email,signupEmail, nickname, profilePath, snsAppRole, signUpType, snsUserState,
+			gender, birthDate, socialId, password, refreshToken, deletedAt
 		);
 	}
 
@@ -50,6 +54,7 @@ public record SnsUserDto(
 		return of(
 			snsUser.getId(),
 			snsUser.getEmail(),
+			snsUser.getSignupEmail(),
 			snsUser.getNickname(),
 			snsUser.getProfilePath(),
 			snsUser.getSnsAppRole(),
@@ -58,6 +63,7 @@ public record SnsUserDto(
 			snsUser.getSnsUserGender(),
 			snsUser.getBirthDate(),
 			snsUser.getSocialId(),
+			snsUser.getHashPw(),
 			snsUser.getRefreshToken(),
 			snsUser.getDeletedAt()
 		);
@@ -80,18 +86,19 @@ public record SnsUserDto(
 
 	public SnsUser toEntity(SignupUserInfoReq signupUserInfoReq) {
 		return SnsUser.builder()
-			.email(this.email)
-			.signupEmail(this.email)
 			.nickname(signupUserInfoReq.getNickname())
-			.username(signupUserInfoReq.getUsername())
+			.username(signupUserInfoReq.getUsername().toLowerCase())
 			.snsUserGender(SnsUserGender.valueOf(signupUserInfoReq.getGender()))
+			.snsUserGender(SnsUserGender.valueOf(signupUserInfoReq.getGender()))
+			.birthDate(signupUserInfoReq.convertBirthDateAsLocalDate())
+			.email(this.email)
+			.signupEmail(this.signupEmail)
 			.profilePath(this.profilePath != null ? this.profilePath : AccountConst.ACCOUNT_NOT_PROFILE_PATH)
 			.snsAppRole(this.snsAppRole)
 			.signUpType(this.signUpType)
 			.snsUserState(this.snsUserState)
-			.snsUserGender(SnsUserGender.valueOf(signupUserInfoReq.getGender()))
-			.birthDate(signupUserInfoReq.convertBirthDateAsLocalDate())
 			.socialId(this.socialId)
+			.hashPw(this.password)
 			.refreshToken(this.refreshToken)
 			.build();
 	}

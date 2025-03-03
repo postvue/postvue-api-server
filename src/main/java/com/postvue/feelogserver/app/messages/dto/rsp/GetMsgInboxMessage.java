@@ -15,10 +15,14 @@ public class GetMsgInboxMessage {
 	private String msgRoomId;
 	private String targetUserId;
 	private String username;
+	private String nickname;
 	private String profilePath;
 	private Integer unreadCount;
 	private LocalDateTime sendAt;
 	private String msgId;
-	private String msgType;
-	private String msgContent;
+	private Boolean hasMsgMedia;
+	private String msgTextContent;
+	private String msgMediaType;
+	private String msgMediaContent;
+	private MsgLinkMetaInfo msgLinkMetaInfo;
 }

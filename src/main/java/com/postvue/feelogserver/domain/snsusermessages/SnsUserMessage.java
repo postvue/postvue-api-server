@@ -3,11 +3,15 @@ package com.postvue.feelogserver.domain.snsusermessages;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import com.postvue.feelogserver.core.config.SnowflakeId;
 import com.postvue.feelogserver.domain.snsusermessagerooms.SnsUserMessageRoom;
-import com.postvue.feelogserver.domain.snsusermessages.vo.SnsMsgType;
+import com.postvue.feelogserver.domain.snsusermessages.vo.MsgMetaInfo;
+import com.postvue.feelogserver.domain.snsusermessages.vo.MsgMediaType;
 import com.postvue.feelogserver.domain.snsusers.SnsUser;
 import com.postvue.feelogserver.global.common.tables.mixin.BaseMixinImpl;
 
@@ -33,7 +37,7 @@ import lombok.Setter;
 @Table(name = "SNS_USER_MESSAGES_TB", indexes = {
 	@Index(
 		name = "IDX__SOURCE_TARGET_MSG_READ_BY_SNS_USER_MESSAGES",
-		columnList = "source_user_id, sns_user_message_room_id, msg_type, msg_content, created_at")})
+		columnList = "source_user_id, sns_user_message_room_id, created_at")})
 @Builder
 @DynamicInsert
 @NoArgsConstructor
@@ -47,21 +51,38 @@ public class SnsUserMessage extends BaseMixinImpl implements Serializable {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "source_user_id", nullable = false, updatable = false)
 	private SnsUser sourceUser;
-	//
-	// @ManyToOne(fetch = FetchType.LAZY)
-	// @JoinColumn(name = "target_user_id", nullable = false)
-	// private SnsUser targetUser;
+
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "sns_user_message_room_id", nullable = false, updatable = false)
 	private SnsUserMessageRoom snsUserMessageRoom;
 
-	@Enumerated(EnumType.STRING)
-	@Column(name = "msg_type", nullable = false)
-	private SnsMsgType msgType;
+	@Column(name = "msg_text_content", length = 2048)
+	private String msgTextContent;
 
-	@Column(name = "msg_content", length = 2048, nullable = false)
-	private String msgContent;
+	@Enumerated(EnumType.STRING)
+	@Column(name = "msg_media_type")
+	private MsgMediaType msgMediaType;
+
+	@Column(name = "msg_media_content", length = 2048)
+	private String msgMediaContent;
+
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(name = "msg_meta_info", nullable = false)
+	@ColumnDefault("'{\"ogTitle\": \"\", \"ogImage\": \"\", \"ogDescription\": \"\"}'")
+	private MsgMetaInfo msgMetaInfo;
+
+
+	// @ManyToOne(fetch = FetchType.LAZY)
+	// @JoinColumn(name = "target_user_id", nullable = false)
+	// private SnsUser targetUser;
+
+	// @Enumerated(EnumType.STRING)
+	// @Column(name = "msg_type", nullable = false)
+	// private SnsMsgType msgType;
+	//
+	// @Column(name = "msg_content", length = 2048, nullable = false)
+	// private String msgContent;
 
 	// @Column(name = "has_msg_reaction", nullable = false)
 	// @ColumnDefault(value = "false")
