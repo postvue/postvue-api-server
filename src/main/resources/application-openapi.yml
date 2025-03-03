@@ -24,9 +24,28 @@ openapi:
     xNaverClientSecret: ${OPENAPI_NAVERDEVELOPERS_SECRET_KEY}
     mapLocalMaxSrchNum: 5
 
+  # 카카오 개발자 API
+  kakaodevelopers:
+    restApi: ${OPENAPI_KAKAO_DEVELOPERS_REST_API}
+
+  appledevelopers:
+    appleSocialServiceClientId: com.feelog.social
+    appleTeamId: 7HT428P8J4
+    appleFeelogApiKeyId: 9KL5F392Y2
+    appleFeelogApiPrivateKey: ${OPENAPI_APPLE_FEELOG_API_PRIVATE_KEY}
+
+  googledevelopers:
+    oauthClientId: 989621368762-8cvdj4sk5u38mbqu6jbgg49ra3j7k34b.apps.googleusercontent.com
+    oauthClientSecret: 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
+
+
+
   # Discord
   discord:
     webhook:
       postReport:
         channelId: ${OPENAPI_DISCORD_WEBHOOK_PORT_REPORT_CHANNEL_ID}
         token: ${OPENAPI_DISCORD_WEBHOOK_PORT_REPORT_TOKEN}
+      serviceNotification:
+        channelId: ${OPENAPI_DISCORD_WEBHOOK_SERVICE_NOTIFICATION_WEBHOOK_CHANNEL_ID}
+        token: ${OPENAPI_DISCORD_WEBHOOK_SERVICE_NOTIFICATION_WEBHOOK_TOKEN}

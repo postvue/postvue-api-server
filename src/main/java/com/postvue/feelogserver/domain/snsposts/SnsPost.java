@@ -7,8 +7,8 @@ import java.util.List;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.Where;
 import org.hibernate.type.SqlTypes;
+import org.locationtech.jts.geom.Point;
 import org.springframework.data.annotation.CreatedDate;
 
 import com.postvue.feelogserver.core.config.SnowflakeId;
@@ -44,13 +44,15 @@ import lombok.Setter;
 	// 해당 게시물의 유저 빠르게 찾기
 	@Index(name = "IDX__USER_BY_SNS_POSTS", columnList = "sns_user_id"),
 	// 해당 위치를 가진 게시물이 존재하는 지 빠르게 검색
-	@Index(name = "IDX__LATITUDE_BY_SNS_POSTS", columnList = "latitude,", unique = false)
+	@Index(name = "IDX__LATITUDE_BY_SNS_POSTS", columnList = "latitude", unique = false),
+	@Index(name = "IDX__H3_INDEX_BY_SNS_POSTS", columnList = "h3_index", unique = false),
+	@Index(name = "IDX__REACTION_COUNT_BY_SNS_POSTS", columnList = "reaction_count", unique = false),
 })
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @DynamicInsert
-@Where(clause = "deleted_at IS NULL")
+// @SQLRestriction("deleted_at IS NULL")
 public class SnsPost extends BaseMixinImpl implements Serializable {
 	@Id
 	@SnowflakeId
@@ -78,16 +80,26 @@ public class SnsPost extends BaseMixinImpl implements Serializable {
 	@Column(nullable = true, name = "post_title")
 	private String postTitle;
 
-	@Column(nullable = true, name = "post_body_text")
+	@Column(nullable = true, name = "post_body_text", length = 1024)
 	private String postBodyText;
 
 	@Column(name = "post_caption_content")
 	private String postCaptionContent;
 
+	@Column(name = "latitude")
 	private Float latitude;
+
+	@Column(name = "longitude")
 	private Float longitude;
 
+	@Column(name = "address", length = 511)
 	private String address;
+
+	@Column(name = "build_name", length = 511)
+	private String buildName;
+
+	@Column(name = "h3_index")
+	private Long h3Index;
 
 	@Column(name = "is_show_address", insertable = false)
 	@ColumnDefault(value = "true")
@@ -123,6 +135,9 @@ public class SnsPost extends BaseMixinImpl implements Serializable {
 	@CreatedDate
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
+
+	@Column(columnDefinition = "geometry(Point, 4326)")
+	private Point geom;
 
 	// @Enumerated(value = EnumType.STRING)
 	// @Column(name = "aud_share_scope", insertable = false)

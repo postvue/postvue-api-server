@@ -33,10 +33,12 @@ public class SnsScrapEndpoint implements CrudService<SnsScrapEndpointDto, Long> 
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull SnsScrapEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<SnsScrap> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, SnsScrap.class)
 			: Specification.anyOf();
+
 
 		return snsScrapRepository.findAll(spec, pageable).getContent().stream().map((SnsScrapEndpointDto::fromEntity)).toList();
 	}

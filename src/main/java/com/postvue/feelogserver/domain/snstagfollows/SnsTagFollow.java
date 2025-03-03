@@ -15,6 +15,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,7 +26,12 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name = "SNS_TAG_FOLLOWS_TB", indexes = {
-	@Index(name = "IDX__TAG_BY_SNS_TAG_FOLLOWS", columnList = "sns_tag_id")})
+	@Index(name = "IDX__TAG_BY_SNS_TAG_FOLLOWS", columnList = "sns_tag_id")},
+	uniqueConstraints = {
+		@UniqueConstraint(columnNames = {"sns_user_id", "sns_tag_id"})
+	}
+)
+
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

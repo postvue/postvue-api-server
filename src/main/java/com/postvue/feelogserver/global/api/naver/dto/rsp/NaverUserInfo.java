@@ -39,6 +39,7 @@ public class NaverUserInfo {
 		return SnsUserDto.of(
 			null,
 			this.naverUserDetail.email,
+			null,
 			this.naverUserDetail.name,
 			this.naverUserDetail.profileImage,
 			SnsAppRole.ROLE_USER,
@@ -47,6 +48,7 @@ public class NaverUserInfo {
 			SnsUserGender.OTHERS,
 			null,
 			this.naverUserDetail.id,
+			null,
 			null,
 			null
 		);

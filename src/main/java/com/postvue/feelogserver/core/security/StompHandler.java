@@ -86,6 +86,7 @@ public class StompHandler implements ChannelInterceptor {
 			Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
 			accessor.setUser(authentication);
 		}
+
 		return ChannelInterceptor.super.preSend(message, channel);
 	}
 }

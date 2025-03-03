@@ -11,4 +11,6 @@ public class GetFavoriteTermRsp {
 	private String favoriteTermName;
 	private String favoriteTermContent;
 	private String favoriteTermContentType;
+
+	private Boolean isFavorite;
 }

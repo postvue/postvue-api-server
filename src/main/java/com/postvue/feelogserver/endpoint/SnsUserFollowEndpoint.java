@@ -32,6 +32,7 @@ public class SnsUserFollowEndpoint implements CrudService<SnsUserFollowEndpointD
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull SnsUserFollowEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<SnsUserFollow> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, SnsUserFollow.class)

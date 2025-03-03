@@ -6,6 +6,6 @@ import SnsTagFollowEndpointDtoModel
 
 export default function SnsTagFollowCrudView() {
   return (
-      <AutoGrid service={SnsTagFollowEndpoint} model={SnsTagFollowEndpointDtoModel}/>
+      <AutoGrid service={SnsTagFollowEndpoint} model={SnsTagFollowEndpointDtoModel}  style={{height:"100%"}}/>
   );
 }

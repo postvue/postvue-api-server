@@ -28,6 +28,7 @@ public class SnsBlockUserEndpoint implements CrudService<SnsBlockUserEndpointDto
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull SnsBlockUserEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<SnsBlockUser> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, SnsBlockUser.class)

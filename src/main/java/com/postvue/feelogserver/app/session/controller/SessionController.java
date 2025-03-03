@@ -3,6 +3,7 @@ package com.postvue.feelogserver.app.session.controller;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.context.event.EventListener;
@@ -23,6 +24,7 @@ import com.postvue.feelogserver.domain.sessionsnsactiveusers.SessionSnsActiveUse
 import com.postvue.feelogserver.domain.sessionsnsactiveusers.repository.SessionSnsActiveUserNativeRepository;
 import com.postvue.feelogserver.domain.sessionsnsactiveusers.repository.SessionSnsActiveUserRepository;
 import com.postvue.feelogserver.global.constant.WebSocketPathConst;
+import com.postvue.feelogserver.global.exception.BadRequestErrorException;
 import com.postvue.feelogserver.global.exception.UnauthorizedErrorException;
 
 import lombok.RequiredArgsConstructor;
@@ -40,6 +42,7 @@ public class SessionController {
 	public void handleWebSocketConnectListener(SessionConnectedEvent event) {
 		StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
 		Principal principal = accessor.getUser();
+
 		if (principal instanceof Authentication authentication) {
 			CustomUserDetails userDetails = (CustomUserDetails)authentication.getPrincipal();
 
@@ -75,12 +78,14 @@ public class SessionController {
 		));
 	}
 
+	// @REFER: 코드 분석 필요
 	// subscribe: ws://topic/session/:userId
 	@SubscribeMapping(WebSocketPathConst.SESSIONS_PATH + "/{userId}")
 	public SessionActiveUserListSub getSessionInit(
 		@DestinationVariable(value = "userId") Long userId,
 		Principal principal
 	) {
+
 		// @REFER: 수정 필요
 		// Long realUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
 
@@ -90,6 +95,10 @@ public class SessionController {
 			CustomUserDetails userDetails = (CustomUserDetails)authentication.getPrincipal();
 
 			Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
+
+			if (!Objects.equals(snsUserId, userId)){
+				throw new BadRequestErrorException("오류");
+			}
 			List<String> followers = sessionService.getFollowers(snsUserId);
 
 			List<SessionSnsActiveUser> sessionSnsActiveUsers = new ArrayList<>();

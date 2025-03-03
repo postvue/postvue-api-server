@@ -31,6 +31,7 @@ public class SnsTagFollowEndpoint implements CrudService<SnsTagFollowEndpointDto
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull SnsTagFollowEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<SnsTagFollow> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, SnsTagFollow.class)

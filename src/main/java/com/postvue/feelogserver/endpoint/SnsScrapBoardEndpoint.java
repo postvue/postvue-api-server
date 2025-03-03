@@ -32,6 +32,7 @@ public class SnsScrapBoardEndpoint implements CrudService<SnsScrapBoardEndpointD
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull SnsScrapBoardEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<SnsScrapBoard> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, SnsScrapBoard.class)

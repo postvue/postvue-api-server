@@ -12,6 +12,7 @@ export default function SnsUserMessageRoomCrudView() {
       <AutoCrud
           service={SnsUserMessageRoomEndpoint}
           model={SnsUserMessageRoomEndpointDtoModel}
+          style={{height:"100%"}}
           formProps={{
             onDeleteError: handleOnDeleteError,
             onSubmitError:handleOnSubmitError,

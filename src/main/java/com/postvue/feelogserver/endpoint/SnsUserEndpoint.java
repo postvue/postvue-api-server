@@ -31,6 +31,7 @@ public class SnsUserEndpoint implements CrudService<SnsUserEndpointDto, Long> {
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull SnsUserEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<SnsUser> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, SnsUser.class)
@@ -56,6 +57,7 @@ public class SnsUserEndpoint implements CrudService<SnsUserEndpointDto, Long> {
 		snsUser.setIsPrivateProfile(value.isPrivateProfile());
 		snsUser.setProfilePath(value.profilePath());
 		snsUser.setHasFollowerNotification(value.hasFollowerNotification());
+		snsUser.setDeletedAt(value.deletedAt());
 		return SnsUserEndpointDto.fromEntity(snsUserRepository.save(snsUser));
 	}
 

@@ -41,11 +41,13 @@ export default function SnsTagCrudView() {
   }
 
   return (
-      <>
-      <AutoCrud service={SnsTagEndpoint} model={SnsTagEndpointDtoModel} formProps={
-        {layoutRenderer: GroupingLayoutRenderer, onDeleteError: handleOnDeleteError,onSubmitError:handleOnSubmitError}
-      }
+      <AutoCrud
+          service={SnsTagEndpoint}
+          model={SnsTagEndpointDtoModel}
+          style={{height:"100%"}}
+          formProps={
+            {layoutRenderer: GroupingLayoutRenderer, onDeleteError: handleOnDeleteError,onSubmitError:handleOnSubmitError}
+          }
       />
-      </>
   );
 }

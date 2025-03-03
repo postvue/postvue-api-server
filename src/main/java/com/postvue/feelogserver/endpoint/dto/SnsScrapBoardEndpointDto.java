@@ -24,7 +24,7 @@ public record SnsScrapBoardEndpointDto(
 			snsScrapBoard.getCreatedAt(),
 			snsScrapBoard.getLastUpdatedAt(),
 			snsScrapBoard.getLastUpdatedBy() != null ? snsScrapBoard.getLastUpdatedBy().toString() : null,
-			snsScrapBoard.getDeleted_at()
+			snsScrapBoard.getDeletedAt()
 		);
 	}
 }

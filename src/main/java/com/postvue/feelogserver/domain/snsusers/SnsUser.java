@@ -19,8 +19,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.Email;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -33,7 +34,15 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "SNS_USERS_TB")
+@Table(name = "SNS_USERS_TB",
+	uniqueConstraints = {
+		@UniqueConstraint(columnNames = {"signupEmail", "sign_up_type"}, name = "IDX_UNIQUE_SIGNUP_TYPE_EMAIL_BY_SNS_USERS_TB"),
+	},
+	indexes = {
+		// 해당 게시물의 유저 빠르게 찾기
+		@Index(name = "IDX__USERNAME_UNIQUE_BY_SNS_USERS", columnList = "username", unique = true),
+	}
+)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -45,15 +54,21 @@ public class SnsUser extends BaseMixinImpl implements Serializable {
 
 	//@REFER: 매직넘버로 함, 수정 필요
 	@Size(min = 1, max = 30, message = "최소 1글자, 최대 30글자까지 입력 가능합니다.")
-	@Pattern(regexp = "^[\\p{L}0-9_]*$", message = "공백 없이 알파벳, 숫자, 밑줄(_) 만 허용됩니다.")
+	@Pattern(regexp = "^[\\p{L}0-9_](.*)?$", message = "맨 앞 공백 없이 알파벳, 숫자, 밑줄(_), 그 뒤 공백 포함 가능")
 	@Column(name = "nickname", nullable = false, length = 255)
 	private String nickname;
 
-	@Email(message = "옳바른 이메일 형식이 아닙니다.")
+	@Pattern(
+		regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
+		message = "옳바른 이메일 형식이 아닙니다."
+	)
 	@Column(name = "signup_email", length = 512, unique = true, updatable = false)
 	private String signupEmail;
 
-	@Email(message = "옳바른 이메일 형식이 아닙니다.")
+	@Pattern(
+		regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
+		message = "옳바른 이메일 형식이 아닙니다."
+	)
 	@Column(name = "email", length = 512)
 	private String email;
 

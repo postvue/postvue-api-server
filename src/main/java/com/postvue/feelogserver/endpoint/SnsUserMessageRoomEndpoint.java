@@ -31,6 +31,7 @@ public class SnsUserMessageRoomEndpoint implements CrudService<SnsUserMessageRoo
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull SnsUserMessageRoomEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<SnsUserMessageRoom> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, SnsUserMessageRoom.class)

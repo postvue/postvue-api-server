@@ -23,7 +23,9 @@ import com.vaadin.hilla.crud.CrudService;
 import com.vaadin.hilla.crud.filter.Filter;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @BrowserCallable
 @AnonymousAllowed
 @RequiredArgsConstructor
@@ -33,6 +35,7 @@ public class SnsTagEndpoint implements CrudService<SnsTagEndpointDto, Long> {
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull SnsTagEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<SnsTag> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, SnsTag.class)
@@ -57,7 +60,7 @@ public class SnsTagEndpoint implements CrudService<SnsTagEndpointDto, Long> {
 			snsTag.setLastUpdatedAt(LocalDateTime.now());
 		}
 		catch (Exception e){
-			System.out.println(e.getMessage());
+			log.error(e.getMessage());
 		}
 
 

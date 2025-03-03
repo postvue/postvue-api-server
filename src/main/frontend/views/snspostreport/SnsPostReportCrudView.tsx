@@ -10,11 +10,17 @@ export default function SnsPostReportCrudView() {
       <AutoCrud
           service={SnsPostReportEndpoint}
           model={SnsPostReportEndpointDtoModel}
+          style={{height:"100%"}}
           formProps={{
             onDeleteError: handleOnDeleteError,
             onSubmitError:handleOnSubmitError,
             visibleFields:[
-                'createdAt']
+                'reportReason',
+                'postReportReasonType',
+                'postReportStatus',
+                'lastUpdatedAt',
+                'createdAt'
+            ]
             }}
       />
       </>

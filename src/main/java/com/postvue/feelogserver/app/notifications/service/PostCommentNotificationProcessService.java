@@ -36,24 +36,19 @@ public class PostCommentNotificationProcessService
 	@Override
 	@Transactional
 	public void processNotification(SnsPost snsPost, SnsPostCommentReaction snsPostCommentReaction) {
-		System.out.println("네 이놈!");
 		Optional<PostCommentNumDao> postCommentNumDaoOpt = snsPostCommentReactionRepository.findCommentNumWithoutMe(
 			snsPost.getId(), snsPost.getSnsUser().getId());
 
-		System.out.println("네 이놈!!");
 		Integer postCommentNum = postCommentNumDaoOpt.isPresent() ? postCommentNumDaoOpt.get().getCommentNum() :
 			SnsNotificationConst.ZERO_NOTIFICATION_NUM;
 
-		System.out.println("네 이놈!!!");
 		boolean needNotification = NotificationUtils.isNotificationInSequence(postCommentNum,
 			SnsNotificationConst.POST_COMMENT_NOTIFICATION_MIN_SEQUENCE_NUM,
 			SnsNotificationConst.POST_COMMENT_NOTIFICATION_SEQUENCE_NUM,
 			postCommentNum.equals(SnsNotificationConst.POST_COMMENT_NOTIFICATION_MIN_NUM));
 
-		System.out.println("네 이놈!!!!");
 		// 알림 카운터가 충족되지 않을 때는 알림하지 않음
 		if (!needNotification) {
-			System.out.println("레몬스");
 			return;
 		}
 
@@ -62,9 +57,7 @@ public class PostCommentNotificationProcessService
 			return;
 		}
 
-		System.out.println("네 이놈!!!!!!");
 		SnsNotification snsNotification = saveNotification(snsPost, snsPostCommentReaction, postCommentNum);
-		System.out.println("네 이놈!!!!!!!!");
 		sendNotification(snsNotification);
 	}
 
@@ -87,7 +80,6 @@ public class PostCommentNotificationProcessService
 		Integer notificationCount) {
 
 
-		System.out.println("네 이놈!!!! 1");
 		SnsUser snsUser = snsPostCommentReaction.getCommentUser();
 
 		List<SnsNotificationContent> snsNotificationContentList = new ArrayList<>(Arrays.asList(
@@ -114,12 +106,10 @@ public class PostCommentNotificationProcessService
 							notificationCount))
 					.build());
 		}
-		System.out.println("네 이놈!!!! 3");
 		SnsNotification snsNotification = notificationServiceTemplate.convertPostNotification(snsPost,
 			snsUser,
 			SnsNotificationType.POST_COMMENT_NOTIFICATION, snsNotificationContentList, notificationCount);
 
-		System.out.println("네 이놈!!!! 4");
 		return snsNotificationRepository.save(snsNotification);
 	}
 

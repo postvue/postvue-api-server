@@ -8,6 +8,7 @@ import com.postvue.feelogserver.domain.snsusers.dto.SnsUserDto;
 import com.postvue.feelogserver.domain.snsusers.vo.SignUpType;
 import com.postvue.feelogserver.domain.snsusers.vo.SnsAppRole;
 import com.postvue.feelogserver.domain.snsusers.vo.SnsUserState;
+import com.postvue.feelogserver.global.constant.AccountConst;
 
 import lombok.Getter;
 
@@ -39,13 +40,15 @@ public class KakaoUserInfo {
 			null,
 			null,
 			null,
-			this.kakaoAccount.profile.profileImageUrl,
+			null,
+			this.kakaoAccount != null ? this.kakaoAccount.profile.profileImageUrl : AccountConst.ACCOUNT_NOT_PROFILE_PATH,
 			SnsAppRole.ROLE_USER,
 			SignUpType.KAKAO,
 			SnsUserState.ACTIVE,
 			null,
 			null,
 			this.id,
+			null,
 			null,
 			null
 		);

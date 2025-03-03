@@ -1,6 +1,0 @@
-# Server Url 정보
-serverUrl:
-  api: ${SERVER_URL_API}
-  admin: ${SERVER_URL_ADMIN}
-  domainUrl: https://feelog.net
-  domainWWWUrl: https://www.feelog.net

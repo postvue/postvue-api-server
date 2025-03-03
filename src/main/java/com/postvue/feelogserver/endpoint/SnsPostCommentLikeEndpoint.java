@@ -34,6 +34,7 @@ public class SnsPostCommentLikeEndpoint implements CrudService<SnsPostCommentLik
 
 	@Override
 	@Nonnull
+	@Transactional
 	public List<@Nonnull SnsPostCommentLikeEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
 		Specification<SnsPostCommentLike> spec = filter != null
 			? jpaFilterCustomConverter.toSpec(filter, SnsPostCommentLike.class)
