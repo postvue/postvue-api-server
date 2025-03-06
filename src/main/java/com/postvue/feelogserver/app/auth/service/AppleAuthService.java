@@ -178,7 +178,6 @@ public class AppleAuthService {
                 .signWith(privateKey, SignatureAlgorithm.ES256) // 서명
                 .compact();
         } catch (Exception e) {
-            System.out.println("어라라라: "+e);
             throw new BadRequestErrorException("Apple Client Secret 생성 실패", e);
         }
     }

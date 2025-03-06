@@ -72,7 +72,7 @@ public class SnsUser extends BaseMixinImpl implements Serializable {
 	@Column(name = "email", length = 512)
 	private String email;
 
-	//@REFER: 일단 5, 18개로 지정, 나중에 고려 필요, 매직 넘버로 함
+	//@ANSWER: 일단 5, 18개로 지정
 	@Size(min = 5, max = 18, message = "최소 5글자, 최대 18글자까지 입력 가능합니다.")
 	@Pattern(regexp = "^[a-zA-Z][a-zA-Z0-9_]*$", message = "첫 글자는 알파벳이어야 하며, 공백 없이 알파벳, 숫자, 밑줄(_) 만 허용됩니다.")
 	@Column(name = "username", nullable = false, unique = true, updatable = false, length = 1024)
@@ -133,7 +133,7 @@ public class SnsUser extends BaseMixinImpl implements Serializable {
 		this.refreshToken = refreshToken;
 	}
 
-	// @REFER: 직접 조회 하는 방식으로 결정
+	// @ANSWER: 직접 조회 하는 방식으로 결정
 	// @Column(name = "follower_num")
 	// @ColumnDefault(value = "0")
 	// private Integer followerNum;

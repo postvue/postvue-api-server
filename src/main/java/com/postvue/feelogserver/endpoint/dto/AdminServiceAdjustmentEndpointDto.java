@@ -7,13 +7,13 @@ import com.postvue.feelogserver.domain.adminserviceadjustments.AdminServiceAdjus
 public record AdminServiceAdjustmentEndpointDto(
 	String id,
 	String serviceType,
-	String propLong1,
+	String propLong1id,
 
-	String propLong2,
+	String propLong2id,
 
-	String propLong3,
+	String propLong3id,
 
-	String propLong4,
+	String propLong4id,
 
 	String propString1,
 
@@ -26,7 +26,7 @@ public record AdminServiceAdjustmentEndpointDto(
 
 	LocalDateTime lastUpdatedAt,
 
-	Long lastUpdatedBy
+	String lastUpdatedByid
 ) {
 
 
@@ -34,17 +34,17 @@ public record AdminServiceAdjustmentEndpointDto(
 		return new AdminServiceAdjustmentEndpointDto(
 			adminServiceAdjustment.getId().toString(),
 			adminServiceAdjustment.getServiceType(),
-			adminServiceAdjustment.getPropLong1() != null ? adminServiceAdjustment.getPropLong1().toString() : null,
-			adminServiceAdjustment.getPropLong2() != null ? adminServiceAdjustment.getPropLong2().toString() : null,
-			adminServiceAdjustment.getPropLong3() != null ? adminServiceAdjustment.getPropLong3().toString() : null,
-			adminServiceAdjustment.getPropLong4() != null ? adminServiceAdjustment.getPropLong4().toString() : null,
+			adminServiceAdjustment.getPropLong1id() != null ? adminServiceAdjustment.getPropLong1id().toString() : null,
+			adminServiceAdjustment.getPropLong2id() != null ? adminServiceAdjustment.getPropLong2id().toString() : null,
+			adminServiceAdjustment.getPropLong3id() != null ? adminServiceAdjustment.getPropLong3id().toString() : null,
+			adminServiceAdjustment.getPropLong4id() != null ? adminServiceAdjustment.getPropLong4id().toString() : null,
 			adminServiceAdjustment.getPropString1(),
 			adminServiceAdjustment.getPropString2(),
 			adminServiceAdjustment.getPropString3(),
 			adminServiceAdjustment.getPropString4(),
 			adminServiceAdjustment.getCreatedAt(),
 			adminServiceAdjustment.getLastUpdatedAt(),
-			adminServiceAdjustment.getLastUpdatedBy()
+			adminServiceAdjustment.getLastUpdatedByid() !=null ? adminServiceAdjustment.getLastUpdatedByid().toString() : null
 		);
 	}
 }

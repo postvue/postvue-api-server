@@ -105,8 +105,6 @@ public class AuthService {
 			snsUser.updateRefreshToken(refreshToken);
 		}
 
-		// @REFER: 로그 기록 남기기
-		// log.info("{ 'msg': '리프레시 토큰 갱신'}");
 		return TokenResponse.of(accessToken, refreshToken, snsUser.getId());
 	}
 

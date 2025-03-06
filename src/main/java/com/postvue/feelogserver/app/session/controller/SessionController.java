@@ -78,7 +78,6 @@ public class SessionController {
 		));
 	}
 
-	// @REFER: 코드 분석 필요
 	// subscribe: ws://topic/session/:userId
 	@SubscribeMapping(WebSocketPathConst.SESSIONS_PATH + "/{userId}")
 	public SessionActiveUserListSub getSessionInit(
@@ -86,7 +85,6 @@ public class SessionController {
 		Principal principal
 	) {
 
-		// @REFER: 수정 필요
 		// Long realUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
 
 		if (principal instanceof Authentication) {

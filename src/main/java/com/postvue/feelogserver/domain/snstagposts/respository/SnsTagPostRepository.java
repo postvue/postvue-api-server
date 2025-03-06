@@ -17,9 +17,6 @@ import org.springframework.data.repository.query.Param;
 
 @Repository
 public interface SnsTagPostRepository extends JpaRepository<SnsTagPost, Long>, JpaSpecificationExecutor<SnsTagPost> {
-	// @REFER: (CASE WHEN is_commented = TRUE THEN 4 ELSE 0 END) : 현재 sns_post_user_reactions_tb에서 is_commented 제거 => sns_post_comment_reactions에서 가져오도록 고려
-
-
 	int SCORE_CONTROL_NUM = 50;
 	String RECOMM_TAG_NATIVE_QUERY = "with "
 		+ "sns_posts_by_popular AS "

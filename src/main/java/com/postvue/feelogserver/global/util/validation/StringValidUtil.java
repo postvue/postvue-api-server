@@ -8,4 +8,8 @@ public final class StringValidUtil {
 	public static boolean isNotBlank(String input) {
 		return input != null && !BLANK_PATTERN.matcher(input).matches();
 	}
+
+	public static String nullIfEmpty(String value) {
+		return (value == null || value.isBlank()) ? null : value;
+	}
 }

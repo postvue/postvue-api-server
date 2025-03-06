@@ -6,13 +6,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.postvue.feelogserver.domain.snstagposts.SnsTagPost;
-import com.postvue.feelogserver.domain.snstagposts.respository.SnsTagPostRepository;
-import com.postvue.feelogserver.domain.snsuserfavoritetermbookmarks.SnsUserFavoriteTermBookmark;
 import com.postvue.feelogserver.domain.snsuserfollows.SnsUserFollow;
 import com.postvue.feelogserver.domain.snsuserfollows.repository.SnsUserFollowRepository;
 import com.postvue.feelogserver.endpoint.converter.JpaFilterCustomConverter;
-import com.postvue.feelogserver.endpoint.dto.SnsTagPostEndpointDto;
 import com.postvue.feelogserver.endpoint.dto.SnsUserFollowEndpointDto;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.hilla.BrowserCallable;

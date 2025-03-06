@@ -20,8 +20,10 @@ export default function SnsUserMessageRoomMemberCrudView() {
               'readAt',
               'isHidden',
               'isBlocked',
-              'createdAt'
-            ]
+              'createdAt',
+                'lastUpdatedAt'
+            ],
+              deleteButtonVisible: false
       }} />
   );
 }

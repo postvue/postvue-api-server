@@ -34,6 +34,17 @@ public interface SnsPostRepository extends JpaRepository<SnsPost, Long>,JpaSpeci
 	String SHOW_BY_NOT_BLOCKED_USER_NATIVE_QUERY = "LEFT OUTER JOIN sns_block_users_tb AS SNS_BU "
 		+ "ON (SNS_BU.sns_blocker_user_id = :snsUserId AND SNS_BU.sns_blocked_user_id = sns_post.sns_user_id) OR (SNS_BU.sns_blocker_user_id = sns_post.sns_user_id AND SNS_BU.sns_blocked_user_id = :snsUserId) ";
 
+	String POST_QUERY_WHERE_CONDITION_DETAIL = " "
+		+ SHOW_BY_NOT_BLOCKED_USER_NATIVE_QUERY
+		+ "WHERE "
+		+ "SNS_BU.sns_blocker_user_id IS NULL "
+		+ "AND sns_post.deleted_at IS NULL "
+		+ "AND SNS_U.deleted_at IS NULL "
+		+ "AND "
+		+ "(sns_post.sns_user_id = :snsUserId "
+		+ "OR (sns_post.tgt_aud_type = " + "'" + TgtAudTypeValue.PUBLIC_SCOPE_VALUE + "'" + " ) "
+		+ "OR (sns_post.tgt_aud_type = " + "'" + TgtAudTypeValue.FOLLOWERS_SCOPE_VALUE + "'" + " AND :snsUserId IN (SELECT SNS_UF.follower_id FROM sns_user_follows_tb AS SNS_UF WHERE sns_post.sns_user_id = SNS_UF.following_id) )"
+		+ ") ";
 
 	String POST_QUERY_WHERE_CONDITION = " "
 		+ SHOW_BY_NOT_BLOCKED_USER_NATIVE_QUERY
@@ -49,7 +60,6 @@ public interface SnsPostRepository extends JpaRepository<SnsPost, Long>,JpaSpeci
 		+ ") ";
 
 
-	// @REFER: (CASE WHEN is_commented = TRUE THEN 4 ELSE 0 END) : 현재 sns_post_user_reactions_tb에서 is_commented 제거 => sns_post_comment_reactions에서 가져오도록 고려
 	String STUFF_FOR_ME_BY_TAG_NATIVE_QUERY = "WITH "
 		+ "follow_relations as (SELECT SNS_F.following_id, SNS_F.follower_id FROM sns_user_follows_tb AS SNS_F where SNS_F.follower_id = :snsUserId), "
 		+ "interest_scores AS (SELECT sns_post_id, (CASE WHEN is_clipped = TRUE THEN 5 ELSE 0 END) + (CASE WHEN is_liked = TRUE THEN 4 ELSE 0 END) AS interest_score FROM sns_post_user_reactions_tb WHERE sns_user_id = :snsUserId), "
@@ -332,7 +342,7 @@ public interface SnsPostRepository extends JpaRepository<SnsPost, Long>,JpaSpeci
 		+ "ON sns_post.sns_user_id = FOLLOW.following_id "
 		+ "LEFT OUTER JOIN sns_post_user_reactions_tb AS SPUR "
 		+ "ON SPUR.sns_user_id = :snsUserId AND sns_post.sns_post_id = SPUR.sns_post_id "
-		+ POST_QUERY_WHERE_CONDITION
+		+ POST_QUERY_WHERE_CONDITION_DETAIL
 		+ "AND sns_post.sns_post_id = :snsPostId ";
 
 	String POST_INFO_NATIVE_QUERY = "SELECT sns_post.sns_post_id AS post_id, "

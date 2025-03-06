@@ -1,6 +1,7 @@
 package com.postvue.feelogserver.domain.snstags.repository;
 
 import java.sql.PreparedStatement;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -21,8 +22,9 @@ public class SnsTagJdbcRepository {
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void saveAll(List<SnsTag> snsTags) {
-		String sql = "INSERT INTO sns_tags_tb (sns_tag_id, tag_name, tag_reps_batch_content, tag_reps_batch_content_type) VALUES (?, ?, ?, ?)";
+		String sql = "INSERT INTO sns_tags_tb (sns_tag_id, tag_name, tag_reps_batch_content, tag_reps_batch_content_type, created_at) VALUES (?, ?, ?, ?, ?)";
 
+		LocalDateTime localDateTime = LocalDateTime.now();
 		jdbcTemplate.batchUpdate(sql,
 			snsTags,
 			snsTags.size(),
@@ -32,6 +34,7 @@ public class SnsTagJdbcRepository {
 				ps.setString(2, snsTag.getTagName());
 				ps.setString(3, snsTag.getTagRepsBatchContent());
 				ps.setString(4, snsTag.getTagRepsBatchContentType().toString());
+				ps.setObject(5, localDateTime);
 			});
 	}
 }

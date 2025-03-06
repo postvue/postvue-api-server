@@ -46,16 +46,16 @@ public class AdminServiceAdjustment extends BaseMixinImpl implements Serializabl
 	private String serviceType;
 
 	@Column(name = "prop_long1")
-	private Long propLong1;
+	private Long propLong1id;
 
 	@Column(name = "prop_long2")
-	private Long propLong2;
+	private Long propLong2id;
 
 	@Column(name = "prop_long3")
-	private Long propLong3;
+	private Long propLong3id;
 
 	@Column(name = "prop_long4")
-	private Long propLong4;
+	private Long propLong4id;
 
 	@Column(name = "prop_string1", length = 512)
 	private String propString1;

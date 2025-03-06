@@ -8,6 +8,8 @@ export default function SnsTagPostCrudView() {
   return (
       <AutoGrid
           service={SnsTagPostEndpoint}
-          model={SnsTagPostEndpointDtoModel}/>
+          model={SnsTagPostEndpointDtoModel}
+          style={{height:"100%"}}
+      />
   );
 }

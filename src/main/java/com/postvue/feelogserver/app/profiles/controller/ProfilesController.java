@@ -187,9 +187,9 @@ public class ProfilesController {
 		@RequestParam(value = "hasFollowInfo", required = false) Boolean hasFollowInfo
 	) {
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
-		if (snsUserId == null) {
-			throw new JwtTokenValidException(new Exception());
-		}
+		// if (snsUserId == null) {
+		// 	throw new JwtTokenValidException(new Exception());
+		// }
 		return new ServerGetOkRsp<>(profilesService.getProfileUserListByUsername(username, snsUserId, cursorId, hasFollowInfo));
 	}
 

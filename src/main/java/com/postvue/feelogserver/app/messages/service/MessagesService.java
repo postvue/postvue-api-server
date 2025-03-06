@@ -460,7 +460,8 @@ public class MessagesService {
 			snsUserMessage.getSnsUserMessageRoom().getId());
 
 		if (Objects.equals(snsUserMessage.getSourceUser().getId(), userId)) {
-			snsUserMessageRepository.delete(snsUserMessage);
+			snsUserMessage.setDeletedAt(LocalDateTime.now());
+			snsUserMessageRepository.save(snsUserMessage);
 		} else {
 			throw new UnauthorizedErrorException("삭제 권한이 없습니다.");
 		}

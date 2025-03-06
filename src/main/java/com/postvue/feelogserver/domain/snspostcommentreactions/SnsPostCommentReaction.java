@@ -42,7 +42,7 @@ import lombok.Setter;
 @Table(name = "SNS_POST_COMMENT_REACTIONS_TB", indexes = {
 	@Index(
 		name = "IDX__SOURCE_COMMENTS_BY_SNS_POST_COMMENT_REACTIONS",
-		columnList = "source_comment_id, is_commented")})
+		columnList = "source_comment_id")})
 @Builder
 @DynamicInsert
 @NoArgsConstructor
@@ -90,19 +90,11 @@ public class SnsPostCommentReaction extends BaseMixinImpl implements Serializabl
 	@Column(name = "comment_media_content")
 	private String commentMediaContent;
 
-	// @REFER: sns_post_comment_likes_tb로 따로 관리
-	// @Column(name = "is_liked", nullable = false)
-	// @ColumnDefault(value = "false")
-	// private Boolean isLiked;
-	//
-	// @Column(name = "is_liked_at")
-	// private LocalDateTime isLikedAt;
-
 	@Column(name = "is_source", nullable = false)
 	@ColumnDefault(value = "false")
 	private Boolean isSource;
 
-	//@REFER: comment(댓글) 행이 있냐 없냐로 구분할 수 있는 데, 굳이 is_commented이 필요 할까?
+	//@ANSWER: comment(댓글) 행이 있냐 없냐로 구분할 수 있는 데, 굳이 is_commented이 필요 할까? -> 제거됨
 	// => is_commented 제거
 	// @Column(name = "is_commented")
 	// private Boolean isCommented;

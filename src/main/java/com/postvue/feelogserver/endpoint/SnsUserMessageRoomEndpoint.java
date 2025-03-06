@@ -6,12 +6,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.postvue.feelogserver.domain.snsusermessagereactions.SnsUserMessageReaction;
-import com.postvue.feelogserver.domain.snsusermessagereactions.repository.SnsUserMessageReactionRepository;
 import com.postvue.feelogserver.domain.snsusermessagerooms.SnsUserMessageRoom;
 import com.postvue.feelogserver.domain.snsusermessagerooms.repository.SnsUserMessageRoomRepository;
 import com.postvue.feelogserver.endpoint.converter.JpaFilterCustomConverter;
-import com.postvue.feelogserver.endpoint.dto.SnsUserMessageReactionEndpointDto;
 import com.postvue.feelogserver.endpoint.dto.SnsUserMessageRoomEndpointDto;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.hilla.BrowserCallable;
@@ -54,6 +51,7 @@ public class SnsUserMessageRoomEndpoint implements CrudService<SnsUserMessageRoo
 	@Override
 	@Transactional
 	public void delete(Long id) {
-		snsUserMessageRoomRepository.deleteById(id);
+		return;
+		// snsUserMessageRoomRepository.deleteById(id);
 	}
 }

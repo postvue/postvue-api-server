@@ -19,7 +19,7 @@ public record AdminServiceErrorManagementEndpointDto(
 
 	LocalDateTime lastUpdatedAt,
 
-	Long lastUpdatedBy
+	String lastUpdatedByid
 ) {
 
 
@@ -33,7 +33,7 @@ public record AdminServiceErrorManagementEndpointDto(
 			adminServiceErrorManagement.getPropMsgString4(),
 			adminServiceErrorManagement.getCreatedAt(),
 			adminServiceErrorManagement.getLastUpdatedAt(),
-			adminServiceErrorManagement.getLastUpdatedBy()
+			adminServiceErrorManagement.getLastUpdatedByid() != null ? adminServiceErrorManagement.getLastUpdatedByid().toString() : null
 		);
 	}
 }

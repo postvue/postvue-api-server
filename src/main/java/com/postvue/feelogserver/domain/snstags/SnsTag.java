@@ -1,6 +1,7 @@
 package com.postvue.feelogserver.domain.snstags;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 import org.hibernate.annotations.ColumnDefault;
 
@@ -40,11 +41,11 @@ public class SnsTag extends BaseMixinImpl implements Serializable {
 	@Column(name = "tag_name", nullable = false, unique = true)
 	private String tagName;
 
-	// @REFER: not nullable 지정
+	// @REFER: not nullable 지정 -> 일단 나중에
 	@Column(name = "tag_reps_batch_content", nullable = true)
 	private String tagRepsBatchContent;
 
-	// @REFER: not nullable 지정
+	// @REFER: not nullable 지정 -> 일단 나중에
 	@Column(name = "tag_reps_batch_content_type", nullable = true)
 	@Enumerated(EnumType.STRING)
 	private PostContentType tagRepsBatchContentType;
@@ -52,6 +53,9 @@ public class SnsTag extends BaseMixinImpl implements Serializable {
 	@Column(name = "is_exposed")
 	@ColumnDefault(value = "true")
 	private Boolean isExposed;
+
+	@Column(name = "deleted_at")
+	private LocalDateTime deletedAt;
 
 	// @Ref 속성이 아닌 테이블로 구현
 	// @JdbcTypeCode(SqlTypes.JSON)

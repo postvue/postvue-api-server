@@ -3,6 +3,7 @@ package com.postvue.feelogserver.app.auth.controller;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -39,6 +40,8 @@ import com.postvue.feelogserver.global.api.kakao.dto.rsp.KakaoUserInfo;
 import com.postvue.feelogserver.global.api.naver.NaverApiClient;
 import com.postvue.feelogserver.global.api.naver.dto.rsp.NaverUserInfo;
 import com.postvue.feelogserver.global.constant.CookieConst;
+import com.postvue.feelogserver.global.exception.BadRequestErrorException;
+import com.postvue.feelogserver.global.exception.BaseException;
 import com.postvue.feelogserver.global.http.response.serverresponse.ServerDeleteRsp;
 import com.postvue.feelogserver.global.http.response.serverresponse.ServerGetOkRsp;
 import com.postvue.feelogserver.global.http.response.serverresponse.ServerPostCreatedRsp;
@@ -278,5 +281,10 @@ public class AuthController {
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
 		authService.withdrawal(snsUserId, authMemberWithdrawalReq);
 		return new ServerDeleteRsp<>("회원이 탈퇴 되었습니다.");
+	}
+
+	@GetMapping("/test")
+	public void testException() {
+		throw new BadRequestErrorException("테스트 예외");
 	}
 }

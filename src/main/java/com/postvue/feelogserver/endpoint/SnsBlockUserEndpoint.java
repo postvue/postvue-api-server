@@ -1,5 +1,6 @@
 package com.postvue.feelogserver.endpoint;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
@@ -43,7 +44,9 @@ public class SnsBlockUserEndpoint implements CrudService<SnsBlockUserEndpointDto
 		SnsBlockUser snsBlockUser = value.id() != null && Long.parseLong(value.id()) > 0
 			? snsBlockUserRepository.getReferenceById(Long.parseLong(value.id()))
 			: new SnsBlockUser();
-		return SnsBlockUserEndpointDto.fromEntity(snsBlockUserRepository.save(snsBlockUser));
+
+		snsBlockUserRepository.save(snsBlockUser);
+		return SnsBlockUserEndpointDto.fromEntity(snsBlockUser);
 	}
 
 	@Override

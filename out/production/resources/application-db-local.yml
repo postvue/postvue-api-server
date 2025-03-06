@@ -14,8 +14,10 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
-    generate-ddl: true
+#      ddl-auto: update
+      ddl-auto: validate
+#    generate-ddl: true
+    generate-ddl: false
     properties:
       hibernate:
         format_sql: true

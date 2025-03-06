@@ -68,7 +68,7 @@ public interface SnsUserFollowRepository extends JpaRepository<SnsUserFollow, Lo
 		@Param("follow") List<Long> followList,
 		@Param("myUserId") Long myUserId);
 
-	//@REFER: 수정 필요, 현재 메시지에 대한 유저 정보의 경우, follow와 아에 관련되어 있지 않고, 오로지 message 테이블로 로써만 관계를 가짐
+	//@ANSWER: 수정 필요, 현재 메시지에 대한 유저 정보의 경우, follow와 아에 관련되어 있지 않고, 오로지 message 테이블로 로써만 관계를 가짐 -> 수정됨
 	// @Query(value =
 	// 	"SELECT "
 	// 		+ "SNS_UF "

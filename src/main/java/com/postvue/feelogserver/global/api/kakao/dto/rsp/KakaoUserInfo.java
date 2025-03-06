@@ -12,7 +12,6 @@ import com.postvue.feelogserver.global.constant.AccountConst;
 
 import lombok.Getter;
 
-// @REFER: 회원 가입 시 받아올 회원 정보 추가
 @Getter
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class KakaoUserInfo {

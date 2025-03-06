@@ -58,9 +58,9 @@ public class SnsScrapBoard extends BaseMixinImpl implements Serializable {
 	@OneToMany(mappedBy = "snsScrapBoard", fetch = FetchType.LAZY)
 	private List<SnsScrap> snsScraps;
 
-	private Float latitude;
-	private Float longitude;
-	private String address;
+	// private Float latitude;
+	// private Float longitude;
+	// private String address;
 
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;

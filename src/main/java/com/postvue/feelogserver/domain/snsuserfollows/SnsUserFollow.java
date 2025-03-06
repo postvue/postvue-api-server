@@ -46,7 +46,7 @@ public class SnsUserFollow extends BaseMixinImpl implements Serializable {
 	@JoinColumn(name = "follower_id", updatable = false)
 	private SnsUser followerUser;
 
-	//@REFER: 불필요한 조회 때문에 제거
+	//@ANSWER: 불필요한 조회 때문에 제거
 	// @Column(name = "is_follower_back", nullable = false)
 	// @ColumnDefault(value = "false")
 	// private Boolean isFollowerBack;

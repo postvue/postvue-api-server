@@ -14,8 +14,8 @@ import jakarta.persistence.ManyToOne;
 public record SnsUserFollowStatisticEndpointDto(
 	String id,
 	String snsUser_id,
+	String snsUser_username,
 	Integer followerNum,
-
 	Integer followingNum
 ) {
 
@@ -23,6 +23,7 @@ public record SnsUserFollowStatisticEndpointDto(
 		return new SnsUserFollowStatisticEndpointDto(
 			snsUserFollowStatistic.getId().toString(),
 			snsUserFollowStatistic.getSnsUser().getId().toString(),
+			snsUserFollowStatistic.getSnsUser().getUsername(),
 			snsUserFollowStatistic.getFollowerNum(),
 			snsUserFollowStatistic.getFollowingNum()
 		);

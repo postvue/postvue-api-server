@@ -382,9 +382,9 @@ public class ProfilesService {
 
 	@Transactional
 	public List<ScrapThumbnailRsp> getScrapListsBySearchQuery(Long userId, String searchQuery, Integer page) {
-		if (userId == null){
-			throw new UnauthorizedErrorException("인증된 계정이 아닙니다.");
-		}
+		// if (userId == null){
+		// 	throw new UnauthorizedErrorException("인증된 계정이 아닙니다.");
+		// }
 		List<ScrapThumbNailDao> scrapListDaoList = snsScrapRepository.selectScrapBoardBySearchQuery(
 			userId, searchQuery, page * PageConfigConst.PROFILE_SCRAP_PAGE_NUM,
 			PageConfigConst.PROFILE_SCRAP_PAGE_NUM);
@@ -687,11 +687,12 @@ public class ProfilesService {
 				.build());
 		snsPostUserReaction.setIsClipped(true);
 		snsPostUserReaction.setIsClippedAt(LocalDateTime.now());
-		snsPostUserReactionRepository.save(snsPostUserReaction);
+		SnsPostUserReaction newSnsPostUserReaction = snsPostUserReactionRepository.save(snsPostUserReaction);
 
 		if (snsScrapOptByPostId.isPresent()) {
 			return PostToScrapRsp.builder()
 				.scrapId(scrapBoardId.toString())
+				.scrapPostId(newSnsPostUserReaction.getId().toString())
 				.isScraped(true)
 				.isClipped(true)
 				.build();
@@ -716,6 +717,7 @@ public class ProfilesService {
 
 			return PostToScrapRsp.builder()
 				.scrapId(scrapBoardId.toString())
+				.scrapPostId(newSnsPostUserReaction.getId().toString())
 				.isScraped(true)
 				.isClipped(true)
 				.build();

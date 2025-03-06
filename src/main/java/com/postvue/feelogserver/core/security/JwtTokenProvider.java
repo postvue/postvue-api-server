@@ -111,7 +111,7 @@ public class JwtTokenProvider {
 		return Jwts.builder()
 			.setHeaderParam(Header.TYPE, Header.JWT_TYPE)
 			.setSubject(String.valueOf(memberId))
-			.claim(USER_ROLE_CLAIME_NAME, sysAppRole.name()) //@REFER: 무슨 의미 인지?, 현재 "role"로 매직 값으로 되어 있음
+			.claim(USER_ROLE_CLAIME_NAME, sysAppRole.name())
 			.setIssuedAt(now)
 			.setExpiration(new Date(now.getTime() + tokenExpiredTime))
 			.signWith(encodeKey, SignatureAlgorithm.HS256)
