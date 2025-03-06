@@ -26,5 +26,5 @@ public class BaseMixinImpl implements TimeMixins {
 	private LocalDateTime lastUpdatedAt;
 
 	@Column(name = "last_updated_by")
-	private Long lastUpdatedBy;
+	private Long lastUpdatedByid;
 }

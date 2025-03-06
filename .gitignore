@@ -30,6 +30,14 @@ src/main/resources/application-*-local.yml
 # dump
 src/main/resources/db/migration/
 
+# application-local
+src/main/resources/application-common-local.yml
+src/main/resources/application-config-local.yml
+src/main/resources/application-db-local.yml
+src/main/resources/application-rabbitmq-local.yml
+src/main/resources/application-redis-local.yml
+src/main/resources/application-swagger-local.yml
+
 # docker
 #dockerfile
 docker-compose.yml

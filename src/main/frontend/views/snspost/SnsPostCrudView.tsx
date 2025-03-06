@@ -106,9 +106,6 @@ function GroupingLayoutRenderer({ children }: AutoFormLayoutRendererProps<SnsPos
                     src={`https://www.google.com/maps?q=${latitude},${longitude}&hl=ko&z=15&output=embed`}>
                 </iframe>
 
-
-
-
                 {fieldsMapping.get('isShowAddress')}
                 {fieldsMapping.get('tags')}
                 <TableContainer >
@@ -162,8 +159,11 @@ function GroupingLayoutRenderer({ children }: AutoFormLayoutRendererProps<SnsPos
                         );
                     })}
                 </StyledSwiper>
+
+                {fieldsMapping.get('reactionCount')}
                 {fieldsMapping.get('createdAt')}
                 {fieldsMapping.get('deletedAt')}
+                {fieldsMapping.get('lastUpdatedAt')}
             </VerticalLayout>
         </VerticalLayout>
     );

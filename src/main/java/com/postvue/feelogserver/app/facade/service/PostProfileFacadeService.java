@@ -151,7 +151,7 @@ public class PostProfileFacadeService {
 			.isReposted(snsPostDao.getIsReposted())
 			.postTitle(snsPostDao.getPostTitle())
 			.postBodyText(snsPostDao.getPostBodyText())
-			// @REFER: 제거
+			// @ANSWER: 제거
 			// .postCategory(snsPostDao.getPostCategory())
 			.followable(snsPostDao.getFollowable())
 			.postContents(snsPostDao.getStringToSnsPostContents()

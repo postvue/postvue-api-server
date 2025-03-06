@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.postvue.feelogserver.domain.snsusermessages.SnsUserMessage;
 import com.postvue.feelogserver.domain.snsusermessages.vo.MsgMediaType;
+import com.postvue.feelogserver.global.util.converter.JsonConverter;
 
 public record SnsUserMessageEndpointDto(
 	String id,
@@ -12,7 +13,10 @@ public record SnsUserMessageEndpointDto(
 	String msgTextContent,
 	MsgMediaType msgMediaType,
 	String msgMediaContent,
-	LocalDateTime createdAt
+	String msgMetaInfo,
+	LocalDateTime createdAt,
+	LocalDateTime deletedAt,
+	LocalDateTime lastUpdatedAt
 ) {
 
 	public static SnsUserMessageEndpointDto fromEntity(SnsUserMessage snsUserMessage){
@@ -23,7 +27,10 @@ public record SnsUserMessageEndpointDto(
 			snsUserMessage.getMsgTextContent(),
 			snsUserMessage.getMsgMediaType(),
 			snsUserMessage.getMsgMediaContent(),
-			snsUserMessage.getCreatedAt()
+			JsonConverter.convertToJsonString(snsUserMessage.getMsgMetaInfo()),
+			snsUserMessage.getCreatedAt(),
+			snsUserMessage.getDeletedAt(),
+			snsUserMessage.getLastUpdatedAt()
 			);
 	}
 }

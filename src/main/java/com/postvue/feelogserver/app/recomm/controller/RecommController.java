@@ -33,7 +33,6 @@ public class RecommController {
 		return new ServerGetOkRsp<>(recommService.findRecommFollowList(snsUserId));
 	}
 
-	//@REFER: 1711682965002 아닌 다른 아이디로 하면 관련 포스트 잘 안 보여줌
 	@GetMapping("/posts/{postId}/relations")
 	public ServerGetOkRsp<List<SnsPostRsp>> getRecommPostRelated(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
@@ -46,7 +45,7 @@ public class RecommController {
 		return new ServerGetOkRsp<>(postsService.findPostRelation(postId, snsUserId, searchType, page));
 	}
 
-	//@REFER: 로그인 하지 않을 시, 다른 값으로 보여줄 지 고려
+	//@ANSWER: 로그인 하지 않을 시, 다른 값으로 보여줄 지 고려 -> 지정 태그 보여줌
 	@GetMapping("/tags")
 	public ServerGetOkRsp<
 		List<GetRecommTagRsp>> getRecommTagList(

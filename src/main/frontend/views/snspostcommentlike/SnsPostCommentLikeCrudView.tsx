@@ -20,6 +20,7 @@ export default function SnsPostCommentLikeCrudView() {
               'snsUser_id',
               'isLiked',
               'isLikedAt',
+              'createdAt'
               ]
       }}/>
 

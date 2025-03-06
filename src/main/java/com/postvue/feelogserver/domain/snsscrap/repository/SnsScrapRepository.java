@@ -23,7 +23,7 @@ public interface SnsScrapRepository extends JpaRepository<SnsScrap, Long>, JpaSp
 
 	String SHOW_BY_NOT_BLOCKED_USER_NATIVE_QUERY = "LEFT OUTER JOIN sns_block_users_tb AS SNS_BU "
 		+ "ON SNS_BU.sns_blocker_user_id = :snsUserId AND SNS_BU.sns_blocked_user_id = sns_post.sns_user_id ";
-	String MY_SCRAP_BOARD_NATIVE_QUERY = "WITH "
+	String SCRAP_BOARD_NATIVE_QUERY = "WITH "
 		+ "SCRAP_BOARD_OFFSET AS (  "
 		+ "SELECT SNS_SB.sns_scrap_board_id, "
 		+ "CASE WHEN recently_posted_at IS NOT NULL THEN recently_posted_at ELSE SNS_SB.created_at END as recently_posted_at, "
@@ -105,7 +105,7 @@ public interface SnsScrapRepository extends JpaRepository<SnsScrap, Long>, JpaSp
 		+ "WHERE "
 		+ "(asc_row_num = 1 OR desc_row_num <= 5)";
 
-	@Query(value = MY_SCRAP_BOARD_NATIVE_QUERY, nativeQuery = true)
+	@Query(value = SCRAP_BOARD_NATIVE_QUERY, nativeQuery = true)
 	List<ScrapThumbNailDao> selectScrapBoard(
 		@Param("snsUserId") Long snsUserId,
 		@Param("page") Integer page,

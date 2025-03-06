@@ -14,7 +14,6 @@ public record SnsPostEndPointDto(
 	String snsPostContents,
 	String postTitle,
 	String postBodyText,
-	String postCaptionContent,
 	Float latitude,
 	Float longitude,
 	String address,
@@ -33,7 +32,8 @@ public record SnsPostEndPointDto(
 	Integer reactionCount,
 
 	LocalDateTime createdAt,
-	LocalDateTime deletedAt
+	LocalDateTime deletedAt,
+	LocalDateTime lastUpdatedAt
 ) {
 
 	public static SnsPostEndPointDto fromEntity(SnsPost snsPost){
@@ -44,7 +44,6 @@ public record SnsPostEndPointDto(
 			JsonConverter.convertToJsonString(snsPost.getSnsPostContents()),
 			snsPost.getPostTitle(),
 			snsPost.getPostBodyText(),
-			snsPost.getPostCaptionContent(),
 			snsPost.getLatitude(),
 			snsPost.getLongitude(),
 			snsPost.getAddress(),
@@ -59,7 +58,8 @@ public record SnsPostEndPointDto(
 			snsPost.getPostContentBusinessType(),
 			snsPost.getReactionCount(),
 			snsPost.getCreatedAt(),
-			snsPost.getDeletedAt()
+			snsPost.getDeletedAt(),
+			snsPost.getLastUpdatedAt()
 		);
 	}
 }

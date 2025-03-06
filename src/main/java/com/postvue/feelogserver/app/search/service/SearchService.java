@@ -172,8 +172,6 @@ public class SearchService {
 
 
 
-
-
 			return false;
 		}
 		else{

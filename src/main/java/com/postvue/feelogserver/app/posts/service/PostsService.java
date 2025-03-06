@@ -817,7 +817,6 @@ public class PostsService {
 	// 	snsPostJdbcRepository.insertPost(snsNewPost);
 	//
 	// 	// QUERY 5: INSERT SNS POST USER REACTION
-	// 	// @REFER: ? 왜 리액션 추가 했지?
 	// 	SnsPostUserReaction snsPostUserReaction = SnsPostUserReaction.builder()
 	// 		.snsPost(snsNewPost)
 	// 		.snsUser(snsUser)
@@ -1036,7 +1035,7 @@ public class PostsService {
 				() -> new BadRequestErrorException("해당 게시글은 없습니다.")
 			);
 
-		// @REFER: 진짜 삭제하진 말고 deleted_at으로 관리
+		// @ANSWER: 진짜 삭제하진 말고 deleted_at으로 관리
 		snsTagPostRepository.deleteAllBySnsPostId(mySnsPost);
 		mySnsPost.setDeletedAt(LocalDateTime.now());
 		snsPostRepository.save(mySnsPost);
@@ -1049,7 +1048,7 @@ public class PostsService {
 	@Transactional
 	public void deletePostBySnsPostIdByAdmin(SnsPost snsPost) {
 
-		// @REFER: 진짜 삭제하진 말고 deleted_at으로 관리
+		// @ANSWER: 진짜 삭제하진 말고 deleted_at으로 관리
 		snsTagPostRepository.deleteAllBySnsPostId(snsPost);
 		snsPost.setDeletedAt(LocalDateTime.now());
 		snsPostRepository.save(snsPost);
@@ -1087,7 +1086,7 @@ public class PostsService {
 				() -> new BadRequestErrorException("해당 계정은 없습니다.")
 			);
 
-		// @REFER: 삭제하지 말고, deletedAt 적용
+		// @ANSWER: 삭제하지 말고, deletedAt 적용
 		// snsPostCommentReactionRepository.delete(snsPostCommentReaction);
 
 		snsPostCommentReaction.setDeletedAt(LocalDateTime.now());
@@ -1252,8 +1251,8 @@ public class PostsService {
 		return true;
 	}
 
+	// @ANSWER: cloudflare 랑 minio랑 구분 되도록 구현됨
 	@Transactional
-	// @REFER: cloudflare 랑 minio랑 구분 되도록 필요
 	public Boolean editPost (
 		Long snsPostId,
 		SnsPostComposeUpdateReq snsPostComposeUpdateReq,
@@ -1264,11 +1263,10 @@ public class PostsService {
 			() -> new BadRequestErrorException("해당 게시물은 없습니다.")
 		);
 
-		// @REFER: 굳이 폴더를 이동할 필요가 있을 까?
+		// @ANSWER: 굳이 폴더를 이동할 필요가 있을 까?
 		// snsPost.getSnsPostContents().forEach((snsPostContent -> {
 		// 	if ( snsPostComposeUpdateReq.getExternalImgLinkList().contains(snsPostContent.getContent())){
 		// 		String oldFileUrl = snsPostContent.getContent();
-		// 		//@REFER: 매직 넘버
 		// 		r2CloudService.renameImageInR2(oldFileUrl, String.format("delete/posts/%d/%s",snsPost.getId(),oldFileUrl));
 		// 	}
 		// }));
@@ -1525,7 +1523,7 @@ public class PostsService {
 			.isClipped(false)
 			.postTitle(snsPost.getPostTitle())
 			.postBodyText(snsPost.getPostBodyText())
-			// @REFER: 제거
+			// @ANSWER: 제거
 			// .postCategory(snsPost.getPostCategory().toString())
 			.postContents(snsPost.getSnsPostContents()
 				.stream()
@@ -1555,7 +1553,6 @@ public class PostsService {
 	// 		.isReposted(snsPostDao.getIsReposted())
 	// 		.postTitle(snsPostDao.getPostTitle())
 	// 		.postBodyText(snsPostDao.getPostBodyText())
-	// 		// @REFER: 제거
 	// 		// .postCategory(snsPostDao.getPostCategory())
 	// 		.followable(snsPostDao.getFollowable())
 	// 		.postContents(snsPostDao.getStringToSnsPostContents()
@@ -1844,7 +1841,7 @@ public class PostsService {
 
 				snsPostContentList.add(0, snsPostContent);
 
-				// @REFER: 이미지를 다운 받지 않고 링크로 저장하는 경우
+				// @ANSWER: 이미지를 다운 받지 않고 링크로 저장하는 경우 -> 링크를 다운로드 하여 저장
 				// snsPostContentList.add(SnsPostContent.builder()
 				// 	.postContentType(postContent.getPostContentType())
 				// 	.content(postContent.getContent())

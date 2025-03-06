@@ -10,7 +10,8 @@ public record SnsScrapEndpointDto(
 	String snsPost_id,
 	String snsScrapBoard_id,
 	LocalDateTime createdAt,
-	LocalDateTime deletedAt
+	LocalDateTime deletedAt,
+	LocalDateTime lastUpdatedAt
 ) {
 
 	public static SnsScrapEndpointDto fromEntity(SnsScrap snsScrap){
@@ -20,7 +21,8 @@ public record SnsScrapEndpointDto(
 			snsScrap.getSnsPost().getId().toString(),
 			snsScrap.getSnsScrapBoard().getId().toString(),
 			snsScrap.getCreatedAt(),
-			snsScrap.getDeletedAt()
+			snsScrap.getDeletedAt(),
+			snsScrap.getLastUpdatedAt()
 		);
 	}
 }

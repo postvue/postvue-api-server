@@ -35,7 +35,7 @@ export default function SnsUserFavoriteTermBookmarkCrudView() {
             }
             {fieldsMapping.get('id')?.props.form.defaultValue.favoriteTermContentType === PostContentType.IMAGE
               &&
-              <img src={fieldsMapping.get('id')?.props.form.defaultValue.favoriteTermContent} style={{width:'100%',maxWidth:'400px',borderRadius:'5px'}}/>
+              <img src={fieldsMapping.get('id')?.props.form.defaultValue.favoriteTermContent} style={{width:'100%',maxWidth:'250px',borderRadius:'5px'}}/>
             }
           </VerticalLayout>
         </VerticalLayout>

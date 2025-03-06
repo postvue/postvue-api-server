@@ -19,7 +19,8 @@ export default function SnsScrapCrudView() {
               'snsPost_id',
               'snsScrapBoard_id',
               'createdAt',
-              'deletedAt'
+              'deletedAt',
+              'lastUpdatedAt'
               ]
       }}/>
       </>

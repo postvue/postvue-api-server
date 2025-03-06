@@ -67,7 +67,7 @@ public class SnsPost extends BaseMixinImpl implements Serializable {
 	@ColumnDefault(value = "true")
 	private Boolean isExposed;
 
-	// @REFER: 스레드 와 포스트를 구분하지 않도록 함
+	// @ANSWER: 스레드 와 포스트를 구분하지 않도록 함
 	// @Column(name = "post_category", nullable = false)
 	// @Enumerated(value = EnumType.STRING)
 	// private SnsPostCategory postCategory;
@@ -83,8 +83,8 @@ public class SnsPost extends BaseMixinImpl implements Serializable {
 	@Column(nullable = true, name = "post_body_text", length = 1024)
 	private String postBodyText;
 
-	@Column(name = "post_caption_content")
-	private String postCaptionContent;
+	// @Column(name = "post_caption_content")
+	// private String postCaptionContent;
 
 	@Column(name = "latitude")
 	private Float latitude;

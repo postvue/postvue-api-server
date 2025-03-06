@@ -19,6 +19,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -28,8 +29,14 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "SNS_POST_USER_REACTIONS_TB", indexes = {
-	@Index(name = "IDX__USER_BY_SNS_POST_USER_REACTIONS", columnList = "sns_user_id")})
+@Table(name = "SNS_POST_USER_REACTIONS_TB"
+	,uniqueConstraints = {
+		@UniqueConstraint(columnNames = {"sns_post_id", "sns_user_id"}, name = "IDX_UNIQUE_USER_POST_ID_BY_SNS_POST_USER_REACTIONS")
+	}
+	, indexes = {
+		@Index(name = "IDX__USER_BY_SNS_POST_USER_REACTIONS", columnList = "sns_user_id")
+	}
+)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -69,7 +76,7 @@ public class SnsPostUserReaction extends BaseMixinImpl implements Serializable {
 	@Column(name = "is_reposted_at")
 	private LocalDateTime isRepostedAt;
 
-	// @REFER: 북마크 제거
+	// @ANSWER: 북마크 제거
 	// @Column(name = "is_bookmarked", nullable = false)
 	// @ColumnDefault(value = "false")
 	// private Boolean isBookmarked;
@@ -77,7 +84,7 @@ public class SnsPostUserReaction extends BaseMixinImpl implements Serializable {
 	// @Column(name = "is_bookmarked_at")
 	// private LocalDateTime isBookmarkedAt;
 
-	// @REFER: SnsPostCommentReaction 테이블 추가로 인해 삭제
+	// @ANSWER: SnsPostCommentReaction 테이블 추가로 인해 삭제
 	// @Column(name = "is_commented", nullable = false)
 	// @ColumnDefault(value = "false")
 	// private Boolean isCommented;

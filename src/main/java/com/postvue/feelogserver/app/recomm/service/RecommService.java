@@ -53,7 +53,7 @@ public class RecommService {
 
 		// 이미 가져온 ID와 겹치지 않는 요소 필터링
 		List<Long> recommFollowListByAdmin = adminServiceAdjustmentRepository.findAllByServiceType(
-				RecommFollowServiceInfo.SERVICE_TYPE_NAME).stream().map(AdminServiceAdjustment::getPropLong1)
+				RecommFollowServiceInfo.SERVICE_TYPE_NAME).stream().map(AdminServiceAdjustment::getPropLong1id)
 			.filter(id -> !ids.contains(id))
 			.toList();
 
@@ -113,7 +113,7 @@ public class RecommService {
 
 		// 이미 가져온 ID와 겹치지 않는 요소 필터링
 		List<Long> recommTagListByAdmin = adminServiceAdjustmentRepository.findAllByServiceType(
-				RecommTagServiceInfo.SERVICE_TYPE_NAME).stream().map(AdminServiceAdjustment::getPropLong1)
+				RecommTagServiceInfo.SERVICE_TYPE_NAME).stream().map(AdminServiceAdjustment::getPropLong1id)
 			.filter(id -> !tagIds.contains(id))
 			.toList();
 
@@ -145,7 +145,6 @@ public class RecommService {
 	}
 
 
-	//@REFER: 잘 되는 지 확인
 	@Transactional
 	public List<GetRecommTagRsp> findRecommFavoriteTagList(Integer page) {
 		List<SnsRecommTagDao> snsRecommTagDaoList = snsTagPostRepository.findPopularTagListByPageable(
@@ -173,7 +172,7 @@ public class RecommService {
 
 		// 이미 가져온 ID와 겹치지 않는 요소 필터링
 		List<Long> recommTagListByAdmin = adminServiceAdjustmentRepository.findAllByServiceType(
-				RecommFavoriteTagServiceInfo.SERVICE_TYPE_NAME).stream().map(AdminServiceAdjustment::getPropLong1)
+				RecommFavoriteTagServiceInfo.SERVICE_TYPE_NAME).stream().map(AdminServiceAdjustment::getPropLong1id)
 			.filter(id -> !tagIds.contains(id))
 			.toList();
 

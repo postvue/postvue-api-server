@@ -98,6 +98,7 @@ public class PostCommentReplyNotificationProcessService
 						switch (snsPostCommentReaction.getCommentMediaType()){
 							case IMAGE -> SnsNotificationContentType.IMAGE;
 							case VIDEO -> SnsNotificationContentType.VIDEO;
+							case NONE -> SnsNotificationContentType.NONE;
 						}
 					)
 					.snsNotificationContent(

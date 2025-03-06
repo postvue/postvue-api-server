@@ -28,10 +28,10 @@ export default function AdminServiceAdjustmentCrudView() {
                 <h4>Personal Information:</h4>
                 <VerticalLayout theme="spacing" className="pb-l">
                     {fieldsMapping.get('serviceType')}
-                    {fieldsMapping.get('propLong1')}
-                    {fieldsMapping.get('propLong2')}
-                    {fieldsMapping.get('propLong3')}
-                    {fieldsMapping.get('propLong4')}
+                    {fieldsMapping.get('propLong1id')}
+                    {fieldsMapping.get('propLong2id')}
+                    {fieldsMapping.get('propLong3id')}
+                    {fieldsMapping.get('propLong4id')}
                     {fieldsMapping.get('propString1')}
                     {fieldsMapping.get('propString2')}
                     {fieldsMapping.get('propString3')}

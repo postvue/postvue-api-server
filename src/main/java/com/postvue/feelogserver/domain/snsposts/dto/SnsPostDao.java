@@ -32,7 +32,7 @@ public interface SnsPostDao {
 	String getAddress();
 	String getBuildName();
 
-	//@REFER: 제거
+	//@ANSWER: 제거
 	// String getPostCategory();
 
 	String getPostTitle();

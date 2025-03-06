@@ -23,18 +23,20 @@ export default function SnsTagCrudView() {
           <h4>Personal Information:</h4>
           <VerticalLayout theme="spacing" className="pb-l">
             {fieldsMapping.get('tagName')}
+              {fieldsMapping.get('tagRepsBatchContent')}
             {fieldsMapping.get('tagRepsBatchContentType')}
+              {fieldsMapping.get('id')?.props.form.defaultValue.tagRepsBatchContentType === PostContentType.VIDEO
+                  &&
+                  <div>{fieldsMapping.get('id')?.props.form.defaultValue.tagRepsBatchContent}</div>
+              }
+              {fieldsMapping.get('id')?.props.form.defaultValue.tagRepsBatchContentType === PostContentType.IMAGE
+                  &&
+                  <img src={fieldsMapping.get('id')?.props.form.defaultValue.tagRepsBatchContent} style={{width:'100%',maxWidth:'250px',borderRadius:'5px'}}/>
+              }
             {fieldsMapping.get('isExposed')}
             {fieldsMapping.get('createdAt')}
-            {fieldsMapping.get('tagRepsBatchContent')}
-            {fieldsMapping.get('id')?.props.form.defaultValue.tagRepsBatchContentType === PostContentType.VIDEO
-              &&
-              <div>{fieldsMapping.get('id')?.props.form.defaultValue.tagRepsBatchContent}</div>
-            }
-            {fieldsMapping.get('id')?.props.form.defaultValue.tagRepsBatchContentType === PostContentType.IMAGE
-              &&
-              <img src={fieldsMapping.get('id')?.props.form.defaultValue.tagRepsBatchContent} style={{width:'100%',maxWidth:'400px',borderRadius:'5px'}}/>
-            }
+              {fieldsMapping.get('deletedAt')}
+              {fieldsMapping.get('lastUpdatedAt')}
           </VerticalLayout>
         </VerticalLayout>
     );
@@ -46,7 +48,12 @@ export default function SnsTagCrudView() {
           model={SnsTagEndpointDtoModel}
           style={{height:"100%"}}
           formProps={
-            {layoutRenderer: GroupingLayoutRenderer, onDeleteError: handleOnDeleteError,onSubmitError:handleOnSubmitError}
+            {
+                layoutRenderer: GroupingLayoutRenderer,
+                onDeleteError: handleOnDeleteError,
+                onSubmitError:handleOnSubmitError,
+                deleteButtonVisible: false
+            }
           }
       />
   );

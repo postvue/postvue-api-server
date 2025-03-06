@@ -15,6 +15,7 @@ public record SnsUserEndpointDto(
 	String signupEmail,
 	String email,
 	String username,
+	String hashPw,
 	String userLink,
 	String userDescription,
 	String socialId,
@@ -28,7 +29,9 @@ public record SnsUserEndpointDto(
 	String refreshToken,
 	LocalDateTime deletedAt,
 	Boolean hasFollowerNotification,
-	LocalDateTime createdAt
+	LocalDateTime createdAt,
+	LocalDateTime lastUpdatedAt,
+	String lastUpdatedByid
 ) {
 
 
@@ -39,6 +42,7 @@ public record SnsUserEndpointDto(
 			snsUser.getSignupEmail(),
 			snsUser.getEmail(),
 			snsUser.getUsername(),
+			snsUser.getHashPw(),
 			snsUser.getUserLink(),
 			snsUser.getUserDescription(),
 			snsUser.getSocialId(),
@@ -52,6 +56,9 @@ public record SnsUserEndpointDto(
 			snsUser.getRefreshToken(),
 			snsUser.getDeletedAt(),
 			snsUser.getHasFollowerNotification(),
-			snsUser.getCreatedAt());
+			snsUser.getCreatedAt(),
+			snsUser.getLastUpdatedAt(),
+			snsUser.getLastUpdatedByid() != null ? snsUser.getLastUpdatedByid().toString() : null
+		);
 	}
 }

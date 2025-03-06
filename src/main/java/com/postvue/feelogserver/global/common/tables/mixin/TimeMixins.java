@@ -12,7 +12,7 @@ public interface TimeMixins {
 
 	void setLastUpdatedAt(LocalDateTime lastUpdatedAt);
 
-	Long getLastUpdatedBy();
+	Long getLastUpdatedByid();
 
-	void setLastUpdatedBy(Long lastUpdatedBy);
+	void setLastUpdatedByid(Long lastUpdatedBy);
 }
