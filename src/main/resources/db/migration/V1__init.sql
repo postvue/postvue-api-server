@@ -14,6 +14,19 @@ create table admin_service_adjustments_tb (
     service_type varchar(255),
     primary key (admin_service_adjustment_id)
 );
+
+create table admin_service_error_managements_tb (
+    admin_service_error_management_id bigint not null,
+    created_at timestamp(6),
+    last_updated_at timestamp(6),
+    last_updated_by bigint,
+    prop_msg_string1 varchar(2047),
+    prop_msg_string2 varchar(2047),
+    prop_msg_string3 varchar(2047),
+    prop_msg_string4 varchar(2047),
+    service_error_type varchar(255),
+    primary key (admin_service_error_management_id)
+);
     
 create table sns_block_users_tb (
     sns_block_user_id bigint not null,

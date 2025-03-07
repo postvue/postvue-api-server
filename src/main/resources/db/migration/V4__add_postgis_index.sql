@@ -1,0 +1,13 @@
+-- postgis 설정
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+ALTER TABLE IF EXISTS sns_posts_tb
+ADD COLUMN IF NOT EXISTS geom GEOMETRY(Point, 4326);
+
+CREATE INDEX IDX__GEOM_GIST_INDEX_BY_SNS_POSTS ON sns_posts_tb USING GIST (geom);
+
+ALTER TABLE if EXISTS sns_posts_tb
+ADD COLUMN h3_index bigint;
+
+CREATE INDEX IDX__H3_INDEX_BY_SNS_POSTS
+ON sns_posts_tb (h3_index);
