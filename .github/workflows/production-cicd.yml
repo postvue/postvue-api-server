@@ -1,4 +1,4 @@
-name: Postvue API Server CI/CD Pipeline
+name: Postvue API Server Production CI/CD Pipeline
 
 on:
   pull_request:
@@ -58,6 +58,11 @@ jobs:
         echo "DB_URL=${{ secrets.DB_URL }}" >> src/main/resources/.env
         echo "SERVER_URL_API=${{ secrets.SERVER_URL_API }}" >> src/main/resources/.env
         echo "SERVER_URL_ADMIN=${{ secrets.SERVER_URL_ADMIN }}" >> src/main/resources/.env
+        echo "OPENAPI_APPLE_FEELOG_API_PRIVATE_KEY=${{ secrets.OPENAPI_APPLE_FEELOG_API_PRIVATE_KEY }}" >> src/main/resources/.env
+        echo "OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_ID=${{ secrets.OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_ID }}" >> src/main/resources/.env
+        echo "OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_SECRET_KEY=${{ secrets.OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_SECRET_KEY }}" >> src/main/resources/.env
+        echo "SPRING_MAIL_USERNAME=${{ secrets.SPRING_MAIL_USERNAME }}" >> src/main/resources/.env
+        echo "SPRING_MAIL_PASSWORD=${{ secrets.SPRING_MAIL_PASSWORD }}" >> src/main/resources/.env
       shell: bash
 
     # 4. Gradle 캐싱 (옵션: Maven 사용 시 수정 필요)
