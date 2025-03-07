@@ -1,3 +1,6 @@
+-- PG GROONGA 생성
+CREATE EXTENSION IF NOT EXISTS pgroonga;
+
 -- postTitle에 대한 pgroonga 인덱스 생성
 CREATE INDEX IDX__PGROONGA__POST_TITLE_BY_SNS_POSTS
 ON sns_posts_tb

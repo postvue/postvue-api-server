@@ -12,11 +12,11 @@ spring:
     username: feelog_postgres_master
     password: TzBJwaxmVQR4I25Q75yhgtvSQezRxR2i
 
+  #      ddl-auto: update
+  #      generate-ddl: true
   jpa:
     hibernate:
-#      ddl-auto: update
       ddl-auto: validate
-#    generate-ddl: true
     generate-ddl: false
     properties:
       hibernate:
