@@ -35,8 +35,8 @@ openapi:
     appleFeelogApiPrivateKey: ${OPENAPI_APPLE_FEELOG_API_PRIVATE_KEY}
 
   googledevelopers:
-    oauthClientId: 989621368762-8cvdj4sk5u38mbqu6jbgg49ra3j7k34b.apps.googleusercontent.com
-    oauthClientSecret: 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
+    oauthClientId: ${OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_ID}
+    oauthClientSecret: ${OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_SECRET_KEY}
 
 
 
