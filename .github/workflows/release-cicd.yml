@@ -5,6 +5,12 @@ on:
     branches:
       - release-*
       - release/**
+    types:
+      - closed
+  create:
+    branches:
+      - release-*
+      - release/**
 
 jobs:
   build:
