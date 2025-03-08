@@ -8,6 +8,10 @@ on:
     branches:
       - master
 
+  push:
+    branches:
+      - master
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -128,7 +132,7 @@ jobs:
           cd ${SERVICE_DIR}
           echo "Logging into Docker Hub..."
           echo "${DOCKER_HUB_ACCESS_TOKEN}" | docker login --username "${DOCKER_HUB_USERNAME}" --password-stdin
-          echo "${REMOTE_PASSWORD}" | sudo -S docker-compose down --volumes --remove-orphans
+          echo "${REMOTE_PASSWORD}" | sudo -S docker-compose down --volumes --remove-orphans --rmi all
           echo "${REMOTE_PASSWORD}" | sudo -S docker compose pull
           echo "${REMOTE_PASSWORD}" | sudo -S docker-compose up -d
         EOF
