@@ -27,8 +27,8 @@ export default function MenuOnLeftLayout() {
   return (
     <AppLayout className="block h-full" primarySection="drawer">
       <header slot="drawer">
-      <img src="/VAADIN/icons/FeelogLogo.svg" width={'25px'}/>
-        <MainTitle>Feelog Admin</MainTitle>
+      {/*<img src="/VAADIN/icons/FeelogLogo.svg" width={'25px'}/>*/}
+      <MainTitle>Feelog Admin</MainTitle>
       </header>
       <Scroller slot="drawer" scroll-direction="vertical">
         <nav>
