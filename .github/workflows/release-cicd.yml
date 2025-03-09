@@ -66,6 +66,8 @@ jobs:
         echo "OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_SECRET_KEY=${{ secrets.OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_SECRET_KEY }}" >> src/main/resources/.env
         echo "SPRING_MAIL_USERNAME=${{ secrets.SPRING_MAIL_USERNAME }}" >> src/main/resources/.env
         echo "SPRING_MAIL_PASSWORD=${{ secrets.SPRING_MAIL_PASSWORD }}" >> src/main/resources/.env
+        echo "DOMAIN_ALLOW_LIST=${{ secrets.DOMAIN_RELEASE_ALLOW_LIST }}" >> src/main/resources/.env
+        echo "APPLE_AUTH_REDIRECT_URL=${{ secrets.APPLE_AUTH_RELEASE_REDIRECT_URL }}" >> src/main/resources/.env
       shell: bash
 
     # 4. Gradle 캐싱 (옵션: Maven 사용 시 수정 필요)
