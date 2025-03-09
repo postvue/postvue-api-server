@@ -30,7 +30,7 @@ import lombok.Setter;
 @Table(name = "SNS_USER_FAVORITE_TERM_BOOKMARKS_TB", indexes = {
 	@Index(name = "IDX__USER_TERM_NAME_BY_SNS_USER_FAVORITE_TERM_BOOKMARKS", columnList = "sns_user_id,favorite_term_name")},
 	uniqueConstraints = {
-		@UniqueConstraint(columnNames = {"sns_user_id", "favorite_term_name"}, name = "IDX_UNIQUE_USER_ID_FAVORITE_TERM_NAME_BY_SNS_USER_FAVORITE_TERM_BOOKMARKS")
+		@UniqueConstraint(columnNames = {"sns_user_id", "favorite_term_name"})
 	})
 @Builder
 @NoArgsConstructor

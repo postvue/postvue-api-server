@@ -14,4 +14,5 @@ public class SnsPostFollowsGetRsp {
 	private String profilePath;
 	private Boolean isFollowed;
 	private Boolean isMe;
+	private Boolean isBlocked;
 }

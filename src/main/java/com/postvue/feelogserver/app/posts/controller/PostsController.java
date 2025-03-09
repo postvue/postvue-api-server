@@ -1,10 +1,7 @@
 package com.postvue.feelogserver.app.posts.controller;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.List;
 
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,10 +16,12 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostCmntCreateReq;
 import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostCmntUpdateReq;
 import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostComposeCreateReq;
-import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostComposeUpdateReq;
+import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostCreateByFileReq;
+import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostCreateByResourceLinkReq;
 import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostReportCreateReq;
 import com.postvue.feelogserver.app.posts.dto.req.create.SnsRepostCreateReq;
 import com.postvue.feelogserver.app.posts.dto.rsp.create.SnsPostCreateRsp;
@@ -51,6 +50,7 @@ import com.postvue.feelogserver.global.http.response.serverresponse.ServerGetOkR
 import com.postvue.feelogserver.global.http.response.serverresponse.ServerPostCreatedRsp;
 import com.postvue.feelogserver.global.http.response.serverresponse.ServerPutOkRsp;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -60,7 +60,6 @@ public class PostsController {
 	private final PostsService postsService;
 
 
-	// @VERIFY1
 	@GetMapping("/{postId}")
 	public ServerGetOkRsp<SnsPostRsp> getPostDetail(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
@@ -113,20 +112,12 @@ public class PostsController {
 		@RequestParam(name = "filter", defaultValue = NearFilterType.NEAR_FILTER_ALL_TYPE) String filter,
 		@RequestParam(name = "page", defaultValue = PageConfigConst.PAGE_INIT_NUM_STRING) Integer page,
 		@RequestParam(name = "lat") Float latitude,
-		@RequestParam(name = "lon") Float longitude,
-		@RequestParam(name = "startDate", required = false) OffsetDateTime offsetStartDate,
-		@RequestParam(name = "endDate", required = false) OffsetDateTime offsetEndDate
-	) {
-		LocalDateTime startDate = offsetStartDate !=null ? offsetStartDate.toLocalDateTime() : null;
-		LocalDateTime endDate = offsetEndDate !=null ? offsetEndDate.toLocalDateTime() : null;
+		@RequestParam(name = "lon") Float longitude) {
+
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
-		return new ServerGetOkRsp<>(postsService.findNearForMePosts(
-			snsUserId, page, latitude, longitude, filter, startDate, endDate
-		));
+		return new ServerGetOkRsp<>(postsService.findNearForMePosts(snsUserId, page, latitude, longitude, filter));
 	}
 
-	// @VERIFY1
-	// 게시물 댓글 리스트 가져오기
 	@GetMapping("/{postId}/comments")
 	public ServerGetOkRsp<GetPostCommentsRsp> getPostComments(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
@@ -159,8 +150,7 @@ public class PostsController {
 	}
 
 	@GetMapping("/{postId}/likes")
-	public ServerGetOkRsp<GetPostLikesRsp> getPostLikes(
-		@PathVariable() Long postId,
+	public ServerGetOkRsp<GetPostLikesRsp> getPostLikes(@PathVariable() Long postId,
 		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@RequestParam(name = "cursor", defaultValue = PageConfigConst.LAST_POST_ID) Long cursorId) {
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
@@ -176,6 +166,25 @@ public class PostsController {
 		return new ServerGetOkRsp<>(postsService.findPostIsRepostedListByPost(postId, cursorId, snsUserId));
 	}
 
+	// @PostMapping("/file")
+	// public ServerPostCreatedRsp<SnsPostCreateRsp> createPostByFile(
+	// 	@AuthenticationPrincipal CustomUserDetails userDetails,
+	// 	@RequestBody SnsPostCreateByFileReq snsPostCreateReqFile) throws
+	// 	JsonProcessingException {
+	// 	Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
+	// 	return new ServerPostCreatedRsp<>(postsService.savePostByFile(snsUserId, snsPostCreateReqFile));
+	// }
+
+	// @PostMapping("/resource-link")
+	// public ServerPostCreatedRsp<SnsPostCreateRsp> createPostByResourceLink(
+	// 	@AuthenticationPrincipal CustomUserDetails userDetails,
+	// 	@Valid @RequestBody SnsPostCreateByResourceLinkReq snsPostCreateByResourceLinkReq) throws
+	// 	JsonProcessingException {
+	// 	Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
+	// 	return new ServerPostCreatedRsp<>(
+	// 		postsService.savePostByResourceLink(snsUserId, snsPostCreateByResourceLinkReq));
+	// }
+
 	@PostMapping("/{postId}/repost")
 	public ServerPostCreatedRsp<SnsPostCreateRsp> createRepost(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
@@ -185,8 +194,6 @@ public class PostsController {
 		return new ServerPostCreatedRsp<>(postsService.savePostRepost(postId, snsUserId, snsRepostCreateReq));
 	}
 
-
-	// @VERIFY1
 	@PostMapping("/{postId}/comments")
 	public ServerPostCreatedRsp<SnsPostCommentRsp> createPostComment(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
@@ -311,8 +318,7 @@ public class PostsController {
 		@RequestParam(name = "latitude") Float latitude,
 		@RequestParam(name = "longitude") Float longitude,
 		@RequestParam(name = "isFetchFavorite", defaultValue = QueryParamConst.QUERY_FALSE_VALUE, required = false) Boolean isFetchFavorite,
-		@RequestParam(name = "page", defaultValue = PageConfigConst.PAGE_INIT_NUM_STRING) Integer page
-	) {
+		@RequestParam(name = "page", defaultValue = PageConfigConst.PAGE_INIT_NUM_STRING) Integer page) {
 
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
 		return new ServerGetOkRsp<>(
@@ -325,25 +331,19 @@ public class PostsController {
 		return new ServerGetOkRsp<>(postsService.getHtmlImageListParser(sourceUrl));
 	}
 
-	@GetMapping("/map_posts")
+	@GetMapping("/map_post")
 	public ServerGetOkRsp<List<SnsPostRsp>> getMapPostBySrchQuery(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@RequestParam(name = "srch_qry") String srchQry,
-		@RequestParam(name = "latitude") Float latitude,
-		@RequestParam(name = "longitude") Float longitude,
-		@RequestParam(name = "page", defaultValue = "0") Integer page,
-		@RequestParam(name = "startDate", required = false) OffsetDateTime offsetStartDate,
-		@RequestParam(name = "endDate", required = false) OffsetDateTime offsetEndDate
+		@RequestParam(name = "page", defaultValue = "0") Integer page
 	) {
-		LocalDateTime startDate = offsetStartDate !=null ? offsetStartDate.toLocalDateTime() : null;
-		LocalDateTime endDate = offsetEndDate !=null ? offsetEndDate.toLocalDateTime() : null;
 
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
 
-		// if (snsUserId == null) {
-		// 	throw new JwtTokenExpiredException(new Exception());
-		// }
-		return new ServerGetOkRsp<>(postsService.getMapPostRelation(snsUserId, srchQry, page, latitude, longitude, startDate, endDate));
+		if (snsUserId == null) {
+			throw new JwtTokenExpiredException(new Exception());
+		}
+		return new ServerGetOkRsp<>(postsService.getMapPostRelation(snsUserId, srchQry, page));
 	}
 
 	@PostMapping("/compose")
@@ -364,7 +364,7 @@ public class PostsController {
 	@PutMapping("/compose/edit/{postId}")
 	public ServerPostCreatedRsp<Boolean> editComposePost(
 		@PathVariable("postId") Long postId,
-		@RequestPart("snsPostComposeUpdateReq") SnsPostComposeUpdateReq snsPostComposeUpdateReq,
+		@RequestPart("snsPostComposeCreateReq") SnsPostComposeCreateReq snsPostComposeCreateReq,
 		@RequestPart(value = "files", required = false) List<MultipartFile> files,
 		@AuthenticationPrincipal CustomUserDetails userDetails
 	){
@@ -374,7 +374,7 @@ public class PostsController {
 			throw new UnauthorizedErrorException("인증되지 않았습니다.");
 		}
 
-		return new ServerPostCreatedRsp<>(postsService.editPost(postId, snsPostComposeUpdateReq,files,snsUserId));
+		return new ServerPostCreatedRsp<>(postsService.editPost(postId, snsPostComposeCreateReq,files,snsUserId));
 	}
 
 	@PostMapping("/{postId}/report")

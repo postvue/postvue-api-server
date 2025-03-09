@@ -24,10 +24,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "SNS_USER_FOLLOW_STATISTICS_TB", indexes = {
-	// 해당 게시물의 유저 빠르게 찾기
-	@Index(name = "IDX__USER_ID_UNIQUE_BY_SNS_USER_FOLLOW_STATISTICS", columnList = "sns_user_id", unique = true),
-})
+@Table(name = "SNS_USER_FOLLOW_STATISTICS_TB")
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -38,7 +35,7 @@ public class SnsUserFollowStatistic implements Serializable {
 	private Long id;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "sns_user_id", nullable = false, updatable = false, unique = true)
+	@JoinColumn(name = "sns_user_id", nullable = false, updatable = false)
 	private SnsUser snsUser;
 
 	@Column(name = "follower_num")

@@ -12,7 +12,6 @@ export default function SnsUserMessageRoomMemberCrudView() {
       <AutoCrud
           service={SnsUserMessageRoomMemberEndpoint}
           model={SnsUserMessageRoomMemberEndpointDtoModel}
-          style={{height:"100%"}}
           formProps={{
             onDeleteError: handleOnDeleteError,
             onSubmitError:handleOnSubmitError,
@@ -20,10 +19,8 @@ export default function SnsUserMessageRoomMemberCrudView() {
               'readAt',
               'isHidden',
               'isBlocked',
-              'createdAt',
-                'lastUpdatedAt'
-            ],
-              deleteButtonVisible: false
+              'createdAt'
+            ]
       }} />
   );
 }

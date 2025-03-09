@@ -22,9 +22,8 @@ public record SnsPostReportEndpointDto(
 	) {
 	public static SnsPostReportEndpointDto fromEntity(SnsPostReport snsPostReport){
 		return new SnsPostReportEndpointDto(
-			snsPostReport.getId().toString(), snsPostReport.getReporterUser().getId().toString(),
-			snsPostReport.getReportedUser().getId().toString(),
-			snsPostReport.getSnsPost().getId().toString(),
+			snsPostReport.getId().toString(), snsPostReport.getReporterUser().getId().toString()
+			, snsPostReport.getReportedUser().getUsername(), snsPostReport.getSnsPost().getId().toString(),
 			snsPostReport.getSnsPostCommentReaction() != null ? snsPostReport.getSnsPostCommentReaction().getId().toString() : null,
 			snsPostReport.getReportReason(),snsPostReport.getPostReportReasonType(),
 			snsPostReport.getPostReportStatus(),snsPostReport.getCreatedAt(),snsPostReport.getLastUpdatedAt());

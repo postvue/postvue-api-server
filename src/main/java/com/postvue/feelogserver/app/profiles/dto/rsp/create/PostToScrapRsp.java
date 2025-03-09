@@ -9,7 +9,6 @@ import lombok.Setter;
 @Setter
 public class PostToScrapRsp {
 	private String scrapId;
-	private String scrapPostId;
 	private Boolean isScraped;
 	private Boolean isClipped;
 }

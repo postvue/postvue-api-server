@@ -14,11 +14,8 @@ import lombok.Setter;
 public class MsgDirectConversationRsp {
 	private String msgRoomId;
 	private String msgId;
-	private String msgTextContent;
-	private Boolean hasMsgMedia;
-	private String msgMediaType;
-	private String msgMediaContent;
-	private MsgLinkMetaInfo msgLinkMetaInfo;
+	private String msgType;
+	private String msgContent;
 	private LocalDateTime sendAt;
 	private Boolean hasMsgReaction;
 	private String msgReactionType;

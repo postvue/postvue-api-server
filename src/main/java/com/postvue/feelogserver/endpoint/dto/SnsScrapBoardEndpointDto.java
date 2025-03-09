@@ -12,7 +12,7 @@ public record SnsScrapBoardEndpointDto(
 	ScrapTargetAudience targetAudience,
 	LocalDateTime createdAt,
 	LocalDateTime lastUpdatedAt,
-	String lastUpdatedByid,
+	String lastUpdatedBy,
 	LocalDateTime deletedAt
 ) {
 	public static SnsScrapBoardEndpointDto fromEntity(SnsScrapBoard snsScrapBoard){
@@ -23,8 +23,8 @@ public record SnsScrapBoardEndpointDto(
 			snsScrapBoard.getTargetAudience(),
 			snsScrapBoard.getCreatedAt(),
 			snsScrapBoard.getLastUpdatedAt(),
-			snsScrapBoard.getLastUpdatedByid() != null ? snsScrapBoard.getLastUpdatedByid().toString() : null,
-			snsScrapBoard.getDeletedAt()
+			snsScrapBoard.getLastUpdatedBy() != null ? snsScrapBoard.getLastUpdatedBy().toString() : null,
+			snsScrapBoard.getDeleted_at()
 		);
 	}
 }

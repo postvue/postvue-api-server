@@ -10,7 +10,6 @@ export default function SnsPostCommentLikeCrudView() {
       <AutoCrud
           service={SnsPostCommentLikeEndpoint}
           model={SnsPostCommentLikeEndpointDtoModel}
-          style={{height:"100%"}}
           formProps={{
             onDeleteError: handleOnDeleteError,
             onSubmitError:handleOnSubmitError,
@@ -20,7 +19,6 @@ export default function SnsPostCommentLikeCrudView() {
               'snsUser_id',
               'isLiked',
               'isLikedAt',
-              'createdAt'
               ]
       }}/>
 

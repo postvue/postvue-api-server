@@ -10,6 +10,4 @@ import lombok.Setter;
 public class GetAddress {
 	private String roadAddr;
 	private String buildName;
-	private Float latitude;
-	private Float longitude;
 }

@@ -33,7 +33,7 @@ import lombok.Setter;
 	@Index(name = "IDX__sns_post_comment_reaction_id_BY_SNS_POST_COMMENT_LIKES",
 		columnList = "sns_post_comment_reaction_id, is_liked")},
 	uniqueConstraints = {
-		@UniqueConstraint(columnNames = {"sns_post_comment_reaction_id", "sns_user_id"}, name = "IDX_UNIQUE_POST_COMMENT_USER_ID_BY_SNS_POST_COMMENT_LIKES")
+		@UniqueConstraint(columnNames = {"sns_post_comment_reaction_id", "sns_user_id"})
 	}
 )
 @Builder

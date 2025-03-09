@@ -1,8 +1,0 @@
-alter table if exists sns_scrap_boards_tb
-    add column address varchar(255);
-
-alter table if exists sns_scrap_boards_tb
-    add column latitude float4;
-
-alter table if exists sns_scrap_boards_tb
-    add column longitude float4;

@@ -26,7 +26,6 @@
     "classnames": "^2.3.2",
     "construct-style-sheets-polyfill": "3.1.0",
     "date-fns": "2.29.3",
-    "hls.js": "^1.5.20",
     "lit": "3.2.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
@@ -97,8 +96,7 @@
     "@vaadin/vaadin-material-styles": "$@vaadin/vaadin-material-styles",
     "ts-transformer-keys": "$ts-transformer-keys",
     "styled-components": "$styled-components",
-    "swiper": "$swiper",
-    "hls.js": "$hls.js"
+    "swiper": "$swiper"
   },
   "vaadin": {
     "dependencies": {
@@ -159,6 +157,6 @@
       "workbox-core": "7.1.0",
       "workbox-precaching": "7.1.0"
     },
-    "hash": "3f4b737fe28a7084fa167aa345072fb75f3c0abbc93d5b8e033051d27c454a6f"
+    "hash": "aa63a5f3be245255db642e522bb210bab3abcd75f51ff823834a9779bacd45c7"
   }
 }

@@ -8,7 +8,6 @@ import java.util.Objects;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.postvue.feelogserver.app.session.dto.sub.SessionActiveUserInfoSub;
 import com.postvue.feelogserver.app.session.dto.sub.SessionActiveUserListSub;
@@ -63,7 +62,6 @@ public class SessionService {
 		}
 	}
 
-	@Transactional
 	public SessionSnsActiveUser updateSessionActiveUser(StompHeaderAccessor accessor, Long userId,
 		Boolean sessionState) {
 		// Session DB(Redis DB)에 해당 유저에 대한 sessionId 정보 남기기

@@ -41,7 +41,7 @@ import lombok.Setter;
 			columnList = "source_user_id, target_user_id, sns_user_message_room_id")
 	},
 	uniqueConstraints = {
-		@UniqueConstraint(columnNames = {"source_user_id", "target_user_id"}, name = "IDX_SOURCE_TARGET_USER_ID_BY_SNS_USER_MESSAGE_ROOM_MEMBERS")
+		@UniqueConstraint(columnNames = {"source_user_id", "target_user_id"})
 	})
 @Builder
 @DynamicInsert

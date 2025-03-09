@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.postvue.feelogserver.app.search.dto.req.PutFavoriteTerm;
 import com.postvue.feelogserver.app.search.dto.rsp.GetFavoriteTermRsp;
 import com.postvue.feelogserver.app.search.dto.rsp.GetTagInfoSearchRsp;
-import com.postvue.feelogserver.app.search.dto.rsp.GetTermInfoRsp;
 import com.postvue.feelogserver.app.search.service.SearchService;
 import com.postvue.feelogserver.core.security.CustomUserDetails;
 import com.postvue.feelogserver.global.constant.PageConfigConst;
@@ -34,45 +33,12 @@ public class SearchController {
 		return new ServerGetOkRsp<>(searchService.getSearchRelationList(searchQuery));
 	}
 
-	@GetMapping("/favorite/terms/previews")
-	public ServerGetOkRsp<List<GetFavoriteTermRsp>> getFavoriteSearchTermPreviewList(
+	@GetMapping("/favorite/terms")
+	public ServerGetOkRsp<List<GetFavoriteTermRsp>> getFavoriteSearchTermList(
 		@AuthenticationPrincipal CustomUserDetails userDetails) {
 
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
-		return new ServerGetOkRsp<>(searchService.getFavoriteTermList(snsUserId,PageConfigConst.SEARCH_FAVORITE_TERM_PAGE_INIT_NUM));
-	}
-
-	@GetMapping("/favorite/terms")
-	public ServerGetOkRsp<List<GetFavoriteTermRsp>> getFavoriteSearchTermList(
-		@AuthenticationPrincipal CustomUserDetails userDetails,
-		@RequestParam(value = "page", defaultValue = PageConfigConst.PAGE_INIT_NUM_STRING) Integer page
-	) {
-
-		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
-		return new ServerGetOkRsp<>(searchService.getFavoriteTermList(snsUserId, page));
-	}
-
-	@GetMapping("/terms/{term}/info")
-	public ServerGetOkRsp<GetTermInfoRsp> getFavoriteSearchTerm(
-		@PathVariable("term") String term,
-		@AuthenticationPrincipal CustomUserDetails userDetails
-		) {
-		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
-		return new ServerGetOkRsp<>(searchService.getTermInfo(term, snsUserId));
-	}
-	@PutMapping("/favorite/terms")
-	public ServerGetOkRsp<Boolean> putFavoriteSearchTerm(
-		@AuthenticationPrincipal CustomUserDetails userDetails,
-		@RequestBody PutFavoriteTerm putFavoriteTerm
-	) {
-
-		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
-		boolean isFavorite = putFavoriteTerm.getIsFavorite()
-			?
-			searchService.createFavoriteTerm(snsUserId, putFavoriteTerm) :
-			searchService.deleteFavoriteTerm(snsUserId, putFavoriteTerm.getFavoriteTerm());
-
-		return new ServerGetOkRsp<>(isFavorite);
+		return new ServerGetOkRsp<>(searchService.getFavoriteTermList(snsUserId));
 	}
 
 	@GetMapping("/tags/{searchQuery}")
@@ -88,7 +54,19 @@ public class SearchController {
 		return new ServerGetOkRsp<>(searchService.getTagInfoSearchList(searchQuery, page));
 	}
 
+	@PutMapping("/favorite/terms")
+	public ServerGetOkRsp<Boolean> putFavoriteSearchTerm(
+		@AuthenticationPrincipal CustomUserDetails userDetails,
+		@RequestBody PutFavoriteTerm putFavoriteTerm) {
 
+		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
+		boolean isFavorite = putFavoriteTerm.getIsFavorite()
+			?
+			searchService.createFavoriteTerm(snsUserId, putFavoriteTerm) :
+			searchService.deleteFavoriteTerm(snsUserId, putFavoriteTerm.getFavoriteTerm());
+
+		return new ServerGetOkRsp<>(isFavorite);
+	}
 
 	@PutMapping("/favorite/tags/{tagId}")
 	public ServerGetOkRsp<Boolean> putFavoriteTag(

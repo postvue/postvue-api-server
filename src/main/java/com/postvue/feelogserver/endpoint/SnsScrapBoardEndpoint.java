@@ -1,21 +1,25 @@
 package com.postvue.feelogserver.endpoint;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.postvue.feelogserver.domain.snsscrap.SnsScrap;
+import com.postvue.feelogserver.domain.snsscrap.repository.SnsScrapRepository;
+import com.postvue.feelogserver.domain.snsscrapboard.SnsScrapBoard;
 import com.postvue.feelogserver.domain.snsscrapboard.repository.SnsScrapBoardRepository;
+import com.postvue.feelogserver.domain.snsusers.SnsUser;
+import com.postvue.feelogserver.endpoint.converter.JpaFilterCustomConverter;
 import com.postvue.feelogserver.endpoint.dto.SnsScrapBoardEndpointDto;
-import com.postvue.feelogserver.global.constant.LogTemplateConst;
+import com.postvue.feelogserver.endpoint.dto.SnsScrapEndpointDto;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.hilla.BrowserCallable;
 import com.vaadin.hilla.Nonnull;
 import com.vaadin.hilla.Nullable;
 import com.vaadin.hilla.crud.CrudService;
 import com.vaadin.hilla.crud.filter.Filter;
-import com.vaadin.hilla.exception.EndpointException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,36 +27,35 @@ import lombok.RequiredArgsConstructor;
 @AnonymousAllowed
 @RequiredArgsConstructor
 public class SnsScrapBoardEndpoint implements CrudService<SnsScrapBoardEndpointDto, Long> {
-	private final SnsScrapBoardEndpointSerivce snsScrapBoardEndpointSerivce;
+	private final SnsScrapBoardRepository snsScrapBoardRepository;
+	private final JpaFilterCustomConverter jpaFilterCustomConverter;
+
 	@Override
 	@Nonnull
 	public List<@Nonnull SnsScrapBoardEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
-		try {
-			return snsScrapBoardEndpointSerivce.listProcess(pageable,filter).stream().map((SnsScrapBoardEndpointDto::fromEntity)).toList();
-		}
-		catch (Exception e){
-			throw new EndpointException("서버 오류 발생", LogTemplateConst.getLogInfoTemplate(e.getMessage() + "_" + e.toString(), LocalDateTime.now().toString()));
-		}
+		Specification<SnsScrapBoard> spec = filter != null
+			? jpaFilterCustomConverter.toSpec(filter, SnsScrapBoard.class)
+			: Specification.anyOf();
+		return snsScrapBoardRepository.findAll(spec,pageable).map((SnsScrapBoardEndpointDto::fromEntity)).toList();
 	}
 
 	@Override
-	@Nonnull
+	@Transactional
 	public @Nullable SnsScrapBoardEndpointDto save(SnsScrapBoardEndpointDto value) {
-		try{
-			return SnsScrapBoardEndpointDto.fromEntity(snsScrapBoardEndpointSerivce.saveProcess(value));
-		}
-		catch (Exception e){
-			throw new EndpointException("서버 오류 발생", LogTemplateConst.getLogInfoTemplate(e.getMessage() + "_" + e.toString(), LocalDateTime.now().toString()));
-		}
+		SnsScrapBoard snsScrapBoard = value.id() != null && Long.parseLong(value.id()) > 0
+			? snsScrapBoardRepository.getReferenceById(Long.parseLong(value.id()))
+			: new SnsScrapBoard();
+
+		snsScrapBoard.setSnsUser(SnsUser.builder().id(Long.parseLong(value.snsUser_id())).build());
+		snsScrapBoard.setScrapName(value.scrapName());
+		snsScrapBoard.setTargetAudience(value.targetAudience());
+
+		return SnsScrapBoardEndpointDto.fromEntity(snsScrapBoardRepository.save(snsScrapBoard));
 	}
 
 	@Override
+	@Transactional
 	public void delete(Long id) {
-		try{
-			snsScrapBoardEndpointSerivce.deleteProcess(id);
-		}
-		catch (Exception e){
-			throw new EndpointException("서버 오류 발생", LogTemplateConst.getLogInfoTemplate(e.getMessage() + "_" + e.toString(), LocalDateTime.now().toString()));
-		}
+		snsScrapBoardRepository.deleteById(id);
 	}
 }

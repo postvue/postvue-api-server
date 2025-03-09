@@ -19,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
+	//@REFER: 이 부분 이해가 잘 안돼. 나중에 이해할 수 있는 수준으로 올리기
+	//@REFER: 매직 값 존재
 	@Override
 	public void commence(
 		HttpServletRequest request,

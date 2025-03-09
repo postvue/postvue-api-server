@@ -1,21 +1,21 @@
 package com.postvue.feelogserver.endpoint;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.postvue.feelogserver.domain.snspostreports.SnsPostReport;
 import com.postvue.feelogserver.domain.snspostreports.repository.SnsPostReportRepository;
+import com.postvue.feelogserver.endpoint.converter.JpaFilterCustomConverter;
 import com.postvue.feelogserver.endpoint.dto.SnsPostReportEndpointDto;
-import com.postvue.feelogserver.global.constant.LogTemplateConst;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.hilla.BrowserCallable;
 import com.vaadin.hilla.Nonnull;
 import com.vaadin.hilla.Nullable;
 import com.vaadin.hilla.crud.CrudService;
 import com.vaadin.hilla.crud.filter.Filter;
-import com.vaadin.hilla.exception.EndpointException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,28 +24,25 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SnsPostReportEndpoint implements CrudService<SnsPostReportEndpointDto, Long> {
 	private final SnsPostReportRepository snsPostReportRepository;
-	private final SnsPostReportEndpointService snsPostReportEndpointService;
+	private final JpaFilterCustomConverter jpaFilterCustomConverter;
 
 	@Override
 	@Nonnull
 	public List<@Nonnull SnsPostReportEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
-		try {
-			return snsPostReportEndpointService.listProcess(pageable, filter);
-		}
-		catch (Exception e){
-			throw new EndpointException("서버 오류 발생", LogTemplateConst.getLogInfoTemplate(e.getMessage() + "_" + e.toString(), LocalDateTime.now().toString()));
-		}
+		Specification<SnsPostReport> spec = filter != null
+			? jpaFilterCustomConverter.toSpec(filter, SnsPostReport.class)
+			: Specification.anyOf();
+		return snsPostReportRepository.findAll(spec,pageable).stream().map((SnsPostReportEndpointDto::fromEntity)).toList();
 	}
 
 
 	@Override
+	@Transactional
 	public @Nullable SnsPostReportEndpointDto save(SnsPostReportEndpointDto value) {
-		try {
-			return SnsPostReportEndpointDto.fromEntity(snsPostReportEndpointService.saveProcess(value));
-		}
-		catch (Exception e){
-			throw new EndpointException("서버 오류 발생", LogTemplateConst.getLogInfoTemplate(e.getMessage() + "_" + e.toString(), LocalDateTime.now().toString()));
-		}
+		SnsPostReport snsBlockUser = value.id() != null && Long.parseLong(value.id()) > 0
+			? snsPostReportRepository.getReferenceById(Long.parseLong(value.id()))
+			: new SnsPostReport();
+		return SnsPostReportEndpointDto.fromEntity(snsPostReportRepository.save(snsBlockUser));
 	}
 
 	@Override

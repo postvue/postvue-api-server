@@ -17,8 +17,6 @@ public class GetProfileInfoRsp {
 	private final Boolean isMe;
 	private final Boolean isFollowed;
 	private final Boolean isBlocked;
-	private final Boolean isPrivate;
-	private final Boolean isBlockerUser;
 	private final Integer followerNum;
 	private final Integer followingNum;
 }
