@@ -1,9 +1,16 @@
-name: Postvue API Server CI/CD Pipeline
+name: Postvue API Server Release CI/CD Pipeline
 
 on:
   pull_request:
     branches:
-      - master
+      - release-*
+      - release/**
+    types:
+      - closed
+  create:
+    branches:
+      - release-*
+      - release/**
 
 jobs:
   build:
@@ -54,6 +61,13 @@ jobs:
         echo "DB_URL=${{ secrets.DB_URL }}" >> src/main/resources/.env
         echo "SERVER_URL_API=${{ secrets.SERVER_URL_API }}" >> src/main/resources/.env
         echo "SERVER_URL_ADMIN=${{ secrets.SERVER_URL_ADMIN }}" >> src/main/resources/.env
+        echo "OPENAPI_APPLE_FEELOG_API_PRIVATE_KEY=${{ secrets.OPENAPI_APPLE_FEELOG_API_PRIVATE_KEY }}" >> src/main/resources/.env
+        echo "OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_ID=${{ secrets.OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_ID }}" >> src/main/resources/.env
+        echo "OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_SECRET_KEY=${{ secrets.OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_SECRET_KEY }}" >> src/main/resources/.env
+        echo "SPRING_MAIL_USERNAME=${{ secrets.SPRING_MAIL_USERNAME }}" >> src/main/resources/.env
+        echo "SPRING_MAIL_PASSWORD=${{ secrets.SPRING_MAIL_PASSWORD }}" >> src/main/resources/.env
+        echo "DOMAIN_ALLOW_LIST=${{ secrets.DOMAIN_RELEASE_ALLOW_LIST }}" >> src/main/resources/.env
+        echo "APPLE_AUTH_REDIRECT_URL=${{ secrets.APPLE_AUTH_RELEASE_REDIRECT_URL }}" >> src/main/resources/.env
       shell: bash
 
     # 4. Gradle 캐싱 (옵션: Maven 사용 시 수정 필요)
@@ -77,14 +91,14 @@ jobs:
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+        username: ${{ secrets.DOCKER_HUB_RELEASE_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_RELEASE_ACCESS_TOKEN }}
 
     - name: Build Docker image
-      run: docker build -t ${{ secrets.DOCKER_HUB_REPOSITORY }}:latest .
+      run: docker build -t ${{ secrets.DOCKER_HUB_RELEASE_REPOSITORY }}:latest .
 
     - name: Push Docker image
-      run: docker push ${{ secrets.DOCKER_HUB_REPOSITORY }}:latest
+      run: docker push ${{ secrets.DOCKER_HUB_RELEASE_REPOSITORY }}:latest
       
   deploy:
     runs-on: ubuntu-latest
@@ -99,29 +113,41 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y sshpass
 
-    - name: Deploy to server
+    - name: Deploy to Ubuntu Server
       env:
-        REMOTE_HOST: ${{ secrets.SERVER_HOST }}
-        REMOTE_USER: ${{ secrets.SERVER_REMOTE_USER }}
-        REMOTE_PORT: ${{ secrets.SERVER_REMOTE_PORT }}
-        REMOTE_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
-        DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
-        DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
-        DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+        REMOTE_HOST: ${{ secrets.SERVER_RELEASE_HOST }}
+        REMOTE_USER: ${{ secrets.SERVER_RELEASE_REMOTE_USER }}
+        REMOTE_PORT: ${{ secrets.SERVER_RELEASE_REMOTE_PORT }}
+        DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_RELEASE_USERNAME }}
+        DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_RELEASE_ACCESS_TOKEN }}
         SERVICE_DIR: ${{ secrets.SERVICE_DIR }}
       run: |
-        echo "Password length: ${#REMOTE_PASSWORD}"
-        echo "port length: ${#REMOTE_PORT}"
-        echo "username length: ${#REMOTE_USER}"
-        echo "REMOTE_HOST length: ${#REMOTE_HOST}"
-        sshpass -p "$REMOTE_PASSWORD" ssh -o StrictHostKeyChecking=no -p ${REMOTE_PORT} "${REMOTE_USER}@${REMOTE_HOST}" << EOF
-          echo "$REMOTE_PASSWORD" | sudo -S -s
+        echo "Setting up SSH private key..."
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SERVER_RELEASE_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        
+        echo "Adding server to known hosts..."
+        ssh-keyscan -p ${REMOTE_PORT} ${REMOTE_HOST} >> ~/.ssh/known_hosts
+
+        echo "Connecting to remote server and deploying..."
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${REMOTE_PORT} "${REMOTE_USER}@${REMOTE_HOST}" << EOF
           sudo -s
+          apt-get update -y
+
+          echo "Navigating to service directory..."
           cd ${SERVICE_DIR}
+
           echo "Logging into Docker Hub..."
           echo "${DOCKER_HUB_ACCESS_TOKEN}" | docker login --username "${DOCKER_HUB_USERNAME}" --password-stdin
-          echo "${REMOTE_PASSWORD}" | sudo -S docker-compose down --volumes --remove-orphans
-          echo "${REMOTE_PASSWORD}" | sudo -S docker compose pull
-          echo "${REMOTE_PASSWORD}" | sudo -S docker-compose up -d
+
+          echo "Stopping and removing existing containers..."
+          docker compose down --volumes --remove-orphans
+
+          echo "Pulling latest images..."
+          docker compose pull
+
+          echo "Starting new containers..."
+          docker compose up -d
         EOF
 
