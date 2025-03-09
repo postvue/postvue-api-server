@@ -234,7 +234,7 @@ public class AuthController {
 		// CHECK3
 		response.addCookie(
 			CookieUtils.createCookie(CookieConst.SIGNUP_TYPE, "",
-				0, false)); // 가입 종류 쿠키 값 제거
+				0)); // 가입 종류 쿠키 값 제거
 
 		response.addCookie(
 			CookieUtils.createCookie(CookieConst.REGISTRATION_VERIFICATION_CODE, "",

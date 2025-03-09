@@ -315,7 +315,7 @@ public class AuthService {
 		// // 가입 종류
 		response.addCookie(
 			CookieUtils.createCookie(CookieConst.SIGNUP_TYPE, userDtoData.signUpType().toString(),
-				COOKIE_EXPIRED_TIME, false));
+				COOKIE_EXPIRED_TIME));
 		// // OAUTH 토큰
 		// response.addCookie(
 		// 	CookieUtils.createCookie(CookieConst.OAUTH_TOKEN, oauthToken,
@@ -335,7 +335,7 @@ public class AuthService {
 		// // 가입 종류
 		response.addCookie(
 			CookieUtils.createCookie(CookieConst.SIGNUP_TYPE, SignUpType.EMAIL.toString(),
-				COOKIE_EXPIRED_TIME, false));
+				COOKIE_EXPIRED_TIME));
 
 		response.addCookie(
 			CookieUtils.createCookie(CookieConst.REGISTRATION_VERIFICATION_CODE, validationCode,

@@ -2,3 +2,7 @@
 serverUrl:
   domainAllowList: ${DOMAIN_ALLOW_LIST}
   appleAuthRedirectUrl: ${APPLE_AUTH_REDIRECT_URL}
+
+serverCookie:
+  allowDomain: ".feelog.net"
+  secure: true
