@@ -65,6 +65,8 @@ jobs:
         echo "OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_SECRET_KEY=${{ secrets.OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_SECRET_KEY }}" >> src/main/resources/.env
         echo "SPRING_MAIL_USERNAME=${{ secrets.SPRING_MAIL_USERNAME }}" >> src/main/resources/.env
         echo "SPRING_MAIL_PASSWORD=${{ secrets.SPRING_MAIL_PASSWORD }}" >> src/main/resources/.env
+        echo "DOMAIN_ALLOW_LIST=${{ secrets.DOMAIN_ALLOW_LIST }}" >> src/main/resources/.env
+        echo "APPLE_AUTH_REDIRECT_URL=${{ secrets.APPLE_AUTH_REDIRECT_URL }}" >> src/main/resources/.env
       shell: bash
 
     # 4. Gradle 캐싱 (옵션: Maven 사용 시 수정 필요)
@@ -115,24 +117,36 @@ jobs:
         REMOTE_HOST: ${{ secrets.SERVER_HOST }}
         REMOTE_USER: ${{ secrets.SERVER_REMOTE_USER }}
         REMOTE_PORT: ${{ secrets.SERVER_REMOTE_PORT }}
-        REMOTE_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
-        DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
         DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
         DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
         SERVICE_DIR: ${{ secrets.SERVICE_DIR }}
+
       run: |
-        echo "Password length: ${#REMOTE_PASSWORD}"
-        echo "port length: ${#REMOTE_PORT}"
-        echo "username length: ${#REMOTE_USER}"
-        echo "REMOTE_HOST length: ${#REMOTE_HOST}"
-        sshpass -p "$REMOTE_PASSWORD" ssh -o StrictHostKeyChecking=no -p ${REMOTE_PORT} "${REMOTE_USER}@${REMOTE_HOST}" << EOF
-          echo "$REMOTE_PASSWORD" | sudo -S -s
-          sudo -s
+        echo "Setting up SSH private key..."
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SERVER_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        
+        echo "Adding server to known hosts..."
+        ssh-keyscan -p ${REMOTE_PORT} ${REMOTE_HOST} >> ~/.ssh/known_hosts
+
+        echo "Connecting to remote server and deploying..."
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${REMOTE_PORT} "${REMOTE_USER}@${REMOTE_HOST}" << EOF
+          sudo apt-get update -y
+
+          echo "Navigating to service directory..."
           cd ${SERVICE_DIR}
+
           echo "Logging into Docker Hub..."
           echo "${DOCKER_HUB_ACCESS_TOKEN}" | docker login --username "${DOCKER_HUB_USERNAME}" --password-stdin
-          echo "${REMOTE_PASSWORD}" | sudo -S docker-compose down --volumes --remove-orphans --rmi all
-          echo "${REMOTE_PASSWORD}" | sudo -S docker compose pull
-          echo "${REMOTE_PASSWORD}" | sudo -S docker-compose up -d
+
+          echo "Stopping and removing existing containers..."
+          sudo docker compose down --volumes --remove-orphans
+
+          echo "Pulling latest images..."
+          sudo docker compose pull
+
+          echo "Starting new containers..."
+          sudo docker compose up -d
         EOF
 
