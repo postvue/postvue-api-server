@@ -22,6 +22,7 @@ public final class CookieUtils {
 		cookie.setSecure(IS_SECURE);
 		if (IS_SECURE) {
 			cookie.setDomain(ALLOW_DOMAIN);
+			cookie.setAttribute("SameSite", "None");
 		}
 
 		return cookie;
@@ -51,6 +52,7 @@ public final class CookieUtils {
 		cookie.setSecure(IS_SECURE);
 		if (IS_SECURE) {
 			cookie.setDomain(ALLOW_DOMAIN);
+			cookie.setAttribute("SameSite", "None");
 		}
 		cookie.setMaxAge(0);
 		return cookie;
