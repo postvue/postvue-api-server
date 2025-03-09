@@ -4,5 +4,5 @@ serverUrl:
   appleAuthRedirectUrl: ${APPLE_AUTH_REDIRECT_URL}
 
 serverCookie:
-  allowDomain: ".feelog.net"
+  allowDomain: "feelog.net"
   secure: true
