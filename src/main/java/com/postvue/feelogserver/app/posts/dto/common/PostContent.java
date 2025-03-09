@@ -15,4 +15,5 @@ public class PostContent {
 	private Integer ascSortNum;
 	private String previewImg;
 	private Boolean isUploaded;
+	private Integer videoDuration;
 }

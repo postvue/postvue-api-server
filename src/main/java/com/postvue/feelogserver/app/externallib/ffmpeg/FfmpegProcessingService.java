@@ -2,6 +2,8 @@ package com.postvue.feelogserver.app.externallib.ffmpeg;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -10,6 +12,8 @@ import net.bramp.ffmpeg.FFmpeg;
 import net.bramp.ffmpeg.FFmpegExecutor;
 import net.bramp.ffmpeg.FFprobe;
 import net.bramp.ffmpeg.builder.FFmpegBuilder;
+import net.bramp.ffmpeg.builder.FFmpegOutputBuilder;
+import net.bramp.ffmpeg.probe.FFmpegProbeResult;
 
 import com.postvue.feelogserver.global.exception.InternalServerErrorException;
 
@@ -25,6 +29,23 @@ public class FfmpegProcessingService {
 
 	@Value("${external-library.ffprobe.path}")
 	private String ffprobePath;
+
+	@Value("${external-library.ffmpeg.videoCodec}")
+	private String videoCodec;
+
+	@Value("${external-library.ffmpeg.useCuda}")
+	private Boolean useCuda;
+
+	@Value("${external-library.ffmpeg.preset}")
+	private String preset;
+
+	@Value("${external-library.ffmpeg.maxRate}")
+	private int maxRate;
+
+	@Value("${external-library.ffmpeg.bufSize}")
+	private int bufSize;
+
+
 
 	private FFmpeg ffmpeg;
 	private FFprobe ffprobe;
@@ -90,49 +111,64 @@ public class FfmpegProcessingService {
 	 * @param videoInputFile Input video file (e.g., MP4 or MKV)
 	 * @param outputDirFile Directory where the HLS files will be saved
 	 */
-	public void convertToHLS(File videoInputFile, File outputDirFile, String m3u8FileName) {
+	public void convertToHLS(File videoInputFile, File outputDirFile, String m3u8FileName) throws IOException {
 		try {
 			if (!outputDirFile.exists() && !outputDirFile.mkdirs()) {
 				throw new IOException("Failed to create output directory: " + outputDirFile.getAbsolutePath());
 			}
 
+			// Initialize FFprobe to get original bitrate
+			double originalBitrate = (double) ffprobe.probe(videoInputFile.getAbsolutePath()).getFormat().bit_rate / 1000;
+
+			// Calculate MAXRATE and BUFSIZE
+			int bitMaxRate = (int) Math.min(originalBitrate, maxRate);
+			int bitBufSize = (int) (originalBitrate > bufSize ? bufSize : originalBitrate * 2);
+
 			String outputM3u8 = new File(outputDirFile, m3u8FileName).getAbsolutePath();
 
-			FFmpegBuilder builder = new FFmpegBuilder()
-				.overrideOutputFiles(true) // Allow overwriting existing files
-				.setInput(videoInputFile.getAbsolutePath()) // Input file
-				.addOutput(outputM3u8) // Output playlist file
-				.addExtraArgs("-codec:v", "libx264") // H.264 video codec
-				.addExtraArgs("-codec:a", "aac") // AAC audio codec
-				.addExtraArgs("-ac", "2") // Stereo audio
-				.addExtraArgs("-maxrate", "1000k") // Maximum bitrate: 1000k
-				.addExtraArgs("-bufsize", "2000k") // Buffer size for smoother encoding
-				.addExtraArgs("-hls_time", "10") // Segment duration (10 seconds)
-				.addExtraArgs("-hls_list_size", "0") // Include all segments in the playlist
-				.addExtraArgs("-crf", "22")
-				.addExtraArgs("-preset", "veryfast")
-				.addExtraArgs("-vf",
-					"zscale=t=linear:npl=100," + // Tone mapping for HDR to SDR conversion
-					"format=gbrpf32le," + // Set a high precision format
-					"zscale=p=bt709," + // Convert to BT.709 color primaries
-					"tonemap=tonemap=hable:desat=0," + // Apply Hable tone-mapping
-					"zscale=t=bt709:m=bt709:r=tv," + // Convert color range to BT.709 TV range
-					"format=yuv420p," + // Final format for compatibility with most players
-					"scale='if(gt(iw,ih),1280,-1)':'if(gt(iw,ih),-1,1280)'") // Resize to 1280 while maintaining aspect ratio
-				.addExtraArgs("-movflags", "+faststart") // faststart 플래그 설정
-				.addExtraArgs("-colorspace", "bt709") // 색상 공간 설정
-				.addExtraArgs("-color_trc", "bt709") // 전달 함수 설정 (SDR)
-				.addExtraArgs("-color_primaries", "bt709") // 색상 원색 설정
+			// Build FFmpeg command
+			FFmpegOutputBuilder fFmpegOutputBuilder = new FFmpegBuilder()
+				.setInput(videoInputFile.getAbsolutePath())
+				.addOutput(outputM3u8)
+				.setAudioCodec("aac")
+				.addExtraArgs("-preset", preset)
+				.addExtraArgs("-ac", "2")
+				.addExtraArgs("-crf", "23")
+				.addExtraArgs("-pix_fmt", "yuv420p")
+				.addExtraArgs("-vf", "scale='if(gt(iw,ih),1280,-2):if(gt(iw,ih),-2,1280)'") //H.264의 경우, 짝수만 가능
+				// .addExtraArgs("-vf", "scale='if(gt(iw,ih),1280,-1):if(gt(iw,ih),-1,1280)'")
+				.addExtraArgs("-colorspace", "bt709")
+				.addExtraArgs("-color_primaries", "bt709")
+				.addExtraArgs("-color_trc", "bt709")
+				.addExtraArgs("-field_order", "progressive")
+				.addExtraArgs("-r", "30")
+				.addExtraArgs("-g", "60")
+				.addExtraArgs("-maxrate", bitMaxRate + "k")
+				.addExtraArgs("-bufsize", bitBufSize + "k")
+				.addExtraArgs("-hls_time", "4")
+				.addExtraArgs("-hls_list_size", "0")
 				.addExtraArgs("-hls_segment_filename", new File(outputDirFile, "segment_%03d.ts").getAbsolutePath()) // Segment naming pattern
-				.done();
+				.addExtraArgs("-hls_playlist_type", "vod");
+
+			// Add CUDA-specific settings based on profile
+			if (useCuda) {
+				fFmpegOutputBuilder
+					.addExtraArgs("-hwaccel", "cuda")
+					.setVideoCodec(videoCodec);
+			} else {
+				fFmpegOutputBuilder.setVideoCodec(videoCodec);
+			}
+
+			// Finalize the build
+			FFmpegBuilder fFmpegBuilder = fFmpegOutputBuilder.done();
 
 			FFmpegExecutor executor = new FFmpegExecutor(ffmpeg, ffprobe);
-			executor.createJob(builder).run();
+			executor.createJob(fFmpegBuilder).run();
 
 			log.info("Video successfully converted to HLS format. Playlist: {}", outputM3u8);
 		} catch (Exception e) {
 			log.error("Failed to convert video to HLS format.", e);
-			throw new InternalServerErrorException("비디오 처리에 오류가 발생했습니다.");
+			throw e;
 		}
 	}
 
@@ -154,6 +190,42 @@ public class FfmpegProcessingService {
 		executor.createJob(builder).run();
 
 		return new File(outputPosterImagePath);
+	}
+
+	/**
+	 * Converts the input video file to export Poster Image
+	 *
+	 * @param inputImgPath Input video file (e.g., MP4 or MKV)
+	 * @param outputImgPath Directory where the JPG files will be saved
+	 */
+	public byte[] convertImgFormat(Path inputImgPath, Path outputImgPath) throws IOException, InterruptedException {
+		// FFmpeg 명령어 실행
+		FFmpegBuilder builder = new FFmpegBuilder()
+			.setInput(inputImgPath.toAbsolutePath().toString()) // 입력 파일
+			.addOutput(outputImgPath.toAbsolutePath().toString()) // 출력 파일
+			.done();
+
+		FFmpegExecutor executor = new FFmpegExecutor(ffmpeg, ffprobe);
+		executor.createJob(builder).run();
+
+		// 변환된 파일 바이트 전달
+		return Files.readAllBytes(outputImgPath);
+	}
+
+	public Integer getVideoDuration(File videoInputFile) {
+		try{
+			if (!videoInputFile.exists()) {
+				throw new IllegalArgumentException("File does not exist: " + videoInputFile.getAbsolutePath());
+			}
+
+			FFmpegProbeResult probeResult = ffprobe.probe(videoInputFile.getAbsolutePath());
+
+			return (int) Math.round(probeResult.getFormat().duration);
+		}
+		catch (IOException e){
+			throw new InternalServerErrorException("비디오 처리하는 데 오류가 발생했습니다.");
+		}
+
 	}
 }
 

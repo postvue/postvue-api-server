@@ -1,0 +1,4 @@
+# Server Url 정보
+serverUrl:
+  domainAllowList: https://feelog.net,https://www.feelog.net,${SERVER_URL_ADMIN}
+  appleAuthRedirectUrl: https://feelog.net/login

@@ -9,4 +9,5 @@ public class Location {
 	private Float latitude;
 	private Float longitude;
 	private String address;
+	private String buildName;
 }

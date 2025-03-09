@@ -4,17 +4,21 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.postvue.feelogserver.app.auth.dto.TokenResponse;
+import com.postvue.feelogserver.app.auth.dto.req.delete.AuthMemberWithdrawalReq;
+import com.postvue.feelogserver.app.auth.dto.req.post.EmailInfoReq;
 import com.postvue.feelogserver.app.auth.dto.req.post.SignupUserInfoReq;
+import com.postvue.feelogserver.app.email.service.EmailService;
+import com.postvue.feelogserver.app.profiles.service.ProfileFollowsService;
 import com.postvue.feelogserver.app.search.service.SearchService;
 import com.postvue.feelogserver.core.security.JwtTokenProvider;
 import com.postvue.feelogserver.core.security.exception.JwtTokenExpiredException;
 import com.postvue.feelogserver.core.security.exception.JwtTokenValidException;
-import com.postvue.feelogserver.domain.snsnotifications.SnsNotification;
 import com.postvue.feelogserver.domain.snstagfollows.SnsTagFollow;
 import com.postvue.feelogserver.domain.snstagfollows.repository.SnsTagFollowJdbcRepository;
 import com.postvue.feelogserver.domain.snstags.SnsTag;
@@ -27,10 +31,15 @@ import com.postvue.feelogserver.domain.snsusers.repository.SnsUserJdbcRepository
 import com.postvue.feelogserver.domain.snsusers.repository.SnsUserRepository;
 import com.postvue.feelogserver.domain.snsusers.vo.SignUpType;
 import com.postvue.feelogserver.domain.snsusers.vo.SnsAppRole;
+import com.postvue.feelogserver.domain.snsusers.vo.SnsUserGender;
 import com.postvue.feelogserver.domain.snsusers.vo.SnsUserState;
+import com.postvue.feelogserver.global.api.apple.dto.AppleRevokeRequestDto;
+import com.postvue.feelogserver.global.api.apple.dto.AppleTokenResponseDto;
+import com.postvue.feelogserver.global.constant.AccountConst;
 import com.postvue.feelogserver.global.constant.CookieConst;
 import com.postvue.feelogserver.global.constant.SystemPhraseConst;
 import com.postvue.feelogserver.global.constant.SystemTimeConst;
+import com.postvue.feelogserver.global.exception.BadRequestErrorException;
 import com.postvue.feelogserver.global.exception.RefreshTokenNotFoundException;
 import com.postvue.feelogserver.global.exception.SnsUserIdNotFoundException;
 import com.postvue.feelogserver.global.exception.UnauthorizedErrorException;
@@ -50,6 +59,11 @@ public class AuthService {
 	private final SearchService searchService;
 	private final BCryptPasswordEncoder passwordEncoder;
 	private final SnsUserJdbcRepository snsUserJdbcRepository;
+	private final EmailService emailService;
+	private final AppleAuthService appleAuthService;
+
+	@Value("${serverUrl.verifyEmailUrl}")
+	private String serverVerifyEmailUrl;
 
 	private final int COOKIE_EXPIRED_TIME = (int)(long)SystemTimeConst.SYSTEM_1_HOUR_TIME_BY_SECOND;
 
@@ -58,6 +72,7 @@ public class AuthService {
 		SnsUser snsUser = snsUserRepository.findByRefreshToken(refreshToken)
 			.orElseThrow(RefreshTokenNotFoundException::new);
 
+		// CHECK1
 		// 리프레시 토큰 검즘 후 오류 나면 리프레시 토큰 삭제
 		try {
 			jwtTokenProvider.validateToken(refreshToken);
@@ -67,6 +82,8 @@ public class AuthService {
 			throw e;
 		}
 
+		// @CHECK2
+		// 엑세스 토큰 없거나 만료시, 새로운 토큰 잘 전달
 		return createJwtTokens(
 			snsUser.getId(),
 			SnsAppRole.valueOf(jwtTokenProvider.getUserRole(refreshToken))
@@ -75,9 +92,8 @@ public class AuthService {
 
 	@Transactional
 	public TokenResponse createJwtTokens(Long userId, SnsAppRole snsAppRole) {
-
 		// 탈퇴 했는 지 확인
-		SnsUser snsUser = snsUserRepository.findByIdAndDeletedAtIsNull(userId)
+		SnsUser snsUser = snsUserRepository.findByNotFullDeleted(userId)
 			.orElseThrow(() -> new SnsUserIdNotFoundException(userId));
 
 		String accessToken = jwtTokenProvider.createAccessToken(userId, snsAppRole);
@@ -89,9 +105,7 @@ public class AuthService {
 			snsUser.updateRefreshToken(refreshToken);
 		}
 
-		// @REFER: 로그 기록 남기기
-		// log.info("{ 'msg': '리프레시 토큰 갱신'}");
-		return TokenResponse.of(accessToken, refreshToken);
+		return TokenResponse.of(accessToken, refreshToken, snsUser.getId());
 	}
 
 	// 소셜 플랫폼을 통한 가입
@@ -107,22 +121,46 @@ public class AuthService {
 			.orElseThrow(() -> new SnsUserIdNotFoundException(userId));
 
 		snsUser.rejoin();
+		snsUserRepository.save(snsUser);
 	}
 
+	@Transactional
+	public SnsUserDto findByEmail(String email, String password) {
+		// @CHECK1
+		SnsUser snsUser = snsUserRepository.findBySignupEmail(email).orElseThrow(
+			() -> new BadRequestErrorException("비밀번호가 틀립니다.")
+		);
+		// @CHECK2
+		if (!checkPassword(password, snsUser.getHashPw())){
+			throw new BadRequestErrorException("비밀번호가 틀립니다.");
+		}
+
+		// 탈퇴 했는 지?: 함 // 완전 탈퇴가 이전 인지?
+		if (snsUser.getSnsUserState() == SnsUserState.FULL_DELETED) {
+			throw new BadRequestErrorException("다시 가입할 수 없습니다.");
+		} else if (snsUser.getDeletedAt() != null){
+			rejoin(snsUser.getId());
+		}
+
+		return SnsUserDto.from(snsUser);
+	}
+
+
+	@Transactional
 	public Optional<SnsUserDto> findBySocialLogin(String socialUid, SignUpType signUpType) {
 		return snsUserRepository.findNotFullDeletedUser(socialUid, signUpType)
 			.map(SnsUserDto::from);
 	}
 
 	// 소셜 로그인 처리
-	@Transactional
 	public SnsUserDto processLoginBySocialLogin(Optional<SnsUserDto> optionalUserDto,
 		HttpServletResponse response, SnsUserDto userDtoData) {
 		SnsUserDto snsUserDto;
+		// CHECK3
 		if (optionalUserDto.isEmpty()) {
 			// DB에 존재하지 않으면 sign up으로 401 에러 반환, 이때 쿠키 값으로 카카오 OAuth 토큰 값 전달
-			throwToSignUp(response, userDtoData);
-			throw new UnauthorizedErrorException(SystemPhraseConst.UNAUTHORIZED_EXCEPTION_PHRASE);
+			registerValidationCodeToCookie(response, userDtoData);
+			throw new UnauthorizedErrorException(SystemPhraseConst.NOT_SIGNUP_USER_EXCEPTION_PHRASE);
 
 		} else {
 			// DB에 존재 하는 경우
@@ -135,16 +173,19 @@ public class AuthService {
 				// 재 가입
 				rejoin(snsUserDto.snsUserId());
 				return snsUserDto;
-			} else {
+			} else if (snsUserDto.snsUserState().equals(SnsUserState.FULL_DELETED)) {
 				// 완전 탈퇴 면 => sign up으로 401 에러 반환
-				throwToSignUp(response, userDtoData);
+				registerValidationCodeToCookie(response, userDtoData);
 				throw new UnauthorizedErrorException(SystemPhraseConst.UNAUTHORIZED_EXCEPTION_PHRASE);
+			}
+			else{
+				throw new BadRequestErrorException("오류로 인해 로그인에 실패했습니다.");
 			}
 		}
 	}
 
 	@Transactional
-	public SnsUser processSignupBySocialLogin(String registrationVerificationCode,
+	public SnsUser processSignupByVerificationCode(String registrationVerificationCode,
 		SignupUserInfoReq signupUserInfoReq) {
 
 		// 가입 증명 코드가 유효하지 않으면
@@ -156,7 +197,10 @@ public class AuthService {
 			signupUserInfoReq.getFavoriteTagList().stream().map(Long::valueOf).toList());
 
 		SnsUser snsUser = signup(userDtoData, signupUserInfoReq);
+
+		// batch insert 전에, sns_user 정보가 db상에 존재해야 되기 때문에, flush
 		snsUserRepository.flush();
+
 		List<SnsTagFollow> snsTagFollowList = snsTagList.stream().map(snsTag ->
 			SnsTagFollow.builder()
 				.snsTag(snsTag)
@@ -183,13 +227,30 @@ public class AuthService {
 		return snsUser;
 	}
 
-	// @REFER: 현재 로직이 단순한데, 추가적으로 로직 필요? : 탈퇴한 포스트는 어떻게 보여줄 지, 팔로우한 유저는 어떻게 보여줄지 등
 	@Transactional
-	public void withdrawal(Long userId) {
+	public void withdrawal(Long userId, AuthMemberWithdrawalReq authMemberWithdrawalReq) {
 		SnsUser snsUser = snsUserRepository.findByIdAndDeletedAtIsNull(userId)
 			.orElseThrow(() -> new UnauthorizedErrorException("해당 회원은 존재하지 않습니다."));
 
+		if (snsUser.getSignUpType() == SignUpType.APPLE){
+			if (authMemberWithdrawalReq.getAppleAuthorizationCode() == null){
+				throw new BadRequestErrorException("사용자 인증이 되지 않았습니다.");
+			}
+			AppleTokenResponseDto appleTokenResponseDto = appleAuthService.getAppleAccessToken(authMemberWithdrawalReq.getAppleAuthorizationCode());
+
+			Optional<SnsUserDto> optionalUserDto = findBySocialLogin(snsUser.getSocialId(),
+				SignUpType.APPLE);
+			appleAuthService.revokeAppleAccount(new AppleRevokeRequestDto(appleTokenResponseDto.getRefreshToken()), optionalUserDto);
+		}
+
 		snsUser.withdrawal();
+	}
+
+	@Transactional
+	public String getCheckSignupType(Long userId){
+		return snsUserRepository.findById(userId).orElseThrow(
+			() -> new BadRequestErrorException("해당 계정은 없습니다.")
+		).getSignUpType().toString();
 	}
 
 	@Transactional
@@ -201,15 +262,55 @@ public class AuthService {
 	}
 
 	@Transactional
-	public boolean updateDeletedUserToFullDeletedUser(LocalDateTime daysAgo) {
-		List<SnsUser> snsUserList =  snsUserRepository.findUserOlderThanDays(daysAgo);
+	public List<SnsUser> updateDeletedUserToFullDeletedUser(LocalDateTime daysAgo) {
+		List<SnsUser> snsUserList =  snsUserRepository.findDeletedUserOlderThanDays(daysAgo);
 		snsUserJdbcRepository.updateAllFullDelete(snsUserList);
+
+		return snsUserList;
+	}
+
+	public Boolean signupEmail(EmailInfoReq emailInfoReq) {
+		SnsUserDto userDtoData = SnsUserDto.of(
+			null,
+			emailInfoReq.email(),
+			emailInfoReq.email(),
+			"",
+			AccountConst.ACCOUNT_NOT_PROFILE_PATH,
+			SnsAppRole.ROLE_USER,
+			SignUpType.EMAIL,
+			SnsUserState.ACTIVE,
+			SnsUserGender.OTHERS,
+			null,
+			null,
+			hashPassword(emailInfoReq.password()),
+			null,
+			null
+		);
+
+		// @CHECK2
+		// 인증 링크 생성 (예: 토큰 생성 후 링크로 전송)
+		// 가입 증명 코드
+		String validationCode = jwtTokenProvider.createRegisterValidationCode(
+			userDtoData,
+			userDtoData.snsAppRole());
+
+
+		// @CHECK3
+		// // 이메일 보내기
+		String verificationLink = serverVerifyEmailUrl + validationCode;
+		emailService.sendVerificationEmail(emailInfoReq.email(), verificationLink);
 
 		return true;
 	}
 
+	public void processVerificationEmail(String registrationVerificationCode, HttpServletResponse response) {
+		// 가입 증명 코드가 유효하지 않으면
+		jwtTokenProvider.validateToken(registrationVerificationCode);
+		registerEmailValidationCodeToCookie(response, registrationVerificationCode);
+	}
+
 	// 가입 된 정보 없을 시, 오류 발생 시켜서, 회원 가입 페이지로 이동하게
-	private void throwToSignUp(HttpServletResponse response,
+	private void registerValidationCodeToCookie(HttpServletResponse response,
 		SnsUserDto userDtoData) {
 		// // 가입 종류
 		response.addCookie(
@@ -224,6 +325,18 @@ public class AuthService {
 		String validationCode = jwtTokenProvider.createRegisterValidationCode(
 			userDtoData,
 			userDtoData.snsAppRole());
+		response.addCookie(
+			CookieUtils.createCookie(CookieConst.REGISTRATION_VERIFICATION_CODE, validationCode,
+				COOKIE_EXPIRED_TIME));
+	}
+
+	private void registerEmailValidationCodeToCookie(HttpServletResponse response,
+		String validationCode) {
+		// // 가입 종류
+		response.addCookie(
+			CookieUtils.createCookie(CookieConst.SIGNUP_TYPE, SignUpType.EMAIL.toString(),
+				COOKIE_EXPIRED_TIME, false));
+
 		response.addCookie(
 			CookieUtils.createCookie(CookieConst.REGISTRATION_VERIFICATION_CODE, validationCode,
 				COOKIE_EXPIRED_TIME));

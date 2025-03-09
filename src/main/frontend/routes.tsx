@@ -1,4 +1,3 @@
-import HomeView from 'Frontend/views/home/HomeView';
 import SnsUserCrudView from 'Frontend/views/snsuser/SnsUserCrudView';
 import SnsPostCrudView from 'Frontend/views/snspost/SnsPostCrudView';
 import MainLayout from 'Frontend/views/MainLayout.js';
@@ -23,6 +22,10 @@ import SnsUserMessageRoomCrudView from "Frontend/views/snsusermessageroom/SnsUse
 import SnsUserMessageCrudView from "Frontend/views/snsusermessage/SnsUserMessageCrudView";
 import SnsPostReportCrudView from "Frontend/views/snspostreport/SnsPostReportCrudView";
 import AdminServiceAdjustmentCrudView from "Frontend/views/adminserviceadjustment/AdminServiceAdjustmentCrudView";
+import AdminServiceErrorManagementCrudView
+  from "Frontend/views/adminserviceerrormanagement/AdminServiceErrorManagementCrudView";
+import SnsUserFollowStatisticCrudView from "Frontend/views/snsUserFollowStatistic/SnsUserFollowStatisticCrudView";
+import SnsUserReportCrudView from "Frontend/views/snsuserreport/SnsUserReportCrudView";
 
 const AboutView = lazy(async () => import('Frontend/views/about/AboutView.js'));
 export type MenuProps = Readonly<{
@@ -55,11 +58,12 @@ export const routes: readonly ViewRouteObject[] = [
     element: <MainLayout />,
     handle: { icon: 'null', title: 'Main' },
     children: [
-      { path: '/admin', element: <HomeView/>, handle: { icon: 'home-solid', title: 'Home' } },
-      { path: '/admin/about', element: <AboutView />, handle: { icon: 'info-solid', title: 'About' } },
+      { path: '/admin', element: <AboutView />, handle: { icon: 'info-solid', title: 'About' } },
       { path:'/admin/service/adjustment',element:<AdminServiceAdjustmentCrudView/>,handle:{title: 'Admin-Adjustment', icon: 'cog-solid'} },
+      { path:'/admin/service/error/managements',element:<AdminServiceErrorManagementCrudView/>,handle:{title: 'Admin-Error-Management', icon: 'cog-solid'} },
       { path:'/admin/snsusers',element:<SnsUserCrudView/>,handle:{title: 'SnsUser', icon: 'user'} },
       { path:'/admin/snsuserfollows',element:<SnsUserFollowCrudView/>,handle:{title: 'SnsUserFollow', icon: 'user'} },
+      { path:'/admin/snsuserfollowstatistic',element:<SnsUserFollowStatisticCrudView/>,handle:{title: 'SnsUserFollowStatistic', icon: 'user'} },
       { path:'/admin/snsblockusers',element:<SnsBlockUserCrudView/>,handle:{title: 'SnsBlockUser', icon: 'user'} },
       { path:'/admin/snsnotifications',element:<SnsNotificationCrudView/>,handle:{title: 'SnsNotification', icon: 'bell'} },
       { path:'/admin/snsposts',element:<SnsPostCrudView/>,handle:{title: 'SnsPost', icon: 'edit'} },
@@ -67,6 +71,7 @@ export const routes: readonly ViewRouteObject[] = [
       { path:'/admin/snspostcommentreactions',element:<SnsPostCommentReactionCrudView/>,handle:{title: 'SnsPostCommentReaction', icon: 'edit'} },
       { path:'/admin/snspostcommentlikes',element:<SnsPostCommentLikeCrudView/>,handle:{title: 'SnsPostCommentLike', icon: 'edit'} },
       { path:'/admin/snspostreports',element:<SnsPostReportCrudView/>,handle:{title: 'SnsPostReport', icon: 'headset-solid'} },
+      { path:'/admin/snsuserreports',element:<SnsUserReportCrudView/>,handle:{title: 'SnsUserReport', icon: 'headset-solid'} },
       { path:'/admin/snsscraps',element:<SnsScrapCrudView/>,handle:{title: 'SnsScrap', icon: 'archive-solid'} },
       { path:'/admin/snsscrapboards',element:<SnsScrapBoardCrudView/>,handle:{title: 'SnsScrapBoard', icon: 'archive-solid'} },
       { path:'/admin/snstags',element:<SnsTagCrudView/>,handle:{title: 'SnsTag', icon: 'bookmark'} },

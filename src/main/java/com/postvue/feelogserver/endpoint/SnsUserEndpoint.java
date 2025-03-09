@@ -1,67 +1,58 @@
 package com.postvue.feelogserver.endpoint;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.postvue.feelogserver.domain.snstagposts.SnsTagPost;
-import com.postvue.feelogserver.domain.snstags.SnsTag;
-import com.postvue.feelogserver.domain.snsusers.SnsUser;
-import com.postvue.feelogserver.domain.snsusers.repository.SnsUserRepository;
-import com.postvue.feelogserver.endpoint.converter.JpaFilterCustomConverter;
-import com.postvue.feelogserver.endpoint.dto.SnsTagEndpointDto;
 import com.postvue.feelogserver.endpoint.dto.SnsUserEndpointDto;
+import com.postvue.feelogserver.global.constant.LogTemplateConst;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.hilla.BrowserCallable;
 import com.vaadin.hilla.Nonnull;
 import com.vaadin.hilla.Nullable;
 import com.vaadin.hilla.crud.CrudService;
 import com.vaadin.hilla.crud.filter.Filter;
+import com.vaadin.hilla.exception.EndpointException;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
+@Controller
 @BrowserCallable
 @AnonymousAllowed
 @RequiredArgsConstructor
 public class SnsUserEndpoint implements CrudService<SnsUserEndpointDto, Long> {
-	private final SnsUserRepository snsUserRepository;
-	private final JpaFilterCustomConverter jpaFilterCustomConverter;
+	private final SnsUserEndpointService snsUserEndpointService;
 
 	@Override
 	@Nonnull
 	public List<@Nonnull SnsUserEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
-		Specification<SnsUser> spec = filter != null
-			? jpaFilterCustomConverter.toSpec(filter, SnsUser.class)
-			: Specification.anyOf();
-		return snsUserRepository.findAll(spec,pageable).map((SnsUserEndpointDto::fromEntity)).toList();
+		try {
+			return snsUserEndpointService.listProcess(pageable, filter).stream().map((SnsUserEndpointDto::fromEntity)).toList();
+		}
+		catch (Exception e){
+			throw new EndpointException("서버 오류 발생", LogTemplateConst.getLogInfoTemplate(e.getMessage() + "_" + e.toString(), LocalDateTime.now().toString()));
+		}
 	}
 
 	@Override
-	@Transactional
 	public @Nullable SnsUserEndpointDto save(SnsUserEndpointDto value) {
-		SnsUser snsUser = value.id() != null && Long.parseLong(value.id()) > 0
-			? snsUserRepository.getReferenceById(Long.parseLong(value.id()))
-			: new SnsUser();
-
-		snsUser.setNickname(value.nickname());
-		snsUser.setEmail(value.email());
-		snsUser.setUserLink(value.userLink());
-		snsUser.setUserDescription(value.userDescription());
-		snsUser.setSnsUserGender(value.snsUserGender());
-		snsUser.setBirthDate(value.birthDate());
-		snsUser.setSnsUserState(value.snsUserState());
-		snsUser.setSnsAppRole(value.snsAppRole());
-		snsUser.setIsPrivateProfile(value.isPrivateProfile());
-		snsUser.setProfilePath(value.profilePath());
-		snsUser.setHasFollowerNotification(value.hasFollowerNotification());
-		return SnsUserEndpointDto.fromEntity(snsUserRepository.save(snsUser));
+		try {
+			return SnsUserEndpointDto.fromEntity(snsUserEndpointService.saveProcess(value));
+		}
+		catch (Exception e){
+			log.error(e.getMessage());
+			throw new EndpointException("서버 오류 발생", LogTemplateConst.getLogInfoTemplate(e.getMessage() + "_" + e.toString(), LocalDateTime.now().toString()));
+		}
 	}
 
 	@Override
 	@Transactional
 	public void delete(Long snsUserId) {
-		snsUserRepository.deleteById(snsUserId);
+		return;
 	}
 }

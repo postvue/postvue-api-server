@@ -20,6 +20,8 @@ public interface SnsPostInfoDao {
 
 	String getAddress();
 
+	String getBuildName();
+
 	TgtAudType getTgtAudType();
 
 	String getPostTitle();
@@ -31,6 +33,8 @@ public interface SnsPostInfoDao {
 	String getTags();
 
 	Long getSnsUserId();
+
+	String getUsername();
 
 	LocalDateTime getPostedAt();
 

@@ -1,0 +1,12 @@
+vaadin-grid-cell-content {
+    max-width: 500px;  /* 원하는 최대 너비 */
+}
+[id^="vaadin-grid-cell-"] {
+    max-width: 500px;  /* 원하는 최대 너비 */
+}
+
+vaadin-item{
+    font-size: 15px;
+    font-family: system-ui;
+    font-weight: 300;
+}

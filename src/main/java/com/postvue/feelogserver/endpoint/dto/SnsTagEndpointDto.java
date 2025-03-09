@@ -11,13 +11,18 @@ public record SnsTagEndpointDto(
 	String tagRepsBatchContent,
 	PostContentType tagRepsBatchContentType,
 	Boolean isExposed,
-	LocalDateTime createdAt
+	LocalDateTime createdAt,
+	LocalDateTime deletedAt,
+	LocalDateTime lastUpdatedAt
 
 ) {
 	public static SnsTagEndpointDto fromEntity(SnsTag snsTag){
 		return new SnsTagEndpointDto(snsTag.getId().toString(),
 			snsTag.getTagName(),snsTag.getTagRepsBatchContent(),
 			snsTag.getTagRepsBatchContentType(),
-			snsTag.getIsExposed(),snsTag.getCreatedAt());
+			snsTag.getIsExposed(),snsTag.getCreatedAt(),
+			snsTag.getDeletedAt(),
+			snsTag.getLastUpdatedAt()
+		);
 	}
 }

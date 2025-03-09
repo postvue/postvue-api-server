@@ -27,7 +27,7 @@ import lombok.Setter;
 @Table(name = "SNS_USER_FOLLOWS_TB", indexes = {
 	@Index(name = "IDX__FOLLOWER_BY_SNS_USER_FOLLOWS", columnList = "follower_id")},
 	uniqueConstraints = {
-		@UniqueConstraint(columnNames = {"following_id", "follower_id"})
+		@UniqueConstraint(columnNames = {"following_id", "follower_id"}, name = "IDX_FOLLOWING_FOLLOWER_ID_BY_SNS_USER_FOLLOWS")
 	})
 @Builder
 @NoArgsConstructor
@@ -46,7 +46,7 @@ public class SnsUserFollow extends BaseMixinImpl implements Serializable {
 	@JoinColumn(name = "follower_id", updatable = false)
 	private SnsUser followerUser;
 
-	//@REFER: 불필요한 조회 때문에 제거
+	//@ANSWER: 불필요한 조회 때문에 제거
 	// @Column(name = "is_follower_back", nullable = false)
 	// @ColumnDefault(value = "false")
 	// private Boolean isFollowerBack;

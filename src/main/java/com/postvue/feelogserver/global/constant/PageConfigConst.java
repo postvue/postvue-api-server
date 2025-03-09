@@ -10,16 +10,20 @@ public final class PageConfigConst {
 	public static final Integer PAGE_INIT_ONE_NUM = 1;
 	public static final String PAGE_INIT_ONE_NUM_STRING = "1";
 
+	public static final Integer KAKAO_MAP_LOCAL_SEARCH_QUERY_PAGE_NUM = 15;
+
 	public static final Integer STUFF_FOR_ME_BY_TAG_PAGE_SIZE = 10;
 	public static final Integer NEAR_FOR_ME_BY_TAG_PAGE_SIZE = 20;
-	public static final String LAST_POST_ID = "100000000000000000";
+
+	public static final Integer MAP_POST_FOR_ME_SIZE = 15;
+	public static final String LAST_POST_ID = "9000000000000000000";
 	public static final String ZERO_ID = "0";
 
-	public static final Integer FOLLOW_MIN_PAGE_NUM = 4;
-	public static final Integer FOLLOW_MAX_PAGE_NUM = 6;
+	public static final Integer FOLLOW_MIN_PAGE_NUM = 2;
+	public static final Integer FOLLOW_MAX_PAGE_NUM = 4;
 	public static final Integer FOLLOW_FOR_ME_PAGE_SIZE = 20;
 
-	public static final Integer POPULAR_PAGE_NUM = 8;
+	public static final Integer POPULAR_PAGE_NUM = 10;
 
 	public static final Integer MSG_INBOX_MESSAGE_PAGE_NUM = 50;
 
@@ -38,15 +42,28 @@ public final class PageConfigConst {
 	public static final Integer POST_COMMENT_REPLY_NUM = 50;
 
 	// Post Relation
-	public static final Integer POST_RELATION_PAGE_NUM = 20;
+
+	public static final Integer POST_RELATION_PAGE_NUM = 6;
+	public static final Integer POST_RELATION_RECOMM_PAGE_NUM_BY_RECOMM = 10;
+	public static final Integer POST_RELATION_DISTANCE_PAGE_NUM_BY_RECOMM = 5;
+	public static final Integer POST_RELATION_LIVE_PAGE_NUM_BY_RECOMM = 5;
+
+	public static final Integer POST_RELATION_RECOMM_PAGE_NUM_BY_DISTANCE = 7;
+	public static final Integer POST_RELATION_DISTANCE_PAGE_NUM_BY_DISTANCE = 10;
+	public static final Integer POST_RELATION_LIVE_PAGE_NUM_BY_DISTANCE = 3;
+
+	public static final Integer POST_RELATION_RECOMM_PAGE_NUM_BY_LIVE = 6;
+	public static final Integer POST_RELATION_DISTANCE_PAGE_NUM_BY_LIVE = 4;
+	public static final Integer POST_RELATION_LIVE_PAGE_NUM_BY_LIVE = 8;
+
 
 	// Follow Recomm
 	public static final Integer PAGE_NUM_BY_FOLLOW_RECOMM = 10;
 
 	// Tag Recomm
-	public static final Integer PAGE_NUM_BY_POPULAR = 10;
-	public static final Integer PAGE_NUM_BY_INTEREST = 10;
-	public static final Integer PAGE_NUM_BY_TAG_RECOMM = 14;
+	public static final Integer PAGE_NUM_BY_POPULAR = 15;
+	public static final Integer PAGE_NUM_BY_INTEREST = 15;
+	public static final Integer PAGE_NUM_BY_TAG_RECOMM = 16;
 	public static final Integer RECOMM_TAG_PAGE_NUM_BY_SIGNUP = 10;
 
 	// My Profile Follows
@@ -66,8 +83,14 @@ public final class PageConfigConst {
 
 	// map
 	public static final Integer MAP_POST_PAGE_SIZE = 20;
+	public static final Integer MAP_ADDRESS_RELATION_KAKAO_MAX_NUM = 1;
+	public static final Integer MAP_ADDRESS_RELATION_NAVER_MAX_NUM = 0;
 
 	// map recomm
 	public static final Integer MAP_SEARCH_RECOMM_POST_PAGE_SIZE = 5;
 	public static final Integer MAP_SEARCH_RECOMM_PLAcE_PAGE_SIZE = 3;
+
+	// 검색어 찜 목록
+	public static final Integer SEARCH_FAVORITE_TERM_PAGE_INIT_NUM = 0;
+	public static final Integer SEARCH_FAVORITE_TERM_PAGE_SIZE = 15;
 }

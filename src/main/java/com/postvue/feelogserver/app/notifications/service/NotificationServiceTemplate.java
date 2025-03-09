@@ -34,7 +34,7 @@ public class NotificationServiceTemplate {
 			.username(snsNotification.getUsername())
 			.postId(
 				snsNotification.getSnsPost() != null ? snsNotification.getSnsPost().getId().toString() : null)
-			.notificationUserId(snsNotification.getNotificationContentUserId().toString())
+			.notificationUserId(snsNotification.getNotificationContentUserid().toString())
 			.notificationUsername(snsNotification.getNotificationContentUsername())
 			.notificationUserProfilePath(snsNotification.getNotificationContentUserProfilePath())
 			.notificationType(snsNotification.getSnsNotificationType().toString())
@@ -70,7 +70,7 @@ public class NotificationServiceTemplate {
 			.snsUser(snsPost.getSnsUser())
 			.username(snsPost.getSnsUser().getUsername())
 			.snsPost(snsPost)
-			.notificationContentUserId(notificationUser.getId())
+			.notificationContentUserid(notificationUser.getId())
 			.notificationContentUsername(notificationUser.getUsername())
 			.notificationContentUserProfilePath(notificationUser.getProfilePath())
 			.notificationCount(notificationCount)
@@ -91,11 +91,12 @@ public class NotificationServiceTemplate {
 			.followerUser(snsUserFollow.getFollowerUser())
 			.snsNotificationType(SnsNotificationType.USER_FOLLOWER_NOTIFICATION)
 			.notificationCount(SnsNotificationConst.ZERO_NOTIFICATION_NUM)
-			.notificationContentUserId(snsUserFollow.getFollowerUser().getId())
+			.notificationContentUserid(snsUserFollow.getFollowerUser().getId())
 			.notificationContentUsername(snsUserFollow.getFollowerUser().getUsername())
 			.notificationContentUserProfilePath(snsUserFollow.getFollowerUser().getProfilePath())
 			// 알림 메시지 내용
 			.snsNotificationContents(snsNotificationContents)
 			.build();
 	}
+
 }

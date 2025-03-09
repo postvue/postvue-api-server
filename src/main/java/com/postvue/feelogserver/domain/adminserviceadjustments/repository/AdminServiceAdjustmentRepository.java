@@ -13,6 +13,5 @@ import com.postvue.feelogserver.domain.snsusers.SnsUser;
 public interface AdminServiceAdjustmentRepository extends JpaRepository<AdminServiceAdjustment, Long>,
 	JpaSpecificationExecutor<AdminServiceAdjustment> {
 
-
 	List<AdminServiceAdjustment> findAllByServiceType(String serviceType);
 }

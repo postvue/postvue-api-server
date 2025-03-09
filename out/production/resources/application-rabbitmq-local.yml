@@ -4,3 +4,10 @@ spring:
     port: 5672
     username: bugsbunny
     password: carrotmarket2160
+    listener:
+      simple:
+        retry:
+          enabled: true
+          max-attempts: 3
+        acknowledge-mode: manual
+    publisher-returns: true

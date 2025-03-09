@@ -7,13 +7,13 @@ import com.postvue.feelogserver.domain.adminserviceadjustments.AdminServiceAdjus
 public record AdminServiceAdjustmentEndpointDto(
 	String id,
 	String serviceType,
-	Long propLong1,
+	String propLong1id,
 
-	Long propLong2,
+	String propLong2id,
 
-	Long propLong3,
+	String propLong3id,
 
-	Long propLong4,
+	String propLong4id,
 
 	String propString1,
 
@@ -26,7 +26,7 @@ public record AdminServiceAdjustmentEndpointDto(
 
 	LocalDateTime lastUpdatedAt,
 
-	Long lastUpdatedBy
+	String lastUpdatedByid
 ) {
 
 
@@ -34,17 +34,17 @@ public record AdminServiceAdjustmentEndpointDto(
 		return new AdminServiceAdjustmentEndpointDto(
 			adminServiceAdjustment.getId().toString(),
 			adminServiceAdjustment.getServiceType(),
-			adminServiceAdjustment.getPropLong1(),
-			adminServiceAdjustment.getPropLong2(),
-			adminServiceAdjustment.getPropLong3(),
-			adminServiceAdjustment.getPropLong4(),
+			adminServiceAdjustment.getPropLong1id() != null ? adminServiceAdjustment.getPropLong1id().toString() : null,
+			adminServiceAdjustment.getPropLong2id() != null ? adminServiceAdjustment.getPropLong2id().toString() : null,
+			adminServiceAdjustment.getPropLong3id() != null ? adminServiceAdjustment.getPropLong3id().toString() : null,
+			adminServiceAdjustment.getPropLong4id() != null ? adminServiceAdjustment.getPropLong4id().toString() : null,
 			adminServiceAdjustment.getPropString1(),
 			adminServiceAdjustment.getPropString2(),
 			adminServiceAdjustment.getPropString3(),
 			adminServiceAdjustment.getPropString4(),
 			adminServiceAdjustment.getCreatedAt(),
 			adminServiceAdjustment.getLastUpdatedAt(),
-			adminServiceAdjustment.getLastUpdatedBy()
+			adminServiceAdjustment.getLastUpdatedByid() !=null ? adminServiceAdjustment.getLastUpdatedByid().toString() : null
 		);
 	}
 }

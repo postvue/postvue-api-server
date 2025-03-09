@@ -60,7 +60,7 @@ public class SnsNotification extends BaseMixinImpl implements Serializable {
 	private SnsUser followerUser;
 
 	@Column(name = "notification_content_user_id", nullable = false)
-	private Long notificationContentUserId;
+	private Long notificationContentUserid;
 
 	@Column(name = "notification_content_username", nullable = false)
 	private String notificationContentUsername;

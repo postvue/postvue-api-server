@@ -28,7 +28,7 @@ public class SnsPostRsp {
 	private List<PostContent> postContents;
 	private String postTitle;
 	private String postBodyText;
-	// @REFER: 제거
+	// @ANSWER: 제거
 	// private String postCategory;
 	private LocalDateTime postedAt;
 }
