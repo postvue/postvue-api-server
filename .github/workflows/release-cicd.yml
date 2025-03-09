@@ -1,0 +1,155 @@
+name: Postvue API Server Release CI/CD Pipeline
+
+on:
+  pull_request:
+    branches:
+      - release-*
+      - release/**
+    types:
+      - closed
+  push:
+    branches:
+      - release-*
+      - release/**
+  create:
+    branches:
+      - release-*
+      - release/**
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    # 2. JDK 설정
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin' # AdoptOpenJDK 기반의 Temurin 사용
+
+    # 3. .env 파일을 생성하고 환경 변수 설정 (GitHub Secrets에서 가져오기)
+    - name: Create .env file from secrets
+      run: |
+        echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> src/main/resources/.env
+        echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> src/main/resources/.env
+        echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> src/main/resources/.env
+        echo "RABBITMQ_HOST=${{ secrets.RABBITMQ_HOST }}" >> src/main/resources/.env
+        echo "RABBITMQ_PORT=${{ secrets.RABBITMQ_PORT }}" >> src/main/resources/.env
+        echo "RABBITMQ_USERNAME=${{ secrets.RABBITMQ_USERNAME }}" >> src/main/resources/.env
+        echo "RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}" >> src/main/resources/.env
+        echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> src/main/resources/.env
+        echo "OPENAPI_VWORLD_CLIENT_ID=${{ secrets.OPENAPI_VWORLD_CLIENT_ID }}" >> src/main/resources/.env
+        echo "OPENAPI_BUSINESSJUSO_SECRET_KEY=${{ secrets.OPENAPI_BUSINESSJUSO_SECRET_KEY }}" >> src/main/resources/.env
+        echo "OPENAPI_NAVERDEVELOPERS_CLIENT_ID=${{ secrets.OPENAPI_NAVERDEVELOPERS_CLIENT_ID }}" >> src/main/resources/.env
+        echo "OPENAPI_NAVERDEVELOPERS_SECRET_KEY=${{ secrets.OPENAPI_NAVERDEVELOPERS_SECRET_KEY }}" >> src/main/resources/.env
+        echo "OPENAPI_KAKAO_DEVELOPERS_REST_API=${{ secrets.OPENAPI_KAKAO_DEVELOPERS_REST_API }}" >> src/main/resources/.env
+        echo "OPENAPI_DISCORD_WEBHOOK_PORT_REPORT_CHANNEL_ID=${{ secrets.OPENAPI_DISCORD_WEBHOOK_PORT_REPORT_CHANNEL_ID }}" >> src/main/resources/.env
+        echo "OPENAPI_DISCORD_WEBHOOK_PORT_REPORT_TOKEN=${{ secrets.OPENAPI_DISCORD_WEBHOOK_PORT_REPORT_TOKEN }}" >> src/main/resources/.env
+        echo "OPENAPI_DISCORD_WEBHOOK_SERVICE_NOTIFICATION_WEBHOOK_CHANNEL_ID=${{ secrets.OPENAPI_DISCORD_WEBHOOK_SERVICE_NOTIFICATION_WEBHOOK_CHANNEL_ID }}" >> src/main/resources/.env
+        echo "OPENAPI_DISCORD_WEBHOOK_SERVICE_NOTIFICATION_WEBHOOK_TOKEN=${{ secrets.OPENAPI_DISCORD_WEBHOOK_SERVICE_NOTIFICATION_WEBHOOK_TOKEN }}" >> src/main/resources/.env
+        echo "CLOUD_CLOUDFLARE_CONTENT_BUCKET_ACCESS_KEY=${{ secrets.CLOUD_CLOUDFLARE_CONTENT_BUCKET_ACCESS_KEY }}" >> src/main/resources/.env
+        echo "CLOUD_CLOUDFLARE_CONTENT_BUCKET_SECRET_KEY=${{ secrets.CLOUD_CLOUDFLARE_CONTENT_BUCKET_SECRET_KEY }}" >> src/main/resources/.env
+        echo "CLOUD_CLOUDFLARE_CONTENT_BUCKET_ENDPOINT=${{ secrets.CLOUD_CLOUDFLARE_CONTENT_BUCKET_ENDPOINT }}" >> src/main/resources/.env
+        echo "CLOUD_CLOUDFLARE_CONTENT_BUCKET_NAME=${{ secrets.CLOUD_CLOUDFLARE_CONTENT_BUCKET_NAME }}" >> src/main/resources/.env
+        echo "CLOUD_CLOUDFLARE_CONTENT_BUCKET_PUBLIC_URL=${{ secrets.CLOUD_CLOUDFLARE_CONTENT_BUCKET_PUBLIC_URL }}" >> src/main/resources/.env
+        echo "CLOUD_MINIO_VIDEOS_BUCKET_ENDPOINT=${{ secrets.CLOUD_MINIO_VIDEOS_BUCKET_ENDPOINT }}" >> src/main/resources/.env
+        echo "CLOUD_MINIO_VIDEOS_BUCKET_ACCESS_KEY=${{ secrets.CLOUD_MINIO_VIDEOS_BUCKET_ACCESS_KEY }}" >> src/main/resources/.env
+        echo "CLOUD_MINIO_VIDEOS_BUCKET_SECRET_KEY=${{ secrets.CLOUD_MINIO_VIDEOS_BUCKET_SECRET_KEY }}" >> src/main/resources/.env
+        echo "CLOUD_MINIO_VIDEOS_BUCKET_NAME=${{ secrets.CLOUD_MINIO_VIDEOS_BUCKET_NAME }}" >> src/main/resources/.env
+        echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> src/main/resources/.env
+        echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> src/main/resources/.env
+        echo "DB_URL=${{ secrets.DB_URL }}" >> src/main/resources/.env
+        echo "SERVER_URL_API=${{ secrets.SERVER_URL_API }}" >> src/main/resources/.env
+        echo "SERVER_URL_ADMIN=${{ secrets.SERVER_URL_ADMIN }}" >> src/main/resources/.env
+        echo "OPENAPI_APPLE_FEELOG_API_PRIVATE_KEY=${{ secrets.OPENAPI_APPLE_FEELOG_API_PRIVATE_KEY }}" >> src/main/resources/.env
+        echo "OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_ID=${{ secrets.OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_ID }}" >> src/main/resources/.env
+        echo "OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_SECRET_KEY=${{ secrets.OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_SECRET_KEY }}" >> src/main/resources/.env
+        echo "SPRING_MAIL_USERNAME=${{ secrets.SPRING_MAIL_USERNAME }}" >> src/main/resources/.env
+        echo "SPRING_MAIL_PASSWORD=${{ secrets.SPRING_MAIL_PASSWORD }}" >> src/main/resources/.env
+      shell: bash
+
+    # 4. Gradle 캐싱 (옵션: Maven 사용 시 수정 필요)
+    - name: Cache Gradle dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+            
+    # 5. Gradle 빌드 및 테스트
+    - name: Build and Test with Gradle
+      run:  ./gradlew build -Pvaadin.productionMode --no-daemon
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_HUB_RELEASE_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_RELEASE_ACCESS_TOKEN }}
+
+    - name: Build Docker image
+      run: docker build -t ${{ secrets.DOCKER_HUB_RELEASE_REPOSITORY }}:latest .
+
+    - name: Push Docker image
+      run: docker push ${{ secrets.DOCKER_HUB_RELEASE_REPOSITORY }}:latest
+      
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up SSH
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y sshpass
+
+    - name: Deploy to Ubuntu Server
+      env:
+        REMOTE_HOST: ${{ secrets.SERVER_RELEASE_HOST }}
+        REMOTE_USER: ${{ secrets.SERVER_RELEASE_REMOTE_USER }}
+        REMOTE_PORT: ${{ secrets.SERVER_RELEASE_REMOTE_PORT }}
+        DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_RELEASE_USERNAME }}
+        DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_RELEASE_ACCESS_TOKEN }}
+        SERVICE_DIR: ${{ secrets.SERVICE_DIR }}
+      run: |
+        echo "Setting up SSH private key..."
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SERVER_RELEASE_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        
+        echo "Adding server to known hosts..."
+        ssh-keyscan -p ${REMOTE_PORT} ${REMOTE_HOST} >> ~/.ssh/known_hosts
+
+        echo "Connecting to remote server and deploying..."
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${REMOTE_PORT} "${REMOTE_USER}@${REMOTE_HOST}" << EOF
+          sudo -s
+          apt-get update -y
+
+          echo "Navigating to service directory..."
+          cd ${SERVICE_DIR}
+
+          echo "Logging into Docker Hub..."
+          echo "${DOCKER_HUB_ACCESS_TOKEN}" | docker login --username "${DOCKER_HUB_USERNAME}" --password-stdin
+
+          echo "Stopping and removing existing containers..."
+          docker compose down --volumes --remove-orphans
+
+          echo "Pulling latest images..."
+          docker compose pull
+
+          echo "Starting new containers..."
+          docker compose up -d
+        EOF
+

@@ -7,7 +7,6 @@ import SnsUserFavoriteTermBookmarkEndpointDtoModel
   from "Frontend/generated/com/postvue/feelogserver/endpoint/dto/SnsUserFavoriteTermBookmarkEndpointDtoModel";
 import {handleOnDeleteError, handleOnSubmitError} from "Frontend/components/utils/ErrorHandle";
 import {VerticalLayout} from "@vaadin/react-components/VerticalLayout";
-import SnsMsgType from "Frontend/generated/com/postvue/feelogserver/domain/snsusermessages/vo/SnsMsgType";
 import PostContentType from "Frontend/generated/com/postvue/feelogserver/domain/snsposts/vo/PostContentType";
 
 export default function SnsUserFavoriteTermBookmarkCrudView() {
@@ -36,7 +35,7 @@ export default function SnsUserFavoriteTermBookmarkCrudView() {
             }
             {fieldsMapping.get('id')?.props.form.defaultValue.favoriteTermContentType === PostContentType.IMAGE
               &&
-              <img src={fieldsMapping.get('id')?.props.form.defaultValue.favoriteTermContent} style={{width:'100%',maxWidth:'400px',borderRadius:'5px'}}/>
+              <img src={fieldsMapping.get('id')?.props.form.defaultValue.favoriteTermContent} style={{width:'100%',maxWidth:'250px',borderRadius:'5px'}}/>
             }
           </VerticalLayout>
         </VerticalLayout>
@@ -46,6 +45,7 @@ export default function SnsUserFavoriteTermBookmarkCrudView() {
       <AutoCrud
           service={SnsUserFavoriteTermBookmarkEndpoint}
           model={SnsUserFavoriteTermBookmarkEndpointDtoModel}
+          style={{height:"100%"}}
           formProps={{
             onDeleteError: handleOnDeleteError,
             onSubmitError:handleOnSubmitError,

@@ -16,4 +16,5 @@ public class SnsPostContentDao {
 	private String fileType;
 	private String bucketUrl;
 	private Boolean isUploaded;
+	private Integer videoDuration;
 }

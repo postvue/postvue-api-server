@@ -17,8 +17,10 @@ public class SnsPostContent {
 	private String fileType;
 	private String bucketUrl;
 	private Boolean isUploaded;
+	private Integer videoDuration;
 
 	public void setIsUploaded(Boolean isUploaded) {
 		this.isUploaded = isUploaded;
 	}
+	public void setIsVideoDuration(Integer videoDuration) {this.videoDuration = videoDuration; }
 }

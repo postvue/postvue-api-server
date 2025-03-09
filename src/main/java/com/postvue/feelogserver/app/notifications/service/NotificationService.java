@@ -14,9 +14,9 @@ import com.postvue.feelogserver.domain.snspostcommentreactions.SnsPostCommentRea
 import com.postvue.feelogserver.domain.snsposts.SnsPost;
 import com.postvue.feelogserver.domain.snspostuserreactions.SnsPostUserReaction;
 import com.postvue.feelogserver.domain.snsuserfollows.SnsUserFollow;
-import com.postvue.feelogserver.domain.snsusers.repository.SnsUserRepository;
-import com.postvue.feelogserver.global.constant.SnsNotificationConst;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -30,22 +30,27 @@ public class NotificationService {
 	private final PostCommentReplyNotificationProcessService postCommentReplyNotificationProcessService;
 	private final FollowerNotificationProcessService followerNotificationProcessService;
 
+	@PersistenceContext
+	private EntityManager entityManager;
+
+	@Transactional
 	public List<SnsNotificationSub> getNotificationList(Long snsUserId, LocalDateTime notifiedDateTime) {
 		List<SnsNotification> snsNotificationList = snsNotificationRepository.findNotificationByIdAndAfterNotifiedAt(
 			snsUserId, notifiedDateTime);
+
 		return snsNotificationList.stream().map((snsNotification -> {
 			return SnsNotificationSub.builder()
 				.notificationId(snsNotification.getId().toString())
-				.userId(snsNotification.getSnsUser().getId().toString())
+				.userId(snsNotification.getSnsUser() != null ? snsNotification.getSnsUser().getId().toString() : null)
 				.username(snsNotification.getUsername())
 				.postId(snsNotification.getSnsPost() != null ? snsNotification.getSnsPost().getId().toString() :
 					null)
-				.notificationUserId(snsNotification.getNotificationContentUserId().toString())
+				.notificationUserId(snsNotification.getNotificationContentUserid() != null ? snsNotification.getNotificationContentUserid().toString() : null)
 				.notificationUsername(snsNotification.getNotificationContentUsername())
 				.isRead(false)
 				.notificationUserProfilePath(snsNotification.getNotificationContentUserProfilePath())
 				.notifiedAt(snsNotification.getCreatedAt())
-				.notificationType(snsNotification.getSnsNotificationType().toString())
+				.notificationType(snsNotification.getSnsNotificationType() != null ? snsNotification.getSnsNotificationType().toString() : null)
 				.notificationContents(snsNotification.getSnsNotificationContents())
 				.build();
 		})).toList();
@@ -56,6 +61,10 @@ public class NotificationService {
 		List<SnsNotification> snsNotificationList = snsNotificationRepository.findNotificationsOlderThanDays(daysAgo);
 
 		snsNotificationJdbcRepository.deleteAll(snsNotificationList);
+
+		// Hibernate 1차 캐시 비우기 (삭제된 데이터가 업데이트되지 않도록 방지)
+		entityManager.clear();
+
 		return true;
 	}
 

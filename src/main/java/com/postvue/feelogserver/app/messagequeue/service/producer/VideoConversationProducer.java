@@ -3,6 +3,9 @@ package com.postvue.feelogserver.app.messagequeue.service.producer;
 import java.time.LocalDateTime;
 
 import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageBuilder;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -19,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class VideoConversationProducer {
-	private final AmqpTemplate amqpTemplate;
+	private final RabbitTemplate rabbitTemplate;
 	public void sendVideoConversionUploadToQueue(
 		Long postId,
 		String videoAbsolutePath,
@@ -30,8 +33,16 @@ public class VideoConversationProducer {
 		ObjectMapper objectMapper = new ObjectMapper();
 
 		// 객체를 JSON으로 변환
+		// 메시지 객체 생성
 		String videoUploadConversionMessageString = objectMapper.writeValueAsString(videoUploadConversionMessage);
-		amqpTemplate.convertAndSend(RabbitMQConst.RABBIT_MQ_VIDEO_EXCHANGE, RabbitMQConst.RABBIT_MQ_VIDEO_CONVERT_UPLOAD_DIRECT_ROUTE_KEY, videoUploadConversionMessageString);
+
+		Message message = MessageBuilder.withBody(videoUploadConversionMessageString.getBytes())
+			.setContentType("application/json")
+			.build();
+
+		rabbitTemplate.send(RabbitMQConst.RABBIT_MQ_VIDEO_EXCHANGE,
+			RabbitMQConst.RABBIT_MQ_VIDEO_CONVERT_UPLOAD_DIRECT_ROUTE_KEY, message);
+		// rabbitTemplate.convertAndSend(RabbitMQConst.RABBIT_MQ_VIDEO_EXCHANGE, RabbitMQConst.RABBIT_MQ_VIDEO_CONVERT_UPLOAD_DIRECT_ROUTE_KEY, videoUploadConversionMessageString);
 		log.info(LogTemplateConst.getLogInfoTemplate(String.format("Video conversion request sent: %s", videoUploadConversionMessageString),
 			LocalDateTime.now().toString()));
 	}

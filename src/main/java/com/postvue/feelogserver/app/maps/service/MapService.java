@@ -1,18 +1,20 @@
 package com.postvue.feelogserver.app.maps.service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.geolatte.geom.crs.CoordinateReferenceSystem;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.postvue.feelogserver.app.maps.dto.GetAddress;
 import com.postvue.feelogserver.app.maps.dto.GetAddressGeocodeRsp;
 import com.postvue.feelogserver.app.maps.dto.GetAddressReverseGeocodeRsp;
+import com.postvue.feelogserver.app.maps.dto.GetAddressWithGis;
 import com.postvue.feelogserver.app.maps.dto.GetLocalSearchRsp;
 import com.postvue.feelogserver.app.maps.dto.GetMapSearchPostRsp;
 import com.postvue.feelogserver.app.maps.dto.GetMapSearchRecommRsp;
@@ -20,6 +22,8 @@ import com.postvue.feelogserver.domain.snsposts.repository.SnsPostRepository;
 import com.postvue.feelogserver.global.api.juso.addresssearch.JusoAddressSearchApiClient;
 import com.postvue.feelogserver.global.api.juso.addresssearch.dto.Juso;
 import com.postvue.feelogserver.global.api.juso.addresssearch.dto.JusoAddressSearchApiRsp;
+import com.postvue.feelogserver.global.api.kakao.client.localapi.KakaoLocalApiClient;
+import com.postvue.feelogserver.global.api.kakao.dto.rsp.KakaoSearchResponseDto;
 import com.postvue.feelogserver.global.api.naver.NaverApiClient;
 import com.postvue.feelogserver.global.api.naver.dto.rsp.NaverLocalSearchResponseDto;
 import com.postvue.feelogserver.global.api.vworld.VworldApiClient;
@@ -27,6 +31,7 @@ import com.postvue.feelogserver.global.api.vworld.VworldRspConst;
 import com.postvue.feelogserver.global.api.vworld.dto.rsp.VworldGetAddressResultRsp;
 import com.postvue.feelogserver.global.api.vworld.dto.rsp.VworldGetGeocodeRsp;
 import com.postvue.feelogserver.global.api.vworld.dto.rsp.VworldGetReverseGeocodeRsp;
+import com.postvue.feelogserver.global.constant.KakaoApiConst;
 import com.postvue.feelogserver.global.constant.MapConst;
 import com.postvue.feelogserver.global.constant.PageConfigConst;
 import com.postvue.feelogserver.global.exception.BadRequestErrorException;
@@ -82,12 +87,16 @@ public class MapService {
 	private String jusoFirstSort;
 
 	private final NaverApiClient naverApiClient;
+	private final KakaoLocalApiClient kakaoLocalApiClient;
 
 	@Value("${openapi.naverdevelopers.xNaverClientId}")
 	private String xNaverClientId;
 
 	@Value("${openapi.naverdevelopers.xNaverClientSecret}")
 	private String xNaverClientSecret;
+
+	@Value("${openapi.kakaodevelopers.restApi}")
+	private String kakaoRestApi;
 
 	@Value("${openapi.naverdevelopers.mapLocalMaxSrchNum}")
 	private Integer mapLocalMaxSrchNum;
@@ -96,12 +105,14 @@ public class MapService {
 
 		VworldGetReverseGeocodeRsp vworldGetReverseGeocodeRsp = vworldApiClient.getAddressReverseGeocode(
 			addressServiceParam, reverseGeocodeParam, vworldVersion, apiFormat,
-			crs, rspRoadType,
+			crs, rspType,
 			String.format("%s,%s", longitude, latitude), vworldClientId);
 
 		if (Objects.equals(vworldGetReverseGeocodeRsp.getResponse().getStatus(), VworldRspConst.VWORLD_OK_RSP_STATUS)) {
 			List<VworldGetAddressResultRsp> vworldGetAddressResultRsps = vworldGetReverseGeocodeRsp.getResponse()
 				.getResult();
+
+
 			if (!vworldGetAddressResultRsps.isEmpty()) {
 				VworldGetAddressResultRsp vworldGetAddressResultRsp = vworldGetAddressResultRsps.get(0);
 				return GetAddressReverseGeocodeRsp.builder()
@@ -116,7 +127,6 @@ public class MapService {
 			}
 		} else {
 			if (Objects.equals(vworldGetReverseGeocodeRsp.getResponse().getStatus(), VworldRspConst.VWORLD_NOT_FOUND_RSP_STATUS)){
-				System.out.println("헤에");
 				return null;
 			}
 			else{
@@ -129,23 +139,15 @@ public class MapService {
 
 		VworldGetReverseGeocodeRsp vworldGetReverseGeocodeRsp = vworldApiClient.getAddressReverseGeocode(
 			addressServiceParam, reverseGeocodeParam, vworldVersion, apiFormat,
-			crs, rspRoadType,
+			crs, rspType,
 			String.format("%s,%s", longitude, latitude), vworldClientId);
-
-		System.out.println("야야야야야야");
-		System.out.println(String.format("%s,%s", longitude, latitude));
-		System.out.println(vworldGetReverseGeocodeRsp.getResponse());
-		System.out.println(vworldGetReverseGeocodeRsp.getResponse().getStatus());
 
 		if (Objects.equals(vworldGetReverseGeocodeRsp.getResponse().getStatus(), VworldRspConst.VWORLD_OK_RSP_STATUS)) {
 			List<VworldGetAddressResultRsp> vworldGetAddressResultRsps = vworldGetReverseGeocodeRsp.getResponse()
 				.getResult();
 			if (!vworldGetAddressResultRsps.isEmpty()) {
-
-
 				return vworldGetAddressResultRsps.stream()
 					.map((vworldGetAddressResultRsp -> {
-						System.out.println(vworldGetAddressResultRsp.getText());
 						return GetAddressReverseGeocodeRsp.builder()
 							.address(vworldGetAddressResultRsp.getStructure().getLevel1() + " "
 								+ vworldGetAddressResultRsp.getStructure().getLevel2() + " "
@@ -193,13 +195,83 @@ public class MapService {
 		}
 	}
 
+	// maxKakaoRequestPageNum: 카카오 최대 호출 페이지 수
+	public List<GetAddressWithGis> getAddressRelationBySrchQryByGis(String srchQry,
+		Boolean hasLocalAddress,
+		Integer maxKakaoRequestPageNum,
+		Integer page, Float latitude,
+		Float longitude, Integer srchPageNum) {
+
+		if (page > MapConst.MAX_KAKAO_LOCAL_SEARCH_PAGE_NUM){
+			return new ArrayList<>();
+		}
+
+		List<GetAddressWithGis> getAddressList = new ArrayList<>();
+
+		// 맨 앞 부분만 요청 되게
+		if (page <= maxKakaoRequestPageNum && hasLocalAddress) {
+			KakaoSearchResponseDto kakaoSearchResponseDto = kakaoLocalApiClient.getLocalSearch(
+				KakaoApiConst.kakaoAKHeader + kakaoRestApi,
+				srchQry,
+				longitude,
+				latitude,
+				page * PageConfigConst.KAKAO_MAP_LOCAL_SEARCH_QUERY_PAGE_NUM + PageConfigConst.PAGE_INIT_ONE_NUM,
+				page + PageConfigConst.KAKAO_MAP_LOCAL_SEARCH_QUERY_PAGE_NUM
+			);
+
+			getAddressList.addAll(
+				kakaoSearchResponseDto.getDocuments().stream()
+					.map(kakaoPlaceDto ->
+						GetAddressWithGis.builder()
+							.roadAddr(kakaoPlaceDto.getRoadAddressName())
+							.buildName(kakaoPlaceDto.getPlaceName())
+							.hasAddress(true)
+							.latitude(kakaoPlaceDto.getY().floatValue())
+							.longitude(kakaoPlaceDto.getX().floatValue())
+							.build()).toList()
+			);
+		}
+
+
+		List<Juso> jusoList = returnAddressByJuso(page, srchPageNum, srchQry);
+		getAddressList.addAll(
+			jusoList.stream().filter((juso -> !juso.getRoadAddrPart1().trim().isEmpty())).map((juso ->
+				GetAddressWithGis.builder()
+					.roadAddr(juso.getRoadAddrPart1())
+					.buildName(juso.getBdNm())
+					.hasAddress(false)
+					.longitude(null)
+					.latitude(null)
+					.build())
+			).toList());
+
+		return getAddressList;
+	}
+
+	public List<GetLocalSearchRsp> getSearchLocalWithGis(String srchQry, Float lat, Float lng) {
+		List<GetAddressWithGis> addressWithGisList = getAddressRelationBySrchQryByGis(srchQry,
+			true, PageConfigConst.PAGE_INIT_NUM,0, lat, lng,
+			MapConst.MAG_LOCAL_SEARCH_REVERSE_GEOCODE_MAX_NUM);
+
+		return addressWithGisList.stream().map((addressWithGis ->
+			GetLocalSearchRsp.builder()
+				.roadAddr(addressWithGis.getRoadAddr())
+				.placeName(addressWithGis.getBuildName())
+				.hasLocation(addressWithGis.getHasAddress())
+				.latitude(addressWithGis.getLatitude())
+				.longitude(addressWithGis.getLongitude())
+				.build()
+		)).toList();
+	}
+
 	public List<GetLocalSearchRsp> getSearchLocal(String srchQry) {
 
+		// 네이버 검색
 		NaverLocalSearchResponseDto naverLocalSearchResponseDto = naverApiClient.getLocalSearch(xNaverClientId,
 			xNaverClientSecret,
 			srchQry, mapLocalMaxSrchNum);
 
-		List<GetAddress> getAddressList = getAddressRelationBySrchQry(srchQry, false, 0, 0f, 0f,
+		List<GetAddress> getAddressList = getAddressRelationBySrchQry(srchQry, false, PageConfigConst.PAGE_INIT_NUM, 0,
 			MapConst.MAG_LOCAL_SEARCH_REVERSE_GEOCODE_MAX_NUM);
 
 		return Stream.concat(naverLocalSearchResponseDto.getItems().stream().map((item ->
@@ -223,11 +295,11 @@ public class MapService {
 
 	public List<GetAddress> getAddressRelationBySrchQry(String srchQry,
 		Boolean hasLocalAddress,
-		Integer page, Float latitude,
-		Float longitude, Integer srchPageNum) {
+		Integer maxNaverRequestPageNum,
+		Integer page, Integer srchPageNum) {
 
 		List<GetAddress> getAddressList = new ArrayList<>();
-		if (Objects.equals(page, PageConfigConst.PAGE_INIT_NUM) && hasLocalAddress) {
+		if (page <= maxNaverRequestPageNum && hasLocalAddress) {
 			NaverLocalSearchResponseDto naverLocalSearchResponseDto = naverApiClient.getLocalSearch(xNaverClientId,
 				xNaverClientSecret,
 				srchQry, mapLocalMaxSrchNum);
@@ -237,26 +309,20 @@ public class MapService {
 					.filter((item -> !NaverLocalSearchResponseDto.convertHtmlTitleToText(item.getRoadAddress())
 						.trim()
 						.isEmpty()))
-					.map((item ->
-						GetAddress.builder()
+					.map((item -> {
+						return GetAddress.builder()
 							.roadAddr(NaverLocalSearchResponseDto.convertHtmlTitleToText(item.getRoadAddress()))
 							.buildName(NaverLocalSearchResponseDto.convertHtmlTitleToText(item.getTitle()))
-							.build()
+							.latitude((float)convertNaverCoordToGPS(Integer.parseInt(item.getMapy())))
+							.longitude((float)convertNaverCoordToGPS(Integer.parseInt(item.getMapx())))
+							.build();
+						}
 					))
 					.toList()
 			);
 		}
 
-		JusoAddressSearchApiRsp jusoAddressSearchTemplate = jusoAddressSearchApiClient.getAddress(
-			jusoSecretKey,
-			page + PageConfigConst.PAGE_INIT_ONE_NUM,
-			srchPageNum != null ? srchPageNum : jusoCountPerPage,
-			srchQry,
-			jusoApiFormat,
-			jusoFirstSort
-		);
-
-		List<Juso> jusoList = jusoAddressSearchTemplate.getResults().getJuso();
+		List<Juso> jusoList = returnAddressByJuso(page, srchPageNum, srchQry);
 		getAddressList.addAll(
 			jusoList.stream().filter((juso -> !juso.getRoadAddrPart1().trim().isEmpty())).map((juso ->
 				GetAddress.builder()
@@ -268,6 +334,7 @@ public class MapService {
 		return getAddressList;
 	}
 
+	@Transactional
 	public List<GetMapSearchPostRsp> getAllMapPostBySrchQry(String srchQry, Integer page, Integer pageSize, Long snsUserId) {
 		return snsPostRepository.findAllMapPostBySearchQuery(srchQry, page * pageSize,
 				pageSize, snsUserId)
@@ -281,10 +348,20 @@ public class MapService {
 			xNaverClientSecret,
 			srchQry, PageConfigConst.MAP_SEARCH_RECOMM_PLAcE_PAGE_SIZE);
 
+		KakaoSearchResponseDto kakaoSearchResponseDto = kakaoLocalApiClient.getLocalSearchNotGis(
+			KakaoApiConst.kakaoAKHeader + kakaoRestApi,
+			srchQry,
+			PageConfigConst.PAGE_INIT_ONE_NUM,
+			PageConfigConst.KAKAO_MAP_LOCAL_SEARCH_QUERY_PAGE_NUM
+		);
+
+
+
 		List<GetMapSearchRecommRsp> getMapSearchRecommRsps = new ArrayList<>();
 
 		getMapSearchRecommRsps.addAll(naverLocalSearchResponseDto.getItems().stream().map((item ->
 			GetMapSearchRecommRsp.builder()
+				.hasLocation(true)
 				.isPlace(true)
 				.roadAddr(NaverLocalSearchResponseDto.convertHtmlTitleToText(item.getRoadAddress()))
 				.placeName(NaverLocalSearchResponseDto.convertHtmlTitleToText(item.getTitle()))
@@ -294,10 +371,24 @@ public class MapService {
 		)).toList());
 
 		getMapSearchRecommRsps.addAll(
+			kakaoSearchResponseDto.getDocuments().stream()
+				.map(kakaoPlaceDto ->
+					GetMapSearchRecommRsp.builder()
+						.hasLocation(true)
+						.isPlace(true)
+						.roadAddr(kakaoPlaceDto.getRoadAddressName())
+						.placeName(kakaoPlaceDto.getPlaceName())
+						.latitude(kakaoPlaceDto.getY().floatValue())
+						.longitude(kakaoPlaceDto.getX().floatValue())
+						.build()).toList()
+		);
+
+		getMapSearchRecommRsps.addAll(
 			getAllMapPostBySrchQry(srchQry, PageConfigConst.PAGE_INIT_NUM,
 				PageConfigConst.MAP_SEARCH_RECOMM_POST_PAGE_SIZE, snsUserId).stream()
 				.map((getMapSearchPostRsp ->
 					GetMapSearchRecommRsp.builder()
+						.hasLocation(false)
 						.isPlace(false)
 						.searchQueryName(getMapSearchPostRsp.getSearchQueryName())
 						.build())).toList()
@@ -307,4 +398,20 @@ public class MapService {
 
 	}
 
+	private List<Juso> returnAddressByJuso (Integer page, Integer srchPageNum, String srchQry) {
+		JusoAddressSearchApiRsp jusoAddressSearchTemplate = jusoAddressSearchApiClient.getAddress(
+			jusoSecretKey,
+			page + PageConfigConst.PAGE_INIT_ONE_NUM,
+			srchPageNum != null ? srchPageNum : jusoCountPerPage,
+			srchQry,
+			jusoApiFormat,
+			jusoFirstSort
+		);
+
+		return jusoAddressSearchTemplate.getResults().getJuso();
+	}
+
+	double convertNaverCoordToGPS(int coord) {
+		return coord / 1e7;
+	}
 }

@@ -24,19 +24,24 @@ export default function SnsPostCommentReactionCrudView() {
                 <h4>Personal Information:</h4>
                 <VerticalLayout theme="spacing" className="pb-l">
                     {fieldsMapping.get('snsPost_id')}
-                    {fieldsMapping.get('sourceComment_id')}
-                    {fieldsMapping.get('commentUser_id')}
+                    {/*{fieldsMapping.get('sourceComment_id')}*/}
+                    {/*{fieldsMapping.get('commentUser_id')}*/}
                     {fieldsMapping.get('commentMsg')}
                     {fieldsMapping.get('commentMediaType')}
                     {fieldsMapping.get('commentMediaContent')}
-                    {fieldsMapping.get('isSource')}
-                    {fieldsMapping.get('createdAt')}
                     <PostWrap>
                     {fieldsMapping.get('id')?.props.form.defaultValue.commentMediaType === PostCommentMediaType.IMAGE
                         ?
                         <PostImgDiv src={fieldsMapping.get('id')?.props.form.defaultValue.commentMediaContent} />
-                        : <PostVideoDiv src={fieldsMapping.get('id')?.props.form.defaultValue.commentMediaContent} />
+                        : <>
+                            {fieldsMapping.get('id')?.props.form.defaultValue.commentMediaType === PostCommentMediaType.VIDEO ?
+                                <PostVideoDiv src={fieldsMapping.get('id')?.props.form.defaultValue.commentMediaContent} />
+                                : null
+                            }
+                        </>
                     }
+                    {fieldsMapping.get('createdAt')}
+                    {fieldsMapping.get('deletedAt')}
                     </PostWrap>
                 </VerticalLayout>
             </VerticalLayout>
@@ -46,6 +51,7 @@ export default function SnsPostCommentReactionCrudView() {
       <AutoCrud
           service={SnsPostCommentReactionEndpoint}
           model={SnsPostCommentReactionEndpointDtoModel}
+          style={{height:"100%"}}
           formProps={{
             onDeleteError: handleOnDeleteError,
             onSubmitError:handleOnSubmitError,
@@ -57,7 +63,7 @@ export default function SnsPostCommentReactionCrudView() {
 
 const PostWrap = styled.div`
   width: 100%;
-  max-width: 360px;
+  max-width: 250px;
 `;
 
 const PostImgDiv = styled.img`

@@ -7,6 +7,7 @@ import lombok.Getter;
 @Getter
 public class GetProfileBlockedUserRsp {
 	private String blockedUserId;
-	private String blockedUserName;
+	private String blockedNickname;
+	private String blockedUsername;
 	private String blockedUserProfilePath;
 }

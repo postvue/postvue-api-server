@@ -25,7 +25,7 @@ import lombok.Setter;
 @Setter
 @Table(name = "SNS_BLOCK_USERS_TB",
 	uniqueConstraints = {
-		@UniqueConstraint(columnNames = {"sns_blocker_user_id", "sns_blocked_user_id"})
+		@UniqueConstraint(columnNames = {"sns_blocker_user_id", "sns_blocked_user_id"}, name = "IDX_UNIQUE_BLOCKER_BLOCKED_USER_SNS_BLOCK_USERS")
 	})
 @Builder
 @NoArgsConstructor

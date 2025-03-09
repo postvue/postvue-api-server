@@ -28,7 +28,7 @@ public class SnsUserJdbcRepository {
 			snsUserList,
 			snsUserList.size(),
 			(PreparedStatement ps, SnsUser snsUser) -> {
-				ps.setObject(1, SnsUserState.FULL_DELETED);
+				ps.setString(1, SnsUserState.FULL_DELETED.toString());
 				ps.setLong(2, snsUser.getId());
 			});
 	}

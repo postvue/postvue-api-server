@@ -1,5 +1,7 @@
 package com.postvue.feelogserver.endpoint.dto;
 
+import java.time.LocalDateTime;
+
 import com.postvue.feelogserver.domain.snsposts.SnsPost;
 import com.postvue.feelogserver.domain.snsposts.vo.PostContentBusinessType;
 import com.postvue.feelogserver.domain.snsposts.vo.TgtAudType;
@@ -12,10 +14,13 @@ public record SnsPostEndPointDto(
 	String snsPostContents,
 	String postTitle,
 	String postBodyText,
-	String postCaptionContent,
 	Float latitude,
 	Float longitude,
 	String address,
+	String buildName,
+
+	Long h3Index,
+	String geom,
 	Boolean isShowAddress,
 	String tags,
 	Boolean isRepost,
@@ -23,7 +28,12 @@ public record SnsPostEndPointDto(
 
 	TgtAudType tgtAudType,
 
-	PostContentBusinessType postContentBusinessType
+	PostContentBusinessType postContentBusinessType,
+	Integer reactionCount,
+
+	LocalDateTime createdAt,
+	LocalDateTime deletedAt,
+	LocalDateTime lastUpdatedAt
 ) {
 
 	public static SnsPostEndPointDto fromEntity(SnsPost snsPost){
@@ -34,16 +44,22 @@ public record SnsPostEndPointDto(
 			JsonConverter.convertToJsonString(snsPost.getSnsPostContents()),
 			snsPost.getPostTitle(),
 			snsPost.getPostBodyText(),
-			snsPost.getPostCaptionContent(),
 			snsPost.getLatitude(),
 			snsPost.getLongitude(),
 			snsPost.getAddress(),
+			snsPost.getBuildName(),
+			snsPost.getH3Index(),
+			snsPost.getGeom() != null ? snsPost.getGeom().toText() : "",
 			snsPost.getIsShowAddress(),
 			JsonConverter.convertToJsonString(snsPost.getTags()),
 			snsPost.getIsRepost(),
 			snsPost.getRepostOrigin() != null ? snsPost.getId().toString() : null,
 			snsPost.getTgtAudType(),
-			snsPost.getPostContentBusinessType()
+			snsPost.getPostContentBusinessType(),
+			snsPost.getReactionCount(),
+			snsPost.getCreatedAt(),
+			snsPost.getDeletedAt(),
+			snsPost.getLastUpdatedAt()
 		);
 	}
 }
