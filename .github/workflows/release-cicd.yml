@@ -113,7 +113,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y sshpass
 
-    - name: Deploy to AWS Ubuntu Server
+    - name: Deploy to Ubuntu Server
       env:
         REMOTE_HOST: ${{ secrets.SERVER_RELEASE_HOST }}
         REMOTE_USER: ${{ secrets.SERVER_RELEASE_REMOTE_USER }}
