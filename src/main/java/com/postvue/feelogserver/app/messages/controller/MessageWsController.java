@@ -29,54 +29,54 @@ public class MessageWsController {
 
 	// publish: ws://app/conversations/create/:msgConversationSessionId
 	// subscribe: ws://topic/conversations/:msgConversationSessionId
-	// @MessageMapping("/conversations/create/{targetUserId}")
-	// public void createMessageToUser(
-	// 	@DestinationVariable(value = "targetUserId") Long targetUserId,
-	// 	MsgDmConversationCreatePub msgDmConversationCreatePub,
-	// 	Principal principal) {
-	// 	String destination = WebSocketPathConst.MESSAGE_CONVERSATION_BROKER_PATH;
-	//
-	// 	if (principal instanceof Authentication) {
-	// 		Authentication authentication = (Authentication)principal;
-	// 		CustomUserDetails userDetails = (CustomUserDetails)authentication.getPrincipal();
-	//
-	// 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
-	// 		messagesService.createDirectNewMsgConversationByWs(msgDmConversationCreatePub, null, destination, targetUserId,
-	// 			snsUserId);
-	// 	} else {
-	// 		throw new UnauthorizedErrorException("인증되지 않은 계정입니다.");
-	// 	}
-	// }
+	@MessageMapping("/conversations/create/{targetUserId}")
+	public void createMessageToUser(
+		@DestinationVariable(value = "targetUserId") Long targetUserId,
+		MsgDmConversationCreatePub msgDmConversationCreatePub,
+		Principal principal) {
+		String destination = WebSocketPathConst.MESSAGE_CONVERSATION_BROKER_PATH;
+
+		if (principal instanceof Authentication) {
+			Authentication authentication = (Authentication)principal;
+			CustomUserDetails userDetails = (CustomUserDetails)authentication.getPrincipal();
+
+			Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
+			messagesService.createDirectNewMsgConversation(msgDmConversationCreatePub, destination, targetUserId,
+				snsUserId);
+		} else {
+			throw new UnauthorizedErrorException("인증되지 않은 계정입니다.");
+		}
+	}
 
 	// publish: ws://url/message/ws/update/conversation
 	// subscribe: ws://topic/message/conversation/:msgConversationSessionId
-	// @MessageMapping("/conversations/update/{msgConversationSessionId}")
-	// public void updateMessageToUser(
-	// 	@DestinationVariable(value = "msgConversationSessionId") String msgConversationSessionId,
-	// 	MsgConversationUpdatePub message,
-	// 	Principal principal) {
-	//
-	// 	String destination = UrlUtils.getWebsocketTargetUri(WebSocketPathConst.MESSAGE_CONVERSATION_BROKER_PATH,
-	// 		Long.valueOf(msgConversationSessionId));
-	//
-	// 	if (principal instanceof Authentication) {
-	// 		Authentication authentication = (Authentication)principal;
-	// 		CustomUserDetails userDetails = (CustomUserDetails)authentication.getPrincipal();
-	//
-	// 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
-	// 		messageTemplate.convertAndSend(destination, MsgConversationSub.builder()
-	// 			.msgType(message.getMsgType())
-	// 			.msgContent(message.getMsgContent())
-	// 			.msgId(message.getMsgId())
-	// 			.hasMsgReaction(message.getHasMsgReaction())
-	// 			.msgReactionType(message.getMsgReactionType())
-	// 			.sendAt(LocalDateTime.now())
-	// 			.sourceUserId(snsUserId.toString())
-	// 			.build());
-	// 	} else {
-	// 		throw new UnauthorizedErrorException("인증되지 않은 계정입니다.");
-	// 	}
-	// }
+	@MessageMapping("/conversations/update/{msgConversationSessionId}")
+	public void updateMessageToUser(
+		@DestinationVariable(value = "msgConversationSessionId") String msgConversationSessionId,
+		MsgConversationUpdatePub message,
+		Principal principal) {
+
+		String destination = UrlUtils.getWebsocketTargetUri(WebSocketPathConst.MESSAGE_CONVERSATION_BROKER_PATH,
+			Long.valueOf(msgConversationSessionId));
+
+		if (principal instanceof Authentication) {
+			Authentication authentication = (Authentication)principal;
+			CustomUserDetails userDetails = (CustomUserDetails)authentication.getPrincipal();
+
+			Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
+			messageTemplate.convertAndSend(destination, MsgConversationSub.builder()
+				.msgType(message.getMsgType())
+				.msgContent(message.getMsgContent())
+				.msgId(message.getMsgId())
+				.hasMsgReaction(message.getHasMsgReaction())
+				.msgReactionType(message.getMsgReactionType())
+				.sendAt(LocalDateTime.now())
+				.sourceUserId(snsUserId.toString())
+				.build());
+		} else {
+			throw new UnauthorizedErrorException("인증되지 않은 계정입니다.");
+		}
+	}
 
 	// publish: ws://url/message/ws/delete/conversations/:msgConversationSessionId/:msgConversationId
 	// subscribe: ws://topic/message/conversations/:msgConversationSessionId

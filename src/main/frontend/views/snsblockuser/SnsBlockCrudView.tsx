@@ -6,10 +6,7 @@ import SnsBlockUserEndpointDtoModel
 export default function SnsBlockUserCrudView() {
 
   return (
-      <AutoGrid
-          service={SnsBlockUserEndpoint}
-          model={SnsBlockUserEndpointDtoModel}
-          style={{height:"100%"}}
+      <AutoGrid service={SnsBlockUserEndpoint} model={SnsBlockUserEndpointDtoModel}
       />
   );
 }

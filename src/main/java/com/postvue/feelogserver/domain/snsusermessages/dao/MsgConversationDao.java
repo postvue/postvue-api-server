@@ -2,8 +2,7 @@ package com.postvue.feelogserver.domain.snsusermessages.dao;
 
 import java.time.LocalDateTime;
 
-import com.postvue.feelogserver.domain.snsusermessages.vo.MsgMediaType;
-import com.postvue.feelogserver.domain.snsusermessages.vo.MsgMetaInfo;
+import com.postvue.feelogserver.domain.snsusermessages.vo.SnsMsgType;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,10 +12,8 @@ import lombok.Getter;
 public class MsgConversationDao {
 	Long snsUserMessageId;
 	Boolean isOtherMsg;
-	String msgTextContent;
-	MsgMediaType msgMediaType;
-	String msgMediaContent;
-	MsgMetaInfo msgMetaInfo;
+	SnsMsgType msgType;
+	String msgContent;
 	LocalDateTime sendAt;
 	Boolean isHidden;
 	Boolean isBlocked;

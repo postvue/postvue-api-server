@@ -1,19 +1,13 @@
 package com.postvue.feelogserver.domain.snsscrap.repository;
 
 import java.sql.PreparedStatement;
-import java.sql.Types;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.postvue.feelogserver.core.config.SnowflakeComponent;
-import com.postvue.feelogserver.domain.snsposts.SnsPost;
-import com.postvue.feelogserver.domain.snspostuserreactions.SnsPostUserReaction;
 import com.postvue.feelogserver.domain.snsscrap.SnsScrap;
 
 import lombok.RequiredArgsConstructor;
@@ -42,33 +36,5 @@ public class SnsScrapJdbcRepository {
 				ps.setObject(5, localDateTime);
 				ps.setLong(6, snsScrap.getSnsUser().getId());
 			});
-	}
-
-	@Transactional(propagation = Propagation.REQUIRED)
-	public void updateScrapDeletedByScrapBoard(Long snsScrapBoardId) {
-		String sql = "UPDATE sns_scraps_tb SET "
-			+ "deleted_at = ? "
-			+ "WHERE sns_scrap_board_id = ?";
-
-		LocalDateTime deletedTime = LocalDateTime.now();
-
-		jdbcTemplate.update(connection -> {
-			PreparedStatement ps = connection.prepareStatement(sql);
-			ps.setObject(1, deletedTime);
-			ps.setLong(2, snsScrapBoardId);
-			return ps;
-		});
-	}
-
-	@Transactional(propagation = Propagation.REQUIRED)
-	public void deleteScrapDeletedByScrapBoard(Long snsScrapBoardId) {
-		String sql = "DELETE FROM sns_scraps_tb "
-			+ "WHERE sns_scrap_board_id = ?";
-
-		jdbcTemplate.update(connection -> {
-			PreparedStatement ps = connection.prepareStatement(sql);
-			ps.setLong(1, snsScrapBoardId);
-			return ps;
-		});
 	}
 }

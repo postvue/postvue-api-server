@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.hibernate.annotations.DynamicInsert;
-import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.Where;
 
 import com.postvue.feelogserver.core.config.SnowflakeId;
@@ -34,6 +33,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name = "SNS_SCRAP_BOARDS_TB")
+@Where(clause = "deleted_at IS NULL")
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -58,10 +58,6 @@ public class SnsScrapBoard extends BaseMixinImpl implements Serializable {
 	@OneToMany(mappedBy = "snsScrapBoard", fetch = FetchType.LAZY)
 	private List<SnsScrap> snsScraps;
 
-	// private Float latitude;
-	// private Float longitude;
-	// private String address;
-
 	@Column(name = "deleted_at")
-	private LocalDateTime deletedAt;
+	private LocalDateTime deleted_at;
 }

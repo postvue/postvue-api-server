@@ -12,18 +12,13 @@ export default function SnsScrapBoardCrudView() {
       <AutoCrud
           service={SnsScrapBoardEndpoint}
           model={SnsScrapBoardEndpointDtoModel}
-          style={{height:"100%"}}
           formProps={{
             onDeleteError: handleOnDeleteError,
             onSubmitError:handleOnSubmitError,
             visibleFields:[
-            'snsUser_id',
-            'scrapName',
-            'targetAudience',
-            'createdAt',
-            'deletedAt',
-            'lastUpdatedAt',
-            'lastUpdatedBy'
+              'snsUser_id',
+              'scrapName',
+              'targetAudience',
             ]
       }}/>
   );

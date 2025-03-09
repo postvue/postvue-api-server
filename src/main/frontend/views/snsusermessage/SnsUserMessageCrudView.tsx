@@ -6,11 +6,9 @@ import {AutoCrud, AutoFormLayoutRendererProps} from '@vaadin/hilla-react-crud';
 import SnsUserMessageEndpointDtoModel
   from "Frontend/generated/com/postvue/feelogserver/endpoint/dto/SnsUserMessageEndpointDtoModel";
 import {handleOnDeleteError, handleOnSubmitError} from "Frontend/components/utils/ErrorHandle";
+import SnsTagEndpointDtoModel from "Frontend/generated/com/postvue/feelogserver/endpoint/dto/SnsTagEndpointDtoModel";
 import {VerticalLayout} from "@vaadin/react-components/VerticalLayout";
-import PostContentType from "Frontend/generated/com/postvue/feelogserver/domain/snsposts/vo/PostContentType";
-import MsgMediaType from "Frontend/generated/com/postvue/feelogserver/domain/snsusermessages/vo/MsgMediaType";
-import HlsPlayer from "Frontend/views/snspost/HlsPlayer";
-import styled from "styled-components";
+import SnsMsgType from "Frontend/generated/com/postvue/feelogserver/domain/snsusermessages/vo/SnsMsgType";
 
 export default function SnsUserMessageCrudView() {
 function GroupingLayoutRenderer({ children }: AutoFormLayoutRendererProps<SnsUserMessageEndpointDtoModel>) {
@@ -21,67 +19,24 @@ function GroupingLayoutRenderer({ children }: AutoFormLayoutRendererProps<SnsUse
         if(!name) return;
         fieldsMapping.set(name, field)
     });
-    //
-    let msgMetaInfo:{
-        ogImage:string;
-        ogTitle:string;
-        ogDescription:string;
-    } = {
-        ogImage: '',
-        ogTitle: '',
-        ogDescription: ''
-    }
 
-    const msgMetaInfoString = fieldsMapping.get('id')?.props.form.defaultValue.msgMetaInfo;
-    //
-    if ( msgMetaInfoString){
-        msgMetaInfo = JSON.parse(msgMetaInfoString);
-    }
 
     return (
         <VerticalLayout>
             <h4>Personal Information:</h4>
             <VerticalLayout theme="spacing" className="pb-l">
-                {fieldsMapping.get("msgTextContent")}
-                {fieldsMapping.get("msgMediaType")}
-                {fieldsMapping.get("msgMediaContent")}
-                {fieldsMapping.get('id')?.props.form.defaultValue.msgMediaType === MsgMediaType.IMAGE
+                {fieldsMapping.get('sourceUser_id')}
+                {fieldsMapping.get('snsUserMessageRoom_id')}
+                {fieldsMapping.get('msgType')}
+                {fieldsMapping.get('msgContent')}
+                {fieldsMapping.get('id')?.props.form.defaultValue.msgType === SnsMsgType.EMOTICON
                     &&
-                    <img src={fieldsMapping.get('id')?.props.form.defaultValue.msgMediaContent} style={{width:'100%',maxWidth:'250px',borderRadius:'5px'}}/>
+                    <div>{fieldsMapping.get('id')?.props.form.defaultValue.msgContent}</div>
                 }
-                {fieldsMapping.get('id')?.props.form.defaultValue.msgMediaType === MsgMediaType.VIDEO
+                {fieldsMapping.get('id')?.props.form.defaultValue.msgType === SnsMsgType.IMAGE
                     &&
-                    <HlsPlayer src={fieldsMapping.get('id')?.props.form.defaultValue.msgMediaContent} />
+                    <img src={fieldsMapping.get('id')?.props.form.defaultValue.msgContent} style={{width:'100%',maxWidth:'400px',borderRadius:'5px'}}/>
                 }
-                {fieldsMapping.get("msgMetaInfo")}
-                <TableContainer >
-                    <TableHead>
-                        <TableHeadCol>
-                            <TableHeadTh>ogTitle</TableHeadTh>
-                            <TableHeadTh>ogImage</TableHeadTh>
-                            <TableHeadTh>ogDescription</TableHeadTh>
-                        </TableHeadCol>
-                    </TableHead>
-                    <tbody>
-                    <TableBodyTr>
-
-                        <TableHeadTd>
-                            {msgMetaInfo.ogTitle}
-                        </TableHeadTd>
-                        <TableHeadTd>
-                            {msgMetaInfo.ogImage}
-                        </TableHeadTd>
-                        <TableHeadTd>
-                            {msgMetaInfo.ogDescription}
-                        </TableHeadTd>
-
-                    </TableBodyTr>
-
-                    </tbody>
-                </TableContainer>
-                {fieldsMapping.get("createdAt")}
-                {fieldsMapping.get("deletedAt")}
-                {fieldsMapping.get("lastUpdatedAt")}
             </VerticalLayout>
         </VerticalLayout>
     );
@@ -90,7 +45,6 @@ function GroupingLayoutRenderer({ children }: AutoFormLayoutRendererProps<SnsUse
       <AutoCrud
           service={SnsUserMessageEndpoint}
           model={SnsUserMessageEndpointDtoModel}
-          style={{height:"100%"}}
           formProps={{
               onDeleteError: handleOnDeleteError,
               onSubmitError:handleOnSubmitError,
@@ -98,43 +52,3 @@ function GroupingLayoutRenderer({ children }: AutoFormLayoutRendererProps<SnsUse
       }}/>
   );
 }
-
-
-const TableContainer = styled.table`
-  border-collapse: collapse;
-  margin: 25px 0;
-  font-size: 0.9em;
-  font-family: sans-serif;
-  min-width: 400px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-`
-
-const TableHead = styled.thead`
-  background-color: #54A1D9;
-  color: #ffffff;
-  text-align: left;
-`
-
-const TableHeadCol = styled.tr`
-  background-color: #54A1D9;
-  color: #ffffff;
-  text-align: left;
-`
-
-const TableBodyTr = styled.tr`
-  border-bottom: 1px solid #dddddd;
-  &:nth-of-type(even) {
-      background-color: #f3f3f3;
-    }
-  &:last-of-type {
-    border-bottom: 2px solid rgb(209 235 255);
-  }
-`
-
-const TableHeadTh = styled.th`
-  padding: 12px 15px;
-`
-
-const TableHeadTd = styled.td`
-  padding: 12px 15px;
-`

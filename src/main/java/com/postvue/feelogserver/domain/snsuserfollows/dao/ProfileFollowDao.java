@@ -13,4 +13,7 @@ public interface ProfileFollowDao {
 	Boolean getIsFollowed();
 
 	Boolean getIsMe();
+
+	Boolean getIsBlocked();
+
 }

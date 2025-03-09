@@ -2,17 +2,17 @@ spring:
   servlet:
     multipart:
       enabled: true
-      file-size-threshold: 1048576 #업로드 한 파일 크기가 이 태그의 값보다 크면 에서 지정한 디렉토리에 임시로 파일을 생성, 1mb
-      max-file-size: 314572800 #업로드 가능한 파일의 최대 크기를 바이트 단위로 지정, 300mb
-      max-request-size: 314572800 #전체 Multipart 요청 데이터의 최대 제한 크기를 바이트 단위로  지정, 300mb
+      file-size-threshold: 209715200 #메모리 대신 임시 파일에 저장, 200mb
+      max-file-size: 209715200 #200mb
+      max-request-size: 209715200 #200mb
 
 server:
   tomcat:
-    max-http-form-post-size: 314572800 #톰캣 뿐만 아니라 모든 서블릿 컨터이너들은 처리할 수 있는 요청의 기본 크기 제한 설정, 300mb
+    max-http-form-post-size: 209715200 # 10mb
 
 file:
-  imageSize: 2097152 # 2mb
-  videoSize: 314572800 # 200mb
+  imageSize: 2097152 # 1mb
+  videoSize: 209715200
 
 
 service:
@@ -24,11 +24,6 @@ service:
 external-library:
   ffmpeg:
     path: /opt/homebrew/bin/ffmpeg
-    videoCodec: h264
-    useCuda: false
-    preset: medium
-    maxRate: 1000
-    bufSize: 2000
   ffprobe:
     path: /opt/homebrew/bin/ffprobe
 
@@ -38,6 +33,3 @@ management:
     web:
       exposure:
         include: health, info, prometheus #prometheus 설정
-
-serverUrl:
-  verifyEmailUrl: https://localhost:3000/verify/email?code=

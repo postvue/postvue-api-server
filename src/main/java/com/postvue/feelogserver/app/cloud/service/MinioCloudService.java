@@ -76,10 +76,12 @@ public class MinioCloudService {
 				Paths.get(file.getAbsolutePath())
 			);
 		} catch (SdkException e) {
-			log.error(e.getMessage());
+			System.out.println("오류는 말수다");
+			System.out.println(e.getMessage());
 			throw new InternalServerErrorException("R2 이미지 업로드 실패 - 서버 에러", e);
 		} catch (Exception e) {
-			log.error(e.getMessage());
+			System.out.println("오류는 말이다.");
+			System.out.println(e.getMessage());
 			throw new InternalServerErrorException("서버 오류로 인한 업로드 실패", e);
 		}
 	}
@@ -88,10 +90,9 @@ public class MinioCloudService {
 		try {
 			uploadFileToMinio(file, contentUrl, MediaConfigConst.IMAGE_JPEG_TYPE);
 		} catch (SdkException e) {
-			log.error(e.getMessage());
 			throw new InternalServerErrorException("R2 이미지 업로드 실패 - 서버 에러", e);
 		} catch (Exception e) {
-			log.error(e.getMessage());
+			System.out.println(e);
 			throw new InternalServerErrorException("서버 오류로 인한 업로드 실패", e);
 		}
 	}
@@ -118,15 +119,17 @@ public class MinioCloudService {
 				if (file.isFile()) {
 					String mimeType = getMimeType(file); // MIME 타입 결정
 					uploadFileToMinio(file, targetPath, mimeType);
+					log.info("Uploaded file to MinIO: {}", targetPath);
 				} else {
 					log.warn("Skipping non-file entry in HLS directory: {}", file.getAbsolutePath());
 				}
 			} catch (Exception e) {
-				log.error("Failed to upload file to MinIO: " + file.getAbsolutePath(), e.getMessage());
+				log.error("Failed to upload file to MinIO: " + file.getAbsolutePath(), e);
+				System.out.println("오류는 엄냥");
+				System.out.println(e.getMessage());
 				throw new InternalServerErrorException("Minio 업로드 실패했습니다.");
 			}
 		}
-		log.info("Uploaded file to MinIO: {}", directory.getName());
 	}
 
 	private String getMimeType(File file) {

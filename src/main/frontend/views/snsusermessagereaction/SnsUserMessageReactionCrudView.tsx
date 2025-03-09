@@ -10,7 +10,6 @@ export default function SnsUserMessageReactionCrudView() {
       <AutoCrud
           service={SnsUserMessageReactionEndpoint}
           model={SnsUserMessageReactionEndpointDtoModel}
-          style={{height:"100%"}}
           formProps={{
             onDeleteError: handleOnDeleteError,
             onSubmitError:handleOnSubmitError,

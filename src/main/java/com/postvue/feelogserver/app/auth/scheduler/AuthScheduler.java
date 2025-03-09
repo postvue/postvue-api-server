@@ -1,7 +1,6 @@
 package com.postvue.feelogserver.app.auth.scheduler;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -9,8 +8,6 @@ import org.springframework.stereotype.Component;
 
 import com.postvue.feelogserver.app.auth.service.AuthService;
 import com.postvue.feelogserver.app.notifications.service.NotificationService;
-import com.postvue.feelogserver.app.profiles.service.ProfileFollowsService;
-import com.postvue.feelogserver.domain.snsusers.SnsUser;
 import com.postvue.feelogserver.global.constant.AccountConst;
 import com.postvue.feelogserver.global.constant.LogTemplateConst;
 import com.postvue.feelogserver.global.constant.LogTypeConst;
@@ -25,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class AuthScheduler {
 	private final AuthService authService;
-	private final ProfileFollowsService profileFollowsService;
 
 	// 14일 지난 알림 삭제
 	// 매일 새벽 4시에 실행
@@ -43,11 +39,7 @@ public class AuthScheduler {
 			LocalDateTime daysAgo = LocalDateTime.now()
 				.minusDays(AccountConst.MAX_DELETED_USER_RETENTION_DAY);
 
-			List<SnsUser> userList = authService.updateDeletedUserToFullDeletedUser(daysAgo);
-
-			profileFollowsService.deleteFollowAllByUserIdList(userList.stream().map(SnsUser::getId).toList());
-
-
+			authService.updateDeletedUserToFullDeletedUser(daysAgo);
 		} catch (Error error) {
 			log.error(
 				LogTemplateConst.getErrorLogTemplate(error.getClass().getName(),

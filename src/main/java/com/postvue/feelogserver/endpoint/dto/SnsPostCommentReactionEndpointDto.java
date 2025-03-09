@@ -19,9 +19,10 @@ public record SnsPostCommentReactionEndpointDto(
 	PostCommentMediaType commentMediaType,
 	String commentMediaContent,
 	Boolean isSource,
-	LocalDateTime createdAt,
-	LocalDateTime deletedAt
+	LocalDateTime createdAt
 	){
+
+
 	public static SnsPostCommentReactionEndpointDto fromEntity(SnsPostCommentReaction snsPostCommentReaction){
 		return new SnsPostCommentReactionEndpointDto(
 			snsPostCommentReaction.getId().toString(),
@@ -32,8 +33,6 @@ public record SnsPostCommentReactionEndpointDto(
 			snsPostCommentReaction.getCommentMediaType(),
 			snsPostCommentReaction.getCommentMediaContent() != null ? snsPostCommentReaction.getCommentMediaContent() : null,
 			snsPostCommentReaction.getIsSource(),
-			snsPostCommentReaction.getCreatedAt(),
-			snsPostCommentReaction.getDeletedAt()
-		);
+			snsPostCommentReaction.getCreatedAt());
 	}
 }

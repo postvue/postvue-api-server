@@ -1,7 +1,6 @@
 package com.postvue.feelogserver.domain.snstags.repository;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -17,15 +16,9 @@ import org.springframework.data.repository.query.Param;
 @Repository
 public interface SnsTagRepository
 	extends JpaRepository<SnsTag, Long>,JpaSpecificationExecutor<SnsTag> {
-
-	Optional<SnsTag> findByTagName(String tagName);
-
 	List<SnsTag> findAllByTagNameIn(List<String> tagNameList);
 
 	List<SnsTag> findAllByIdIn(List<Long> tagIdList);
-
-	@Query("SELECT COUNT(SNS_T) FROM SnsTag SNS_T WHERE  SNS_T.id IN :tagIdList")
-	Long countByIds(@Param("tagIdList") List<Long> tagIdList);
 
 	@Query(
 		value = ""
@@ -33,10 +26,7 @@ public interface SnsTagRepository
 			+ "UNION "
 			+ "SELECT SNS_SB.scrap_name AS search_query_name FROM sns_scrap_boards_tb AS SNS_SB WHERE SNS_SB.scrap_name LIKE CONCAT(:searchQuery, '%') "
 			+ "UNION "
-			+ "SELECT SNS_P.build_name AS search_query_name FROM sns_posts_tb AS SNS_P WHERE SNS_P.build_name LIKE CONCAT(:searchQuery, '%')"
-			+ "UNION "
-			+ "SELECT :searchQuery AS search_query_name "
-			+ "LIMIT 15"
+			+ "SELECT SNS_P.address AS search_query_name FROM sns_posts_tb AS SNS_P WHERE SNS_P.address LIKE CONCAT(:searchQuery, '%') "
 		, nativeQuery = true)
 	List<SearchQueryDao> findAllBySearchQuery(@Param("searchQuery") String searchQuery);
 

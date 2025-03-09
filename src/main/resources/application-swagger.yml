@@ -13,7 +13,3 @@ springdoc:
       enabled: true
   cache:
     disabled: true
-
-serverUrl:
-  api: ${SERVER_URL_API}
-  admin: ${SERVER_URL_ADMIN}

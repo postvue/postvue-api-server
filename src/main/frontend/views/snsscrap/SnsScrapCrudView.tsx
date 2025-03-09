@@ -10,7 +10,6 @@ export default function SnsScrapCrudView() {
       <AutoCrud
           service={SnsScrapEndpoint}
           model={SnsScrapEndpointDtoModel}
-          style={{height:"100%"}}
           formProps={{
               onDeleteError: handleOnDeleteError,
               onSubmitError:handleOnSubmitError,
@@ -18,9 +17,6 @@ export default function SnsScrapCrudView() {
               'snsUser_id',
               'snsPost_id',
               'snsScrapBoard_id',
-              'createdAt',
-              'deletedAt',
-              'lastUpdatedAt'
               ]
       }}/>
       </>

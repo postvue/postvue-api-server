@@ -14,8 +14,7 @@ public record SnsUserMessageRoomMemberEndpointDto(
 	LocalDateTime readAt,
 	Boolean isHidden,
 	Boolean isBlocked,
-	LocalDateTime createdAt,
-	LocalDateTime lastUpdatedAt
+	LocalDateTime createdAt
 ) {
 	public static SnsUserMessageRoomMemberEndpointDto fromEntity(SnsUserMessageRoomMember snsUserMessageRoomMember){
 		return new SnsUserMessageRoomMemberEndpointDto(
@@ -27,8 +26,7 @@ public record SnsUserMessageRoomMemberEndpointDto(
 			snsUserMessageRoomMember.getReadAt(),
 			snsUserMessageRoomMember.getIsHidden(),
 			snsUserMessageRoomMember.getIsBlocked(),
-			snsUserMessageRoomMember.getCreatedAt(),
-			snsUserMessageRoomMember.getLastUpdatedAt()
+			snsUserMessageRoomMember.getCreatedAt()
 			);
 	}
 }

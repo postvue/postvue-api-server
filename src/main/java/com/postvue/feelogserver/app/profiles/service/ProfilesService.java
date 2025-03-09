@@ -4,15 +4,14 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,14 +23,12 @@ import com.postvue.feelogserver.app.auth.dto.TokenResponse;
 import com.postvue.feelogserver.app.auth.service.AuthService;
 import com.postvue.feelogserver.app.cloud.service.R2CloudService;
 import com.postvue.feelogserver.app.common.rsp.SnsPostFollowsGetRsp;
-import com.postvue.feelogserver.app.facade.service.PostProfileFacadeService;
 import com.postvue.feelogserver.app.notifications.service.NotificationService;
 import com.postvue.feelogserver.app.posts.dto.common.Location;
-import com.postvue.feelogserver.app.posts.dto.common.PostContent;
-import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostReportCreateReq;
 import com.postvue.feelogserver.app.posts.dto.rsp.get.SnsPostRsp;
+import com.postvue.feelogserver.app.posts.service.PostsService;
+import com.postvue.feelogserver.app.profiles.dto.req.create.AddPostToScrapListReq;
 import com.postvue.feelogserver.app.profiles.dto.req.create.CreateProfileScrapReq;
-import com.postvue.feelogserver.app.profiles.dto.req.create.SnsUserReportCreateReq;
 import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyPrivateProfileInfoReq;
 import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfileBirthdateInfoReq;
 import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfileEmailInfoReq;
@@ -39,11 +36,12 @@ import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfileGenderInfoR
 import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfileInfoReq;
 import com.postvue.feelogserver.app.profiles.dto.req.put.PutMyProfilePasswordInfoReq;
 import com.postvue.feelogserver.app.profiles.dto.rsp.common.ScrapThumbnailRsp;
+import com.postvue.feelogserver.app.profiles.dto.rsp.create.PostToScrapListRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.create.PostToScrapRsp;
-import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetExistenceByEmailRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetExistenceByUsernameRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetMyProfileInfoRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetProfilePostListRsp;
+import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetProfilePostRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetProfileBlockedUserRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetProfileInfoRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetProfileMainScrapPostRsp;
@@ -55,16 +53,14 @@ import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetScrapRsp;
 import com.postvue.feelogserver.app.profiles.dto.rsp.put.PutProfilePasswordInfoRsp;
 import com.postvue.feelogserver.domain.snsblockusers.SnsBlockUser;
 import com.postvue.feelogserver.domain.snsblockusers.repository.SnsBlockUserRepository;
-import com.postvue.feelogserver.domain.snspostreports.SnsPostReport;
-import com.postvue.feelogserver.domain.snspostreports.vo.PostReportReasonType;
-import com.postvue.feelogserver.domain.snspostreports.vo.PostReportStatus;
 import com.postvue.feelogserver.domain.snsposts.SnsPost;
 import com.postvue.feelogserver.domain.snsposts.dto.SnsPostContentDao;
 import com.postvue.feelogserver.domain.snsposts.dto.SnsPostDao;
 import com.postvue.feelogserver.domain.snsposts.repository.SnsPostRepository;
 import com.postvue.feelogserver.domain.snsposts.vo.PostContentType;
+import com.postvue.feelogserver.domain.snsposts.vo.SnsPostContent;
 import com.postvue.feelogserver.domain.snspostuserreactions.SnsPostUserReaction;
-import com.postvue.feelogserver.domain.snspostuserreactions.dao.ProfilePostScrapDao;
+import com.postvue.feelogserver.domain.snspostuserreactions.dao.ProfilePostListDao;
 import com.postvue.feelogserver.domain.snspostuserreactions.repository.SnsPostUserReactionJdbcRepository;
 import com.postvue.feelogserver.domain.snspostuserreactions.repository.SnsPostUserReactionRepository;
 import com.postvue.feelogserver.domain.snsscrap.SnsScrap;
@@ -73,20 +69,11 @@ import com.postvue.feelogserver.domain.snsscrap.repository.SnsScrapRepository;
 import com.postvue.feelogserver.domain.snsscrap.repository.dao.ScrapThumbNailDao;
 import com.postvue.feelogserver.domain.snsscrapboard.SnsScrapBoard;
 import com.postvue.feelogserver.domain.snsscrapboard.dao.ScrapBoardInfoDao;
-import com.postvue.feelogserver.domain.snsscrapboard.dao.ScrapPreviewDao;
 import com.postvue.feelogserver.domain.snsscrapboard.repository.SnsScrapBoardRepository;
 import com.postvue.feelogserver.domain.snsscrapboard.vo.ScrapTargetAudience;
-import com.postvue.feelogserver.domain.snstags.vo.PostTag;
 import com.postvue.feelogserver.domain.snsuserfollows.SnsUserFollow;
 import com.postvue.feelogserver.domain.snsuserfollows.dao.ProfileFollowDao;
-import com.postvue.feelogserver.domain.snsuserfollows.repository.SnsUserFollowJdbcRepository;
 import com.postvue.feelogserver.domain.snsuserfollows.repository.SnsUserFollowRepository;
-import com.postvue.feelogserver.domain.snsuserfollowstatistics.SnsUserFollowStatistic;
-import com.postvue.feelogserver.domain.snsuserfollowstatistics.repository.SnsUserFollowStatisticRepository;
-import com.postvue.feelogserver.domain.snsuserreport.SnsUserReport;
-import com.postvue.feelogserver.domain.snsuserreport.repository.SnsUserReportRepository;
-import com.postvue.feelogserver.domain.snsuserreport.vo.UserReportReasonType;
-import com.postvue.feelogserver.domain.snsuserreport.vo.UserReportStatus;
 import com.postvue.feelogserver.domain.snsusers.SnsUser;
 import com.postvue.feelogserver.domain.snsusers.dao.ProfileInfoWithFollowDao;
 import com.postvue.feelogserver.domain.snsusers.dao.ProfileUserByUsernameDao;
@@ -94,17 +81,11 @@ import com.postvue.feelogserver.domain.snsusers.dao.ProfileUserWithFollowByUsern
 import com.postvue.feelogserver.domain.snsusers.repository.SnsUserRepository;
 import com.postvue.feelogserver.domain.snsusers.vo.SnsUserGender;
 import com.postvue.feelogserver.global.constant.CookieConst;
-import com.postvue.feelogserver.global.constant.MediaConfigConst;
 import com.postvue.feelogserver.global.constant.PageConfigConst;
-import com.postvue.feelogserver.global.constant.PostConst;
-import com.postvue.feelogserver.global.constant.PostReportConst;
-import com.postvue.feelogserver.global.constant.SystemPhraseConst;
-import com.postvue.feelogserver.global.constant.UserReportConst;
 import com.postvue.feelogserver.global.exception.BadRequestErrorException;
-import com.postvue.feelogserver.global.exception.ForbiddenErrorException;
-import com.postvue.feelogserver.global.exception.NotFoundErrorException;
 import com.postvue.feelogserver.global.exception.UnauthorizedErrorException;
 import com.postvue.feelogserver.global.util.generator.CookieUtils;
+import com.postvue.feelogserver.global.util.generator.UrlUtils;
 import com.postvue.feelogserver.global.util.validation.UploadFileValidationUtils;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -125,9 +106,7 @@ public class ProfilesService {
 	private final AuthService authService;
 	private final NotificationService notificationService;
 	private final R2CloudService r2CloudService;
-	private final PostProfileFacadeService postProfileFacadeService;
-	private final ProfileFollowsService profileFollowsService;
-	private final SnsUserReportRepository snsUserReportRepository;
+	private final PostsService postsService;
 
 	@Value("${security.service.auth.COOKIE_MAX_AGE_REFRESH_TOKEN}")
 	private Integer COOKIE_MAX_AGE_REFRESH_TOKEN;
@@ -143,7 +122,6 @@ public class ProfilesService {
 
 	@Value("${file.imageSize}")
 	private Integer imageFileSize;
-
 
 	// public GetFollowProfileInfoRsp getFollowProfileInfo(String username, Long myUserId) {
 	// 	SnsUserFollow snsUserFollow = snsUserFollowRepository.findByUsernameAndUserId(username, myUserId).orElseThrow();
@@ -161,44 +139,37 @@ public class ProfilesService {
 	// 		.build();
 	// }
 
-	// @VERIFY1
-	@Transactional
 	public GetMyProfileInfoRsp getMyProfileInfo(Long userId) {
-		SnsUser myUser = snsUserRepository.findById(userId).orElseThrow(
-			() -> new BadRequestErrorException("해당 계정은 없습니다.")
-		);
+		SnsUser myUser = snsUserRepository.findById(userId).orElseThrow();
 		return convertUserToMyProfileInfoRsp(myUser);
 	}
 
 	@Transactional
 	public GetMyProfileInfoRsp putMyProfileInfo(Long userId, PutMyProfileInfoReq putMyProfileInfoReq,
 		MultipartFile profileImgFile) {
-		SnsUser myUser = snsUserRepository.findById(userId).orElseThrow(
-			()->new BadRequestErrorException("해당 계정은 없습니다.")
-		);
+		SnsUser myUser = snsUserRepository.findById(userId).orElseThrow();
 		myUser.setUserLink(putMyProfileInfoReq.getWebsite());
 		myUser.setUserDescription(putMyProfileInfoReq.getIntroduce());
 		myUser.setNickname(putMyProfileInfoReq.getNickname());
 
-
-		if (profileImgFile != null) {
+		if (profileImgFile!=null) {
 			String contentType = profileImgFile.getContentType();
 			boolean isImage = UploadFileValidationUtils.isImage(contentType);
-			if (!isImage) {
+			if (!isImage){
 				throw new BadRequestErrorException("업로드 파일 유형이 아닙니다.");
 			}
-			if (profileImgFile.getSize() > imageFileSize) {
+			if (profileImgFile.getSize() > imageFileSize){
 				throw new BadRequestErrorException("이미지 크기가 너무 큽니다.");
 			}
 
 			String originalFilename = profileImgFile.getOriginalFilename();
-			// String extension = FilenameUtils.getExtension(originalFilename);
-			if (myUser.getProfilePath().startsWith(cloudflareBucketUrl)) {
+			String extension = FilenameUtils.getExtension(originalFilename);
+			if(myUser.getProfilePath().startsWith(cloudflareBucketUrl)){
 				r2CloudService.deleteImageFromR2(myUser.getProfilePath().replace(cloudflareBucketUrl, ""));
 			}
 
 			String profilePath = imageContentStoragePath + imageProfilePath +
-				UUID.randomUUID() + MediaConfigConst.IMAGE_WEBP_FORMAT;
+				UUID.randomUUID() + "." + extension;
 
 			myUser.setProfilePath(cloudflareBucketUrl + profilePath);
 			r2CloudService.uploadImageToR2(profileImgFile, profilePath);
@@ -206,14 +177,11 @@ public class ProfilesService {
 
 		snsUserRepository.save(myUser);
 		return convertUserToMyProfileInfoRsp(myUser);
-
 	}
 
 	@Transactional
 	public GetMyProfileInfoRsp putMyProfileEmailInfo(Long userId, PutMyProfileEmailInfoReq putMyProfileEmailInfoReq) {
-		SnsUser myUser = snsUserRepository.findById(userId).orElseThrow(
-			() -> new BadRequestErrorException("해당 계정은 없습니다.")
-		);
+		SnsUser myUser = snsUserRepository.findById(userId).orElseThrow();
 		myUser.setEmail(putMyProfileEmailInfoReq.getEmail());
 		snsUserRepository.save(myUser);
 		return convertUserToMyProfileInfoRsp(myUser);
@@ -222,9 +190,7 @@ public class ProfilesService {
 	@Transactional
 	public GetMyProfileInfoRsp putMyProfileBirthdateInfo(Long userId,
 		PutMyProfileBirthdateInfoReq putMyProfileBirthdateInfoReq) {
-		SnsUser myUser = snsUserRepository.findById(userId).orElseThrow(
-			() -> new BadRequestErrorException("해당 계정은 없습니다.")
-		);
+		SnsUser myUser = snsUserRepository.findById(userId).orElseThrow();
 		myUser.setBirthDate(putMyProfileBirthdateInfoReq.convertBirthDateAsLocalDate());
 		snsUserRepository.save(myUser);
 		return convertUserToMyProfileInfoRsp(myUser);
@@ -233,9 +199,7 @@ public class ProfilesService {
 	@Transactional
 	public GetMyProfileInfoRsp putMyProfileGenderInfo(Long userId,
 		PutMyProfileGenderInfoReq putMyProfileGenderInfoReq) {
-		SnsUser myUser = snsUserRepository.findById(userId).orElseThrow(
-			() -> new BadRequestErrorException("해당 계정은 없습니다.")
-		);
+		SnsUser myUser = snsUserRepository.findById(userId).orElseThrow();
 		myUser.setSnsUserGender(SnsUserGender.valueOf(putMyProfileGenderInfoReq.getGender()));
 		snsUserRepository.save(myUser);
 		return convertUserToMyProfileInfoRsp(myUser);
@@ -244,9 +208,7 @@ public class ProfilesService {
 	@Transactional
 	public GetMyProfileInfoRsp putMyPrivateProfile(Long userId,
 		PutMyPrivateProfileInfoReq putMyPrivateProfileInfoReq) {
-		SnsUser myUser = snsUserRepository.findById(userId).orElseThrow(
-			() -> new BadRequestErrorException("해당 계정은 없습니다.")
-		);
+		SnsUser myUser = snsUserRepository.findById(userId).orElseThrow();
 		myUser.setIsPrivateProfile(putMyPrivateProfileInfoReq.getIsPrivateProfile());
 		snsUserRepository.save(myUser);
 		return convertUserToMyProfileInfoRsp(myUser);
@@ -274,7 +236,6 @@ public class ProfilesService {
 			.build();
 	}
 
-	@Transactional
 	public GetExistenceByUsernameRsp getExistenceByUsername(String username) {
 		Optional<SnsUser> snsUserOpt = snsUserRepository.findByUsername(username);
 		return GetExistenceByUsernameRsp.builder()
@@ -283,22 +244,9 @@ public class ProfilesService {
 			.build();
 	}
 
-	@Transactional
-	public GetExistenceByEmailRsp getExistenceByEmail(String email) {
-		// CHECK1
-		Optional<SnsUser> snsUserOpt = snsUserRepository.findBySignupEmail(email);
-		return GetExistenceByEmailRsp.builder()
-			.email(email)
-			.isExisted(snsUserOpt.isPresent())
-			.build();
-	}
-
-	@Transactional
 	public GetProfileInfoRsp getProfileInfo(String username, Long myUserId) {
 		ProfileInfoWithFollowDao profileInfoWithFollowDao = snsUserRepository.findByUsernameWithFollowInfo(username,
-			myUserId).orElseThrow(
-			() -> new NotFoundErrorException("해당 계정은 없습니다.")
-		);
+			myUserId).orElseThrow();
 
 		return GetProfileInfoRsp.builder()
 			.userId(profileInfoWithFollowDao.getSnsUserId().toString())
@@ -310,14 +258,16 @@ public class ProfilesService {
 			.isMe(Objects.equals(myUserId, profileInfoWithFollowDao.getSnsUserId()))
 			.isFollowed(profileInfoWithFollowDao.getIsFollowed())
 			.isBlocked(profileInfoWithFollowDao.getIsBlocked())
-			.isBlockerUser(profileInfoWithFollowDao.getIsBlockerUser())
-			.isPrivate(profileInfoWithFollowDao.getIsPrivate())
 			.followerNum(profileInfoWithFollowDao.getFollowerNum())
 			.followingNum(profileInfoWithFollowDao.getFollowingNum())
 			.build();
 	}
 
-	@Transactional
+	public List<SnsPostFollowsGetRsp> getMyProfileFollowing(Long myUserId, Integer page) {
+		SnsUser snsUser = snsUserRepository.findById(myUserId).orElseThrow();
+		return getProfileFollowing(myUserId, snsUser.getUsername(), page);
+	}
+
 	public GetProfileUserRsp getProfileUserListByUsername(String username, Long myUserId, Long cursorId, Boolean hasFollowInfo) {
 		List<GetProfileUserByUsername> getProfileUserByUsernameList;
 
@@ -371,20 +321,35 @@ public class ProfilesService {
 
 	}
 
-	@Transactional
+	public List<SnsPostFollowsGetRsp> getProfileFollower(Long myUserId, String username, Integer page) {
+		List<ProfileFollowDao> profileFollowerDaoList = snsUserFollowRepository.selectAllFollowerListByPageable(
+			myUserId, username,
+			page * PageConfigConst.MY_PROFILE_FOLLOW_PAGE_SIZE, PageConfigConst.MY_PROFILE_FOLLOW_PAGE_SIZE);
+
+		return getPostFollowList(profileFollowerDaoList);
+	}
+
+	public List<SnsPostFollowsGetRsp> getProfileFollowing(Long myUserId, String username, Integer page) {
+		List<ProfileFollowDao> profileFollowerDaoList = snsUserFollowRepository.selectAllFollowingListByPageable(
+			myUserId,
+			username, page * PageConfigConst.MY_PROFILE_FOLLOW_PAGE_SIZE, PageConfigConst.MY_PROFILE_FOLLOW_PAGE_SIZE);
+
+		return getPostFollowList(profileFollowerDaoList);
+	}
+
 	public List<ScrapThumbnailRsp> getScrapLists(Long userId, Integer page) {
 		List<ScrapThumbNailDao> scrapListDaoThumbNail = snsScrapRepository.selectScrapBoard(userId,
 			page * PageConfigConst.PROFILE_SCRAP_PAGE_NUM,
 			PageConfigConst.PROFILE_SCRAP_PAGE_NUM);
 
+		System.out.println("콩콩콩");
 		return getScrapThumbnailListRsps(scrapListDaoThumbNail);
 	}
 
-	@Transactional
 	public List<ScrapThumbnailRsp> getScrapListsBySearchQuery(Long userId, String searchQuery, Integer page) {
-		// if (userId == null){
-		// 	throw new UnauthorizedErrorException("인증된 계정이 아닙니다.");
-		// }
+		if (userId == null){
+			throw new UnauthorizedErrorException("인증된 계정이 아닙니다.");
+		}
 		List<ScrapThumbNailDao> scrapListDaoList = snsScrapRepository.selectScrapBoardBySearchQuery(
 			userId, searchQuery, page * PageConfigConst.PROFILE_SCRAP_PAGE_NUM,
 			PageConfigConst.PROFILE_SCRAP_PAGE_NUM);
@@ -403,19 +368,26 @@ public class ProfilesService {
 				Long myScrapListId = entry.getKey();
 				List<ScrapThumbNailDao> scrapThumbNailDaos = entry.getValue();
 
+				//@REFER: 나중에 참고 바람
+				// List<String> imagePathList = new ArrayList<>();
+				// for (MyScrapListDao myScrapListDao : myScrapListDaos) {
+				// 	for (SnsPostContentDao snsPostContentDao : myScrapListDao.getStringToSnsPostContents()) {
+				// 		if (snsPostContentDao.getPostContentType() != PostContentType.IMAGE) {
+				// 			imagePathList.add(snsPostContentDao.getContent());
+				// 			break;
+				// 		}
+				// 	}
+				// }
+
 				List<GetProfileMainScrapPostRsp> getProfileMainScrapPostRspList = new ArrayList<>();
 				for (ScrapThumbNailDao scrapThumbNailDao : scrapThumbNailDaos) {
 					if (!scrapThumbNailDao.getStringToSnsPostContents().isEmpty()) {
 						SnsPostContentDao postContentDao = scrapThumbNailDao.getStringToSnsPostContents().get(0);
-
-						PostContentType contentType = postContentDao.getPostContentType();
 						getProfileMainScrapPostRspList.add(
 							GetProfileMainScrapPostRsp
 								.builder()
-								.postThumbnailContent(contentType == PostContentType.VIDEO
-									? Objects.requireNonNullElse(postContentDao.getBucketUrl(),"") + postContentDao.getPreviewImg()
-									: Objects.requireNonNullElse(postContentDao.getBucketUrl(),"") + postContentDao.getContent())
-								.postThumbnailContentType(PostContentType.IMAGE.toString())
+								.postThumbnailContent(postContentDao.getContent())
+								.postThumbnailContentType(postContentDao.getPostContentType().toString())
 								.build()
 						);
 					}
@@ -433,63 +405,34 @@ public class ProfilesService {
 			.toList();
 	}
 
-	@Transactional
 	public List<GetScrapPreviewRsp> getScrapPreviewList(Long myUserId, Long postId) {
 		Pageable pageable = PageRequest.of(PageConfigConst.PAGE_INIT_NUM, PageConfigConst.SCRAP_PREVIEW_MAX_PAGE_NUM);
-		// List<SnsScrapBoard> snsScrapBoardLists = snsScrapBoardRepository.findBySnsUser_IdOrderByIdDesc(
-		// 	myUserId, pageable);
+		List<SnsScrapBoard> snsScrapBoardLists = snsScrapBoardRepository.findBySnsUser_IdOrderByIdDesc(
+			myUserId, pageable);
 
-		// List<SnsScrap> snsScrapList = snsScrapRepository.findBySnsUser_IdAndSnsPost_IdOrderByCreatedAtDesc(myUserId,
-		// 	postId);
+		List<SnsScrap> snsScrapList = snsScrapRepository.findBySnsUser_IdAndSnsPost_Id(myUserId,
+			postId);
 
-		// Map<Long, SnsScrap> snsScrapMap = new HashMap<>();
-		// snsScrapList.forEach(snsScrap -> {
-		// 	snsScrapMap.put(snsScrap.getSnsScrapBoard().getId(), snsScrap);
-		// });
+		Map<Long, SnsScrap> snsScrapMap = new HashMap<>();
+		snsScrapList.forEach(snsScrap -> {
+			snsScrapMap.put(snsScrap.getSnsScrapBoard().getId(), snsScrap);
+		});
 
-		List<ScrapPreviewDao> scrapPreviewDaoList = snsScrapBoardRepository.findPreviewScrapBoardList(myUserId, postId, pageable);
-		List<ScrapPreviewDao> scrapPreviewDaoMyList = snsScrapBoardRepository.findPreviewScrapBoardListByHasPost(myUserId, postId);
-
-		// 중복 방지를 위한 Set 사용
-		Set<Long> scrapBoardIdSet = new HashSet<>();
-
-		// 최종 결과 리스트
-		List<ScrapPreviewDao> mergedList = new ArrayList<>();
-
-		// 첫 번째 리스트 추가 (중복 방지)
-		for (ScrapPreviewDao item : scrapPreviewDaoMyList) {
-			if (scrapBoardIdSet.add(item.getScrapBoardId())) { // 중복된 ID가 아닐 경우 추가
-				mergedList.add(item);
-			}
-		}
-
-		// 두 번째 리스트 추가 (중복 방지)
-		for (ScrapPreviewDao item : scrapPreviewDaoList) {
-			if (scrapBoardIdSet.add(item.getScrapBoardId())) { // 중복된 ID가 아닐 경우 추가
-				mergedList.add(item);
-			}
-		}
-
-
-
-		return mergedList.stream().map(scrapPreviewDao ->
-				GetScrapPreviewRsp
-					.builder()
-					.scrapBoardId(scrapPreviewDao.getScrapBoardId().toString())
-					.scrapBoardName(scrapPreviewDao.getScrapBoardName())
-					.isScraped(scrapPreviewDao.getIsScraped())
-					.build())
-			.toList();
+		return snsScrapBoardLists.stream().map((snsScrapBoardList -> GetScrapPreviewRsp.builder()
+			.scrapBoardId(snsScrapBoardList.getId().toString())
+			.scrapBoardName(snsScrapBoardList.getScrapName())
+			.isScraped(snsScrapMap.get(snsScrapBoardList.getId()) != null)
+			.build())).toList();
 
 	}
 
-	@Transactional
 	public GetProfilePostListRsp getMyClipListRsp(Long myUserId, Long cursorId) {
+		Pageable pageable = PageRequest.of(PageConfigConst.PAGE_INIT_NUM, PageConfigConst.PROFILE_CLIP_PAGE_NUM);
 		List<SnsPostDao> profilePostListDaoList =
-			snsPostRepository.findAllMyClipList(
+			snsPostUserReactionRepository.findAllMyClipList(
 				myUserId, cursorId, PageConfigConst.PROFILE_CLIP_PAGE_NUM);
 
-		List<SnsPostRsp> snsPostRspList = postProfileFacadeService.getPostGetRspList(profilePostListDaoList);
+		List<SnsPostRsp> snsPostRspList = postsService.getPostGetRspList(profilePostListDaoList);
 
 		if (snsPostRspList.isEmpty()) {
 			return GetProfilePostListRsp.builder()
@@ -504,7 +447,6 @@ public class ProfilesService {
 		}
 	}
 
-	@Transactional
 	public GetScrapInfoRsp getScrapInfo(Long myUserId, Long scrapId) {
 		ScrapBoardInfoDao scrapBoardInfoDao = snsScrapBoardRepository.findScrapInfoByMyUserId(
 				scrapId, myUserId)
@@ -524,30 +466,27 @@ public class ProfilesService {
 			.build();
 	}
 
-	@Transactional
 	public GetScrapRsp getScrapRsp(Long myUserId, Long scrapId, Long cursorId) {
 		Pageable pageable = PageRequest.of(PageConfigConst.PAGE_INIT_NUM, PageConfigConst.PROFILE_SCRAP_PAGE_NUM);
-		List<ProfilePostScrapDao> profilePostScrapDaoList = snsScrapRepository.findScrapPostList(myUserId, scrapId,
+		List<ProfilePostListDao> profilePostListDaoList = snsScrapRepository.findScrapPostList(myUserId, scrapId,
 			cursorId,
 			pageable);
 
-		List<SnsPostRsp> getProfilePostRspList = profilePostScrapDaoList.stream().map(
-			this::convertProfileScrapDaoToPostRsp).toList();
+		List<GetProfilePostRsp> getProfilePostRspList = convertDaoToProfilePostList(profilePostListDaoList);
 
 		if (getProfilePostRspList.isEmpty()) {
 			return GetScrapRsp.builder()
 				.cursorId(PageConfigConst.ZERO_ID)
-				.snsPostRspList(new ArrayList<>())
+				.scrapPostList(new ArrayList<>())
 				.build();
 		} else {
 			return GetScrapRsp.builder()
-				.cursorId(profilePostScrapDaoList.get(profilePostScrapDaoList.size() - 1).getCursorId().toString())
-				.snsPostRspList(getProfilePostRspList)
+				.cursorId(profilePostListDaoList.get(profilePostListDaoList.size() - 1).getCursorId().toString())
+				.scrapPostList(getProfilePostRspList)
 				.build();
 		}
 	}
 
-	@Transactional
 	public List<GetProfileBlockedUserRsp> getProfileBlockedUserList(Long userId, Integer page) {
 		Pageable pageable = PageRequest.of(page * PageConfigConst.PROFILE_BLOCKED_USER_LIST_PAGE_SIZE,
 			PageConfigConst.PROFILE_BLOCKED_USER_LIST_PAGE_SIZE);
@@ -555,8 +494,7 @@ public class ProfilesService {
 
 		return blockedUserList.stream().map((blockedUser) -> GetProfileBlockedUserRsp.builder()
 			.blockedUserId(blockedUser.getId().toString())
-			.blockedNickname(blockedUser.getNickname())
-			.blockedUsername(blockedUser.getUsername())
+			.blockedUserName(blockedUser.getUsername())
 			.blockedUserProfilePath(blockedUser.getProfilePath())
 			.build()).toList();
 
@@ -585,19 +523,15 @@ public class ProfilesService {
 		newScrapList = snsScrapBoardRepository.save(newScrapList);
 
 		List<GetProfileMainScrapPostRsp> getProfileMainScrapPostRspList = new ArrayList<>();
-
-		// 스크랩 생성 할 떄, 포스트도 같이 저장
 		if (postId != null) {
-			SnsPost snsPost = snsPostRepository.findById(postId).orElseThrow(
-				() -> new BadRequestErrorException("해당 게시물은 없습니다.")
-			);
+			SnsPost snsPost = snsPostRepository.findById(postId).orElseThrow();
 
-			// clip 없을 시, 추가
+			// 찜 없을 시, 추가
 			Optional<SnsPostUserReaction> snsPostUserReactionOpt = snsPostUserReactionRepository
 				.findBySnsPostAndSnsUser(
 					postId, snsUserId);
 
-			// // 리액션(clip) 아예 없을 시
+			// // 리액션 아예 없을 시
 			if (snsPostUserReactionOpt.isEmpty()) {
 				snsPostUserReactionRepository.save(SnsPostUserReaction.builder()
 					.snsPost(snsPost)
@@ -621,7 +555,7 @@ public class ProfilesService {
 			snsScrapRepository.save(newSnsScrap);
 
 			// 리액션 반응
-			snsPost.setReactionCount((snsPost.getReactionCount() != null ? snsPost.getReactionCount() : 0) + PostConst.POST_REACTION_SCRAP_SCORE);
+			snsPost.setReactionCount((snsPost.getReactionCount() != null ? snsPost.getReactionCount() : 0) + 1);
 
 			if (snsPost.getSnsPostContents().isEmpty()) {
 				getProfileMainScrapPostRspList.add(GetProfileMainScrapPostRsp.builder()
@@ -640,10 +574,7 @@ public class ProfilesService {
 	}
 
 	@Transactional
-	public ScrapThumbnailRsp updateProfileScrap(
-		Long scrapId,
-		Long snsUserId,
-		CreateProfileScrapReq createProfileScrapReq) {
+	public ScrapThumbnailRsp updateProfileScrap(Long scrapId, Long snsUserId, CreateProfileScrapReq createProfileScrapReq, Long postId) {
 		ScrapTargetAudience targetAudience = getTargetAudienceValue(createProfileScrapReq.getTargetAudienceValue());
 		SnsScrapBoard scrapBoard = snsScrapBoardRepository.findBySnsUser_IdAndId(snsUserId,scrapId).orElseThrow(
 			() -> new BadRequestErrorException("해당 스크랩은 없습니다.")
@@ -665,17 +596,12 @@ public class ProfilesService {
 
 	@Transactional
 	public PostToScrapRsp createPostToScrap(Long snsUserId, Long scrapBoardId, Long postId) {
-		Optional<SnsScrap> snsScrapOptByPostId = snsScrapRepository.findBySnsUser_IdAndSnsPost_IdAndSnsScrapBoard_Id(
+		Optional<SnsScrap> snsScrapOpt = snsScrapRepository.findBySnsUser_IdAndSnsPost_IdAndSnsScrapBoard_Id(
 			snsUserId, postId,
 			scrapBoardId);
 
 		SnsPost snsPost = snsPostRepository.findById(postId)
 			.orElseThrow(() -> new BadRequestErrorException("해당 게시물은 없습니다."));
-
-		boolean isBlocked = snsBlockUserRepository.findIsBlockUser(snsUserId, snsPost.getSnsUser().getId());
-		if (isBlocked){
-			throw new ForbiddenErrorException("비공개 계정에 대해서 포스트를 클립할 수 없습니다.");
-		}
 
 		SnsPostUserReaction snsPostUserReaction = snsPostUserReactionRepository.findBySnsPostAndSnsUser(postId,
 			snsUserId).orElse(
@@ -687,17 +613,16 @@ public class ProfilesService {
 				.build());
 		snsPostUserReaction.setIsClipped(true);
 		snsPostUserReaction.setIsClippedAt(LocalDateTime.now());
-		SnsPostUserReaction newSnsPostUserReaction = snsPostUserReactionRepository.save(snsPostUserReaction);
+		snsPostUserReactionRepository.save(snsPostUserReaction);
 
-		if (snsScrapOptByPostId.isPresent()) {
+		if (snsScrapOpt.isPresent()) {
 			return PostToScrapRsp.builder()
 				.scrapId(scrapBoardId.toString())
-				.scrapPostId(newSnsPostUserReaction.getId().toString())
 				.isScraped(true)
 				.isClipped(true)
 				.build();
 		} else {
-			snsPost.setReactionCount((snsPost.getReactionCount() != null ? snsPost.getReactionCount() : 0) + PostConst.POST_REACTION_SCRAP_SCORE);
+			snsPost.setReactionCount((snsPost.getReactionCount() != null ? snsPost.getReactionCount() : 0) + 1);
 			SnsScrap newScrap = SnsScrap.builder()
 				.snsScrapBoard(SnsScrapBoard.builder().id(scrapBoardId).build())
 				.snsUser(SnsUser.builder().id(snsUserId).build())
@@ -717,71 +642,64 @@ public class ProfilesService {
 
 			return PostToScrapRsp.builder()
 				.scrapId(scrapBoardId.toString())
-				.scrapPostId(newSnsPostUserReaction.getId().toString())
 				.isScraped(true)
 				.isClipped(true)
 				.build();
 		}
 	}
 
-	// @Transactional
-	// public PostToScrapListRsp createPostToScrapList(Long snsUserId,
-	// 	Long postId,
-	// 	List<String> scrapIdList) {
-	// 	List<Long> scrapBoardList = scrapIdList.stream().map(Long::valueOf).toList();
-	//
-	// 	if (scrapBoardList.isEmpty()) {
-	// 		throw new BadRequestErrorException("스크랩 목록이 없습니다.");
-	// 	}
-	// 	List<SnsScrap> myScrapList = snsScrapRepository.findBySnsUserAndSnsPostAndSnsScrapBoardIn(snsUserId, postId,
-	// 		scrapBoardList);
-	//
-	// 	List<Long> myScrapBoardIdList = myScrapList.stream()
-	// 		.map((snsScrap -> snsScrap.getSnsScrapBoard().getId()))
-	// 		.toList();
-	//
-	// 	List<SnsScrap> notExistedScrapBoradList = new ArrayList<>();
-	//
-	// 	SnsPost snsPost = snsPostRepository.findById(postId).orElseThrow(
-	// 		() -> new BadRequestErrorException("해당 게시물은 없습니다.")
-	// 	);
-	//
-	// 	boolean isBlocked = snsBlockUserRepository.findIsBlockUser(snsUserId, snsPost.getSnsUser().getId());
-	// 	if (isBlocked){
-	// 		throw new ForbiddenErrorException("비공개 계정에 대해서 포스트를 스크랩 할 수 없습니다.");
-	// 	}
-	//
-	// 	// 리액션 반응
-	// 	snsPost.setReactionCount((snsPost.getReactionCount() != null ? snsPost.getReactionCount() : 0) + 1);
-	//
-	// 	for (Long scrapBoardId : scrapBoardList) {
-	// 		int myScrapIndex = myScrapBoardIdList.indexOf(scrapBoardId);
-	// 		if (myScrapIndex == -1) {
-	// 			notExistedScrapBoradList.add(SnsScrap.builder()
-	// 				.snsScrapBoard(SnsScrapBoard.builder().id(scrapBoardId).build())
-	// 				.snsPost(snsPost)
-	// 				.snsUser(SnsUser.builder().id(snsUserId).build())
-	// 				.build());
-	// 		}
-	// 	}
-	//
-	// 	snsScrapJdbcRepository.saveAll(notExistedScrapBoradList);
-	//
-	// 	SnsPostUserReaction snsPostUserReaction = snsPostUserReactionRepository.findBySnsPostAndSnsUser(postId,
-	// 		snsUserId).orElse(
-	// 		SnsPostUserReaction.builder()
-	// 			.snsPost(SnsPost.builder().id(postId).build())
-	// 			.snsUser(SnsUser.builder().id(snsUserId).build())
-	// 			.build());
-	// 	snsPostUserReaction.setIsClipped(true);
-	// 	snsPostUserReaction.setIsClippedAt(LocalDateTime.now());
-	// 	snsPostUserReactionRepository.save(snsPostUserReaction);
-	//
-	// 	return PostToScrapListRsp.builder()
-	// 		.scrapIdList(scrapIdList)
-	// 		.isClipped(true)
-	// 		.build();
-	// }
+	public PostToScrapListRsp createPostToScrapList(Long snsUserId,
+		Long postId,
+		AddPostToScrapListReq addPostToScrapListReq) {
+		List<Long> scrapBoardList = addPostToScrapListReq.getScrapIdList().stream().map(Long::valueOf).toList();
+
+		if (scrapBoardList.isEmpty()) {
+			throw new BadRequestErrorException("스크랩 목록이 없습니다.");
+		}
+		List<SnsScrap> myScrapList = snsScrapRepository.findBySnsUserAndSnsPostAndSnsScrapBoardIn(snsUserId, postId,
+			scrapBoardList);
+
+		List<Long> myScrapBoardIdList = myScrapList.stream()
+			.map((snsScrap -> snsScrap.getSnsScrapBoard().getId()))
+			.toList();
+
+		List<SnsScrap> notExistedScrapBoradList = new ArrayList<>();
+
+		SnsPost snsPost = snsPostRepository.findById(postId).orElseThrow(
+			() -> new BadRequestErrorException("해당 게시물은 없습니다.")
+		);
+
+		// 리액션 반응
+		snsPost.setReactionCount((snsPost.getReactionCount() != null ? snsPost.getReactionCount() : 0) + 1);
+
+		for (Long scrapBoardId : scrapBoardList) {
+			int myScrapIndex = myScrapBoardIdList.indexOf(scrapBoardId);
+			if (myScrapIndex == -1) {
+				notExistedScrapBoradList.add(SnsScrap.builder()
+					.snsScrapBoard(SnsScrapBoard.builder().id(scrapBoardId).build())
+					.snsPost(snsPost)
+					.snsUser(SnsUser.builder().id(snsUserId).build())
+					.build());
+			}
+		}
+
+		snsScrapJdbcRepository.saveAll(notExistedScrapBoradList);
+
+		SnsPostUserReaction snsPostUserReaction = snsPostUserReactionRepository.findBySnsPostAndSnsUser(postId,
+			snsUserId).orElse(
+			SnsPostUserReaction.builder()
+				.snsPost(SnsPost.builder().id(postId).build())
+				.snsUser(SnsUser.builder().id(snsUserId).build())
+				.build());
+		snsPostUserReaction.setIsClipped(true);
+		snsPostUserReaction.setIsClippedAt(LocalDateTime.now());
+		snsPostUserReactionRepository.save(snsPostUserReaction);
+
+		return PostToScrapListRsp.builder()
+			.scrapIdList(addPostToScrapListReq.getScrapIdList())
+			.isClipped(true)
+			.build();
+	}
 
 	@Transactional
 	public Boolean createUserToBlockList(Long userId, Long blockedUserId) {
@@ -791,10 +709,8 @@ public class ProfilesService {
 
 		Optional<SnsUserFollow> snsUserFollowOpt = snsUserFollowRepository.findByFollowerUseAndFollowingUser(userId,
 			blockedUserId);
-
-		// 만약 팔로우 했으면, 팔로우 제거
 		if(snsUserFollowOpt.isPresent()){
-			profileFollowsService.deleteFollow(userId, blockedUserId);
+			deleteFollow(userId, blockedUserId);
 		}
 
 		SnsBlockUser snsBlockUser = SnsBlockUser.builder()
@@ -811,34 +727,18 @@ public class ProfilesService {
 	public PostToScrapRsp deletePostToScrap(Long snsUserId, Long scrapBoardId, Long postId) {
 		SnsScrap snsScrap = snsScrapRepository.findBySnsUser_IdAndSnsPost_IdAndSnsScrapBoard_Id(
 			snsUserId, postId,
-			scrapBoardId).orElseThrow(
-			() -> new BadRequestErrorException("해당 게시물을 저장하지 않았습니다.")
-		);
-
-		SnsPost snsPost = snsPostRepository.findById(postId).orElseThrow(
-			() -> new BadRequestErrorException("해당 게시물은 없습니다.")
-		);
+			scrapBoardId).orElseThrow();
 
 		snsScrapRepository.delete(snsScrap);
-		// 바로 반영되도록
-		snsScrapRepository.flush();
 
 		List<SnsScrap> snsScrapList = snsScrapRepository.findBySnsUser_IdAndSnsPost_Id(snsUserId,
 			postId);
 
 		if (snsScrapList.isEmpty()) {
 			SnsPostUserReaction snsPostUserReaction = snsPostUserReactionRepository.findBySnsPostAndSnsUser(postId,
-				snsUserId).orElse(
-					SnsPostUserReaction.builder()
-						.snsPost(snsPost)
-						.snsUser((SnsUser.builder().id(snsUserId).build()))
-						.build()
-				);
+				snsUserId).orElseThrow();
 			snsPostUserReaction.setIsClipped(false);
 		}
-
-		int score = PostConst.POST_REACTION_SCRAP_SCORE;
-		snsPost.setReactionCount(snsPost.getReactionCount() != null ? snsPost.getReactionCount() - score : 0);
 
 		return PostToScrapRsp.builder()
 			.scrapId(scrapBoardId.toString())
@@ -855,24 +755,66 @@ public class ProfilesService {
 		).orElseThrow(
 			() -> new BadRequestErrorException("해당 스크랩은 없습니다.")
 		);
-
-		// 스크랩안에 클립이 0개 이상 있을 경우 경우가 있는 지?
 		if (scrapNum > 0 ){
-			// 클립한 거 false, 이떄, 두 스크랩에 대해 동일한 포스트가 클립 되어 있을 시, 삭제 되지 않도록
-			List<SnsPostUserReaction> snsPostUserReactionList = snsPostUserReactionRepository.findAllByDistinctScrapAndClipTrue(snsUserId, scrapBoardId);
+			// 스크랩 보드 비 활성화, delete_at
+			System.out.println("수수께끼는 ");
+			snsScrapBoard.setDeleted_at(LocalDateTime.now());
+			snsScrapBoardRepository.save(snsScrapBoard);
+
+			// 클립한 거 false
+			List<SnsPostUserReaction> snsPostUserReactionList = snsPostUserReactionRepository.findAllByScrapAndClipTrue(snsUserId, scrapBoardId);
 			List<SnsPostUserReaction> snsPostUserReactionByIsClippedFalse = snsPostUserReactionList.stream().peek((snsPostUserReaction -> snsPostUserReaction.setIsClipped(false))).toList();
 
+			// batch update
 			snsPostUserReactionJdbcRepository.updateAll(snsPostUserReactionByIsClippedFalse);
-
-			// 스크랩 삭제
-			snsScrapJdbcRepository.deleteScrapDeletedByScrapBoard(snsScrapBoard.getId());
 		}
-		// board 삭제
-		snsScrapBoardRepository.delete(snsScrapBoard);
+		else{
+			// board 삭제
+			System.out.println("모두 풀렸어 ");
+			snsScrapBoardRepository.delete(snsScrapBoard);
+		}
 
 
 		return false;
 
+	}
+
+	public Boolean createFollow(Long userId, Long followId) {
+		if (Objects.equals(followId, userId)) {
+			throw new BadRequestErrorException("나 자신을 팔로우 할 수 없습니다.");
+		}
+		SnsUser myUser = snsUserRepository.findById(userId).orElseThrow(
+			() -> new BadRequestErrorException("해당 유저는 없습니다.")
+		);
+		if (snsBlockUserRepository.findBySnsBlockerUser_IdAndSnsBlockedUser_Id(
+			userId, followId).isPresent()) {
+			throw new BadRequestErrorException("차단된 유저는 팔로우 할 수 없습니다.");
+		}
+
+		SnsUserFollow newSnsUserFollow = SnsUserFollow.builder()
+			.followerUser(myUser)
+			.followingUser(snsUserRepository.findById(followId).orElseThrow(
+				() -> new BadRequestErrorException("해당 유저는 없습니다.")
+			))
+			.build();
+		SnsUserFollow snsUserFollow = snsUserFollowRepository.save(newSnsUserFollow);
+
+		//알림, 알림 설정 했을 경우
+		if (snsUserFollow.getFollowingUser().getHasFollowerNotification()) {
+			notificationService.processFollowerNotification(snsUserFollow);
+		}
+
+		return true;
+	}
+
+	public Boolean deleteFollow(Long userId, Long followId) {
+		SnsUserFollow snsUserFollow = snsUserFollowRepository.findByFollowerUseAndFollowingUser(userId, followId)
+			.orElseThrow();
+
+		snsUserFollowRepository.delete(snsUserFollow);
+
+
+		return false;
 	}
 
 	@Transactional
@@ -882,57 +824,58 @@ public class ProfilesService {
 		return true;
 	}
 
-	@Transactional
-	public Boolean createUserReport(Long myUserId, Long reportedUserId, SnsUserReportCreateReq snsUserReportCreateReq){
-		SnsUserReport snsPostReport = SnsUserReport.builder()
-			.reporterUser(SnsUser.builder().id(myUserId).build())
-			.reportedUser(SnsUser.builder().id(reportedUserId).build())
-			.userReportStatus(UserReportStatus.PENDING)
-			.build();
-
-		registerReportType(snsPostReport, snsUserReportCreateReq);
-
-		snsUserReportRepository.save(snsPostReport);
-		return true;
+	private List<GetProfilePostRsp> convertDaoToProfilePostList(List<ProfilePostListDao> profilePostListDaoList) {
+		return profilePostListDaoList.stream()
+			.map((profilePostListDao -> GetProfilePostRsp.builder()
+				.postThumbnailContent(profilePostListDao.getPostContents()
+					.stream()
+					.findFirst()
+					.orElse(new SnsPostContent(PostContentType.IMAGE, 100, "Not Image",false,"","","",false))
+					.getContent()
+				)
+				.postThumbnailContentType(profilePostListDao.getPostContents()
+					.stream()
+					.findFirst()
+					.orElse(new SnsPostContent(PostContentType.IMAGE, 100, "Not Image",false,"","","",false))
+					.getPostContentType().toString())
+				.postThumbnailPreviewImg(profilePostListDao.getPostContents()
+					.stream()
+					.findFirst()
+					.orElse(new SnsPostContent(PostContentType.IMAGE, 100, "Not Image",false,"","","",false))
+					.getPreviewImg()
+				)
+				.postId(profilePostListDao.getPostId().toString())
+				.postedAt(profilePostListDao.getPostedAt())
+				.location(new Location(profilePostListDao.getLatitude(), profilePostListDao.getLongitude(),
+					profilePostListDao.getAddress()))
+				.userId(profilePostListDao.getUserId().toString())
+				.username(profilePostListDao.getUsername())
+				.build())).toList();
 	}
 
-
-	private SnsPostRsp convertProfileScrapDaoToPostRsp(ProfilePostScrapDao profilePostScrapDao) {
-		return SnsPostRsp.builder()
-			.postId(profilePostScrapDao.getPostId().toString())
-			.userId(profilePostScrapDao.getSnsUserId().toString())
-			.username(profilePostScrapDao.getUsername())
-			.profilePath(profilePostScrapDao.getProfilePath())
-			.location(new Location(
-				profilePostScrapDao.getLatitude(), profilePostScrapDao.getLongitude(),
-				profilePostScrapDao.getAddress(), profilePostScrapDao.getBuildName()))
-			.tags(profilePostScrapDao.getTags().stream().map(PostTag::getTagName).toList())
-			.isFollowed(profilePostScrapDao.getFollowingId() != null)
-			.isLiked(profilePostScrapDao.getIsLiked())
-			.isClipped(profilePostScrapDao.getIsClipped())
-			.isReposted(profilePostScrapDao.getIsReposted())
-			.postTitle(profilePostScrapDao.getPostTitle())
-			.postBodyText(profilePostScrapDao.getPostBodyText())
-			.followable(profilePostScrapDao.getFollowable())
-			.postContents(profilePostScrapDao.getSnsPostContents()
-				.stream()
-				.map((snsPostContent -> new PostContent(snsPostContent.getPostContentType(),
-					Objects.requireNonNullElse(snsPostContent.getBucketUrl(),"") + Objects.requireNonNullElse(snsPostContent.getContent(),""),
-					snsPostContent.getAscSortNum(),
-					Objects.requireNonNullElse(snsPostContent.getBucketUrl(),"") + Objects.requireNonNullElse(snsPostContent.getPreviewImg(),""),
-					snsPostContent.getIsUploaded(),
-					snsPostContent.getVideoDuration()
-				)))
-				.toList())
-			.postedAt(profilePostScrapDao.getPostedAt())
-			.build();
+	private List<SnsPostFollowsGetRsp> getPostFollowList(List<ProfileFollowDao> profileFollowDaoList
+	) {
+		return profileFollowDaoList.stream()
+			.map((this::convertToFollowGetRsp))
+			.toList();
 	}
 
+	private SnsPostFollowsGetRsp convertToFollowGetRsp(ProfileFollowDao profileFollowDao) {
+		return SnsPostFollowsGetRsp.builder()
+			.userId(profileFollowDao.getSnsUserId().toString())
+			.username(profileFollowDao.getUsername())
+			.profilePath(profileFollowDao.getProfilePath())
+			.nickname(profileFollowDao.getNickname())
+			.isFollowed(profileFollowDao.getIsFollowed())
+			.isMe(profileFollowDao.getIsMe())
+			.isBlocked(profileFollowDao.getIsBlocked())
+			.build();
+	}
 
 	private GetMyProfileInfoRsp convertUserToMyProfileInfoRsp(SnsUser snsUser) {
 		return GetMyProfileInfoRsp.builder()
 			.userId(snsUser.getId().toString())
-			.profilePath(snsUser.getProfilePath())
+			.profilePath(UrlUtils.convertToDataURL(snsUser.getProfilePath()))
 			.username(snsUser.getUsername())
 			.nickname(snsUser.getNickname())
 			.introduce(snsUser.getUserDescription())
@@ -954,43 +897,6 @@ public class ProfilesService {
 			targetAudience = ScrapTargetAudience.PUBLIC_AUDIENCE;
 		}
 		return targetAudience;
-	}
-
-	private void registerReportType (SnsUserReport snsUserReport, SnsUserReportCreateReq snsUserReportCreateReq) {
-		switch (snsUserReportCreateReq.getUserReportReasonType()) {
-			case UserReportConst.USER_INAPPROPRIATE_CONTENT_TYPE -> {
-				snsUserReport.setUserReportReasonType(UserReportReasonType.INAPPROPRIATE_CONTENT);
-				snsUserReport.setReportReason(UserReportConst.USER_INAPPROPRIATE_CONTENT_REASON);
-			}
-			case UserReportConst.USER_SPAM_OR_PROMOTIONAL_CONTENT_TYPE -> {
-				snsUserReport.setUserReportReasonType(UserReportReasonType.SPAM_OR_PROMOTIONAL_CONTENT);
-				snsUserReport.setReportReason(UserReportConst.USER_SPAM_OR_PROMOTIONAL_CONTENT_REASON);
-			}
-			case UserReportConst.USER_FALSE_INFORMATION_FRAUD_TYPE -> {
-				snsUserReport.setUserReportReasonType(UserReportReasonType.FALSE_INFORMATION_FRAUD);
-				snsUserReport.setReportReason(UserReportConst.USER_FALSE_INFORMATION_FRAUD_REASON);
-			}
-			case UserReportConst.USER_PRIVACY_VIOLATION_TYPE -> {
-				snsUserReport.setUserReportReasonType(UserReportReasonType.PRIVACY_VIOLATION);
-				snsUserReport.setReportReason(UserReportConst.USER_PRIVACY_VIOLATION_REASON);
-			}
-			case UserReportConst.USER_COPYRIGHT_INFRINGEMENT_TYPE -> {
-				snsUserReport.setUserReportReasonType(UserReportReasonType.COPYRIGHT_INFRINGEMENT);
-				snsUserReport.setReportReason(UserReportConst.USER_COPYRIGHT_INFRINGEMENT_REASON);
-			}
-			case UserReportConst.USER_HARASSMENT_OR_BULLYING_TYPE -> {
-				snsUserReport.setUserReportReasonType(UserReportReasonType.HARASSMENT_OR_BULLYING);
-				snsUserReport.setReportReason(UserReportConst.USER_HARASSMENT_OR_BULLYING_REASON);
-			}
-			case UserReportConst.POST_OTHER_REASON_TYPE -> {
-				snsUserReport.setUserReportReasonType(UserReportReasonType.OTHER);
-				if (snsUserReportCreateReq.getUserReportReason() == null) {
-					throw new BadRequestErrorException("신고 이유를 보내 주어야 됩니다.");
-				}
-				snsUserReport.setReportReason(snsUserReportCreateReq.getUserReportReason());
-			}
-			default -> throw new BadRequestErrorException("맞지 않는 신고입니다.");
-		}
 	}
 
 }

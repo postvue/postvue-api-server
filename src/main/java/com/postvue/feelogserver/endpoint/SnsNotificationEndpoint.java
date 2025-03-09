@@ -1,22 +1,25 @@
 package com.postvue.feelogserver.endpoint;
 
-import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 
-
+import com.postvue.feelogserver.domain.snsblockusers.SnsBlockUser;
+import com.postvue.feelogserver.domain.snsnotifications.SnsNotification;
 import com.postvue.feelogserver.domain.snsnotifications.repository.SnsNotificationRepository;
+import com.postvue.feelogserver.domain.snsnotifications.vo.SnsNotificationContent;
+import com.postvue.feelogserver.endpoint.converter.JpaFilterCustomConverter;
 import com.postvue.feelogserver.endpoint.dto.SnsNotificationEndpointDto;
-import com.postvue.feelogserver.global.constant.LogTemplateConst;
+import com.postvue.feelogserver.global.util.converter.JsonConverter;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.hilla.BrowserCallable;
 import com.vaadin.hilla.Nonnull;
 import com.vaadin.hilla.Nullable;
 import com.vaadin.hilla.crud.CrudService;
 import com.vaadin.hilla.crud.filter.Filter;
-import com.vaadin.hilla.exception.EndpointException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,28 +28,27 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SnsNotificationEndpoint implements CrudService<SnsNotificationEndpointDto, Long> {
 	private final SnsNotificationRepository snsNotificationRepository;
-	private final SnsNotificationEndpointService snsNotificationEndpointService;
+	private final JpaFilterCustomConverter jpaFilterCustomConverter;
 
 	@Override
 	@Nonnull
 	public List<@Nonnull SnsNotificationEndpointDto> list(Pageable pageable, @Nullable Filter filter) {
-		try {
-			return snsNotificationEndpointService.listProcess(pageable,filter);
-		}
-		catch (Exception e){
-			throw new EndpointException("서버 오류 발생", LogTemplateConst.getLogInfoTemplate(e.getMessage() + "_" + e.toString(), LocalDateTime.now().toString()));
-		}
+		Specification<SnsNotification> spec = filter != null
+			? jpaFilterCustomConverter.toSpec(filter, SnsNotification.class)
+			: Specification.anyOf();
+		return snsNotificationRepository.findAll(spec,pageable).stream().map((SnsNotificationEndpointDto::fromEntity)).toList();
 	}
 
 	@Override
-	@Nonnull
+	@Transactional
 	public @Nullable SnsNotificationEndpointDto save(SnsNotificationEndpointDto value) {
-		try {
-			return SnsNotificationEndpointDto.fromEntity(snsNotificationEndpointService.saveProcess(value));
-		}
-		catch (Exception e){
-			throw new EndpointException("서버 오류 발생", LogTemplateConst.getLogInfoTemplate(e.getMessage() + "_" + e.toString(), LocalDateTime.now().toString()));
-		}
+		SnsNotification snsNotification = value.id() != null && Long.parseLong(value.id()) > 0
+			? snsNotificationRepository.getReferenceById(Long.parseLong(value.id()))
+			: new SnsNotification();
+
+		snsNotification.setSnsNotificationType(value.snsNotificationType());
+		snsNotification.setSnsNotificationContents(Arrays.asList(JsonConverter.convertToList(value.snsNotificationContents(),SnsNotificationContent.class)));
+		return SnsNotificationEndpointDto.fromEntity(snsNotificationRepository.save(snsNotification));
 	}
 
 	@Override

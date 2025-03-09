@@ -27,19 +27,9 @@ frontend/themes/hilla-react-app/theme-editor.css
 # application
 src/main/resources/application-*-local.yml
 
-# application-local
-src/main/resources/application-common-local.yml
-src/main/resources/application-config-local.yml
-src/main/resources/application-db-local.yml
-src/main/resources/application-rabbitmq-local.yml
-src/main/resources/application-redis-local.yml
-src/main/resources/application-swagger-local.yml
+# dump
+src/main/resources/db/migration/
 
 # docker
 #dockerfile
 docker-compose.yml
-
-# production
-out/
-
-src/main/resources/temp/

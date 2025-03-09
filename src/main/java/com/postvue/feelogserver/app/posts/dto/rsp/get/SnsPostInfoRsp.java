@@ -16,7 +16,6 @@ import lombok.Getter;
 public class SnsPostInfoRsp {
 	private String postId;
 	private String userId;
-	private String username;
 	private Location location;
 	private List<String> tags;
 	private List<PostContent> postContents;
@@ -24,5 +23,4 @@ public class SnsPostInfoRsp {
 	private String postBodyText;
 	private Integer targetAudTypeId;
 	private LocalDateTime postedAt;
-	private List<ScrapBoardInfo> scrapBoardIdList;
 }
