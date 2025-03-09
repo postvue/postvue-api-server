@@ -7,6 +7,10 @@ on:
       - release/**
     types:
       - closed
+  push:
+    branches:
+      - release-*
+      - release/**
   create:
     branches:
       - release-*
