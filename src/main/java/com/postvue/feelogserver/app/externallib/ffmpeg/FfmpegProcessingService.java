@@ -129,6 +129,7 @@ public class FfmpegProcessingService {
 			// Build FFmpeg command
 			FFmpegOutputBuilder fFmpegOutputBuilder = new FFmpegBuilder()
 				.setInput(videoInputFile.getAbsolutePath())
+				.addExtraArgs(useCuda ? "-hwaccel" : "", useCuda ? "cuda" : "") // ✅ HW 가속을 입력 파일에 적용
 				.addOutput(outputM3u8)
 				.setAudioCodec("aac")
 				.addExtraArgs("-preset", preset)
@@ -148,16 +149,8 @@ public class FfmpegProcessingService {
 				.addExtraArgs("-hls_time", "4")
 				.addExtraArgs("-hls_list_size", "0")
 				.addExtraArgs("-hls_segment_filename", new File(outputDirFile, "segment_%03d.ts").getAbsolutePath()) // Segment naming pattern
-				.addExtraArgs("-hls_playlist_type", "vod");
-
-			// Add CUDA-specific settings based on profile
-			if (useCuda) {
-				fFmpegOutputBuilder
-					.addExtraArgs("-hwaccel", "cuda")
-					.setVideoCodec(videoCodec);
-			} else {
-				fFmpegOutputBuilder.setVideoCodec(videoCodec);
-			}
+				.addExtraArgs("-hls_playlist_type", "vod")
+				.setVideoCodec(videoCodec);
 
 			// Finalize the build
 			FFmpegBuilder fFmpegBuilder = fFmpegOutputBuilder.done();
