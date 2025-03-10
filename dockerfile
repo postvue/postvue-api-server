@@ -1,10 +1,9 @@
 # Dockerfile
-FROM openjdk:17-jdk-slim
+FROM nvidia/cuda:12.1.1-base-ubuntu22.04
 
 # FFMPEG 설정
 RUN apt-get update && apt-get install -y \
     ffmpeg \
-    libx264-dev \
     && apt-get clean
 
 VOLUME /tmp
