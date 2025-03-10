@@ -3,6 +3,7 @@ FROM nvidia/cuda:12.1.1-base-ubuntu22.04
 
 # FFMPEG 설정
 RUN apt-get update && apt-get install -y \
+    openjdk-17-jdk \
     ffmpeg \
     && apt-get clean
 
