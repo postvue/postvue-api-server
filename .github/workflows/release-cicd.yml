@@ -137,6 +137,17 @@ jobs:
 
           echo "Navigating to service directory..."
           cd ${SERVICE_DIR}
+        
+          echo "Checking if the latest image is available..."
+          for i in {1..6}; do
+            sleep 5  # 5초 대기 (최대 30초)
+            if docker manifest inspect ${DOCKER_HUB_USERNAME}/postvue-api-server:latest > /dev/null 2>&1; then
+              echo "Latest image is available!"
+              break
+            else
+              echo "Waiting for the latest image to be available on Docker Hub..."
+            fi
+          done
 
           echo "Logging into Docker Hub..."
           echo "${DOCKER_HUB_ACCESS_TOKEN}" | docker login --username "${DOCKER_HUB_USERNAME}" --password-stdin
