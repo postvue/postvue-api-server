@@ -1959,18 +1959,20 @@ public class PostsService {
 
 		if ( (latitude != null && longitude != null) || (isApiRequestAddressToGis && StringValidUtil.isNotBlank(address))) {
 			Float updateLatitude;
+			Float updateLongitude;
 
 			if ((latitude != null && longitude != null)){
 				updateLatitude = latitude;
+				updateLongitude = longitude;
 			}
 			else{
 				GetAddressGeocodeRsp getAddressGeocodeRsp = mapService.getAddressGeocode(address);
 				updateLatitude = getAddressGeocodeRsp.getLatitude();
 				updateLongitude = getAddressGeocodeRsp.getLongitude();
+			}
 
 			snsPost.setAddress(address);
 			snsPost.setBuildName(buildName);
-			snsPost.setH3Index(h3Service.getLatLngToH3Cell(latitude, longitude));
 			snsPost.setLatitude(updateLatitude);
 			snsPost.setLongitude(updateLongitude);
 			snsPost.setH3Index(h3Service.getLatLngToH3Cell(updateLatitude, updateLongitude));

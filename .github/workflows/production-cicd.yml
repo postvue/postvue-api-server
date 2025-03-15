@@ -143,6 +143,9 @@ jobs:
               echo "Waiting for the latest image to be available on Docker Hub..."
             fi
           done
+        
+          echo "Logging out from Docker Hub to clear previous sessions..."
+          docker logout || echo "No previous Docker login found"
 
           echo "Logging into Docker Hub..."
           echo "${DOCKER_HUB_ACCESS_TOKEN}" | docker login --username "${DOCKER_HUB_USERNAME}" --password-stdin
