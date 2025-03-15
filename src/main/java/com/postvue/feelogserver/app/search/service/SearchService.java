@@ -126,8 +126,8 @@ public class SearchService {
 				.snsUser(SnsUser.builder().id(userId).build())
 				.build();
 
-			snsTagFollow = snsTagFollowRepository.save(snsTagFollow);
-			snsTagFollowRepository.flush();
+			snsTagFollow = snsTagFollowRepository.saveAndFlush(snsTagFollow);
+			// snsTagFollowRepository.flush();
 
 			snsUserFavoriteTermBookmark = SnsUserFavoriteTermBookmark.builder()
 				.snsUser(SnsUser.builder().id(userId).build())

@@ -14,6 +14,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -28,6 +30,7 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,6 +41,7 @@ import com.postvue.feelogserver.app.common.rsp.SnsPostFollowsGetRsp;
 import com.postvue.feelogserver.app.externallib.ffmpeg.FfmpegProcessingService;
 import com.postvue.feelogserver.app.facade.service.PostProfileFacadeService;
 import com.postvue.feelogserver.app.h3.service.H3Service;
+import com.postvue.feelogserver.app.maps.dto.GetAddressGeocodeRsp;
 import com.postvue.feelogserver.app.maps.service.MapService;
 import com.postvue.feelogserver.app.messagequeue.service.producer.VideoConversationProducer;
 import com.postvue.feelogserver.app.notifications.service.NotificationService;
@@ -1233,22 +1237,28 @@ public class PostsService {
 		List<MultipartFile> files,
 		Long userId
 	) {
-		composesPost(
-			new SnsPost(),
-			snsPostComposeCreateReq.getTitle(),
-			snsPostComposeCreateReq.getBodyText(),
-			snsPostComposeCreateReq.getAddress(),
-			snsPostComposeCreateReq.getBuildName(),
-			snsPostComposeCreateReq.getLatitude(),
-			snsPostComposeCreateReq.getLongitude(),
-			snsPostComposeCreateReq.getTargetAudienceValue(),
-			snsPostComposeCreateReq.getExternalImgLinkList(),
-			snsPostComposeCreateReq.getScrapIdList(),
-			snsPostComposeCreateReq.getTagList(),
-			files, userId,false,
-			List.of()
-		);
-		return true;
+		try {
+			composePostProcess(
+				new SnsPost(),
+				snsPostComposeCreateReq.getTitle(),
+				snsPostComposeCreateReq.getBodyText(),
+				snsPostComposeCreateReq.getAddress(),
+				snsPostComposeCreateReq.getBuildName(),
+				snsPostComposeCreateReq.getLatitude(),
+				snsPostComposeCreateReq.getLongitude(),
+				snsPostComposeCreateReq.getTargetAudienceValue(),
+				snsPostComposeCreateReq.getExternalImgLinkList(),
+				snsPostComposeCreateReq.getScrapIdList(),
+				snsPostComposeCreateReq.getTagList(),
+				files, userId, false,
+				List.of(),
+				null,
+				false
+			).get();
+			return true;
+		} catch (ExecutionException | InterruptedException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	// @ANSWER: cloudflare 랑 minio랑 구분 되도록 구현됨
@@ -1278,26 +1288,35 @@ public class PostsService {
 			}
 		}));
 
-		composesPost(
-			snsPost,
-			snsPostComposeUpdateReq.getTitle(),
-			snsPostComposeUpdateReq.getBodyText(),
-			snsPostComposeUpdateReq.getAddress(),
-			snsPostComposeUpdateReq.getBuildName(),
-			snsPostComposeUpdateReq.getLatitude(),
-			snsPostComposeUpdateReq.getLongitude(),
-			snsPostComposeUpdateReq.getTargetAudienceValue(),
-			snsPostComposeUpdateReq.getExternalImgLinkList(),
-			snsPostComposeUpdateReq.getScrapIdList(),
-			snsPostComposeUpdateReq.getTagList(),
-			files, userId,true,
-			registerPostContentList
-		);
-		return true;
+		try {
+			composePostProcess(
+				snsPost,
+				snsPostComposeUpdateReq.getTitle(),
+				snsPostComposeUpdateReq.getBodyText(),
+				snsPostComposeUpdateReq.getAddress(),
+				snsPostComposeUpdateReq.getBuildName(),
+				snsPostComposeUpdateReq.getLatitude(),
+				snsPostComposeUpdateReq.getLongitude(),
+				snsPostComposeUpdateReq.getTargetAudienceValue(),
+				snsPostComposeUpdateReq.getExternalImgLinkList(),
+				snsPostComposeUpdateReq.getScrapIdList(),
+				snsPostComposeUpdateReq.getTagList(),
+				files, userId, true,
+				registerPostContentList,
+				null,
+				false
+			).get();
+
+			return true;
+		} catch (ExecutionException | InterruptedException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
+
+	@Async
 	@Transactional(rollbackOn = Exception.class)
-	public void composesPost(
+	public CompletableFuture<Void> composePostProcess(
 		SnsPost snsPost,
 		String title,
 		String bodyText,
@@ -1312,7 +1331,9 @@ public class PostsService {
 		List<MultipartFile> multipartFileList_,
 		Long userId,
 		Boolean isEdit,
-		List<SnsPostContent> existPostContentList
+		List<SnsPostContent> existPostContentList,
+		LocalDateTime createdAt,
+		Boolean isApiRequestAddressToGis
 	) {
 		List<MultipartFile> multipartFileList = multipartFileList_ != null ? new ArrayList<>(multipartFileList_) : new ArrayList<>();
 
@@ -1334,17 +1355,16 @@ public class PostsService {
 		// 링크로 업로드 된 이미지나 비디오
 		// QUERY 4: INSERT, NEW POST
 		SnsPost _snsPost = updateUploadSnsPost(
-			snsPost, title,bodyText, targetAudienceValue, address, buildName, latitude, longitude, snsUser, snsPostContentList, snsPostTagEntityList);
+			snsPost, title,bodyText, targetAudienceValue, address, buildName, latitude, longitude, snsUser, snsPostContentList, snsPostTagEntityList, createdAt, isApiRequestAddressToGis);
 
 		try {
-			if (isEdit){
+			if (isEdit) {
 				snsTagPostJdbcRepository.deleteByPostId(_snsPost.getId());
 				// snsPostJdbcRepository.updatePost(_snsPost);
 				snsPostRepository.save(_snsPost);
 			}
-			else{
+			else {
 				snsPostJdbcRepository.insertPost(_snsPost);
-
 				// QUERY 5: INSERT SNS POST USER REACTION
 				// SnsPostUserReaction snsPostUserReaction = SnsPostUserReaction.builder()
 				// 	.snsPost(_snsPost)
@@ -1352,6 +1372,7 @@ public class PostsService {
 				// 	.build();
 				// snsPostUserReactionRepository.save(snsPostUserReaction);
 			}
+
 			if (scrapIdList != null){
 				if (scrapIdList.isEmpty()){
 					snsScrapRepository.deleteAllByPostId(_snsPost.getId());
@@ -1453,6 +1474,7 @@ public class PostsService {
 				throw new InternalServerErrorException("서버 오류로 업로드 실패", e);
 			}
 		}
+		return CompletableFuture.completedFuture(null);
 	}
 
 	@Transactional
@@ -1908,7 +1930,10 @@ public class PostsService {
 		Float longitude,
 		SnsUser snsUser,
 		List<SnsPostContent> snsPostContentList,
-		List<SnsTag> snsPostTagEntityList) {
+		List<SnsTag> snsPostTagEntityList,
+		LocalDateTime createdAt,
+		Boolean isApiRequestAddressToGis
+	) {
 
 		if (title.length() > PostConst.MAX_POST_TITLE_NUM) throw new BadRequestErrorException("제목 최대 길이는 " + PostConst.MAX_POST_TITLE_NUM + "입니다.");
 		if (bodyText.length() > PostConst.MAX_POST_BODY_TEXT_NUM) throw new BadRequestErrorException("본문 최대 길이는 " + PostConst.MAX_POST_BODY_TEXT_NUM + "입니다.");
@@ -1932,18 +1957,32 @@ public class PostsService {
 				throw new BadRequestErrorException("옳바르지 않은 공개 대상 타입 입니다.");
 		});
 
-		if (latitude != null && longitude != null) {
-			// GetAddressGeocodeRsp getAddressGeocodeRsp = mapService.getAddressGeocode(address);
+		if ( (latitude != null && longitude != null) || (isApiRequestAddressToGis && StringValidUtil.isNotBlank(address))) {
+			Float updateLatitude;
+
+			if ((latitude != null && longitude != null)){
+				updateLatitude = latitude;
+			}
+			else{
+				GetAddressGeocodeRsp getAddressGeocodeRsp = mapService.getAddressGeocode(address);
+				updateLatitude = getAddressGeocodeRsp.getLatitude();
+				updateLongitude = getAddressGeocodeRsp.getLongitude();
 
 			snsPost.setAddress(address);
 			snsPost.setBuildName(buildName);
-			snsPost.setLatitude(latitude);
-			snsPost.setLongitude(longitude);
 			snsPost.setH3Index(h3Service.getLatLngToH3Cell(latitude, longitude));
+			snsPost.setLatitude(updateLatitude);
+			snsPost.setLongitude(updateLongitude);
+			snsPost.setH3Index(h3Service.getLatLngToH3Cell(updateLatitude, updateLongitude));
 
-			Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+			Point point = geometryFactory.createPoint(new Coordinate(updateLongitude, updateLatitude));
 			point.setSRID(MapConst.MAP_COORDINATE_SYSTEM); // WGS 84 좌표계 설정
 			snsPost.setGeom(point);
+
+		}
+
+		if (createdAt != null){
+			snsPost.setCreatedAt(createdAt);
 		}
 
 		return snsPost;
