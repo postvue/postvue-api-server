@@ -1,0 +1,1 @@
+export type ExcelRow = Record<string, any>; // ✅ 엑셀 데이터의 객체 형태

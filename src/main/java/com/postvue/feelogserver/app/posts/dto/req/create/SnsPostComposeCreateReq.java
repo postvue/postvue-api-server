@@ -8,8 +8,10 @@ import com.postvue.feelogserver.global.constant.PostConst;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+@AllArgsConstructor
 @Getter
 public class SnsPostComposeCreateReq {
 	private List<String> tagList;

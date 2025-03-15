@@ -13,6 +13,7 @@ import com.postvue.feelogserver.domain.adminserviceerrormanagements.repository.A
 import com.postvue.feelogserver.global.admin.service.errormanage.RabbitMQErrorServiceInfo;
 import com.postvue.feelogserver.global.constant.RabbitMQConst;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.LongString;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +29,17 @@ public class ParkingLotConsumer {
 	public void parkingLotConsume(Channel channel, Message message) throws
 		IOException {
 		log.info("Received message in parking lot queue");
-		String errorMsg = (String) message.getMessageProperties().getHeaders().get(RabbitMQConst.CONSUMER_ERROR_INFO);
+
+		Object consumerErrorInfoObj = message.getMessageProperties().getHeaders().get(RabbitMQConst.CONSUMER_ERROR_INFO);
+		String errorMsg = null;
+
+		if (consumerErrorInfoObj instanceof String) {
+			errorMsg = (String) consumerErrorInfoObj;
+		} else if (consumerErrorInfoObj instanceof LongString) {
+			errorMsg = ((LongString) consumerErrorInfoObj).toString(); // ✅ LongString을 String으로 변환
+		} else if (consumerErrorInfoObj != null) {
+			errorMsg = consumerErrorInfoObj.toString(); // ✅ 기타 객체도 String으로 변환
+		}
 
 		adminServiceErrorManagementRepository.save(AdminServiceErrorManagement.builder()
 			.serviceErrorType(RabbitMQErrorServiceInfo.SERVICE_ERROR_TYPE_NAME)

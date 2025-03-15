@@ -1,0 +1,1 @@
+export const SERVER_API_PATH = "https://api.feelog.net";
