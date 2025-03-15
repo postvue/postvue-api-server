@@ -82,6 +82,10 @@ public class JwtTokenProvider {
 		}
 	}
 
+	public CustomUserDetails getUserDetails(String token) {
+		return CustomUserDetails.of(getSubjectByToken(token), getUserRole(token));
+	}
+
 	public Authentication getAuthentication(String token) {
 		CustomUserDetails userDetails = CustomUserDetails.of(getSubjectByToken(token), getUserRole(token));
 		userDetails.getRole();

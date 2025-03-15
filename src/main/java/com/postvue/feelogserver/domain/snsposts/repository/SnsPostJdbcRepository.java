@@ -71,7 +71,8 @@ public class SnsPostJdbcRepository {
 			ps.setString(8, snsPost.getAddress());
 			ps.setString(9, snsPost.getBuildName());
 			ps.setObject(10, tagsString, Types.OTHER);
-			ps.setObject(11, localDateTime);
+			// created_at
+			ps.setObject(11, snsPost.getCreatedAt() != null ? snsPost.getCreatedAt() : localDateTime);
 			ps.setObject(12, localDateTime);
 			ps.setString(13, snsPost.getTgtAudType().toString());
 

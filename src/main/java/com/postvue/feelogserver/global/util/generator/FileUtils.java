@@ -109,4 +109,9 @@ public final class FileUtils {
 		}
 	}
 
+	public static MultipartFile convertFileToMultipartFile(File file) throws IOException {
+		byte[] fileBytes = Files.readAllBytes(file.toPath());
+		return new CustomMultipartFile(fileBytes, file.getName());
+	}
+
 }

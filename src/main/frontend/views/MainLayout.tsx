@@ -20,9 +20,10 @@ export default function MenuOnLeftLayout() {
 
   const currentTitle = matches[matches.length - 1]?.handle?.title ?? 'Unknown';
 
-  const menuRoutes = (routes[0]?.children || []).filter(
+  const menuRoutes = (routes[1]?.children?.[0].children || []).filter(
     (route) => route.path && route.handle && route.handle.icon && route.handle.title
   ) as readonly MenuRoute[];
+
 
   return (
     <AppLayout className="block h-full" primarySection="drawer">

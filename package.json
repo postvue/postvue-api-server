@@ -4,6 +4,8 @@
   "type": "module",
   "dependencies": {
     "@polymer/polymer": "3.5.2",
+    "@types/qs": "^6.9.18",
+    "@types/xlsx": "^0.0.35",
     "@vaadin-component-factory/vcf-nav": "1.1.0",
     "@vaadin/bundles": "24.5.1",
     "@vaadin/common-frontend": "0.0.19",
@@ -23,17 +25,22 @@
     "@vaadin/vaadin-material-styles": "24.5.1",
     "@vaadin/vaadin-themable-mixin": "24.5.1",
     "@vaadin/vaadin-usage-statistics": "2.1.3",
+    "axios": "^1.8.3",
     "classnames": "^2.3.2",
     "construct-style-sheets-polyfill": "3.1.0",
     "date-fns": "2.29.3",
     "hls.js": "^1.5.20",
     "lit": "3.2.1",
+    "qs": "^6.14.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "react-dropzone": "^14.3.8",
     "react-router-dom": "6.26.2",
+    "sheetjs": "^2.0.0",
     "styled-components": "^6.1.13",
     "swiper": "^11.1.14",
-    "ts-transformer-keys": "^0.4.4"
+    "ts-transformer-keys": "^0.4.4",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@babel/preset-react": "7.25.7",
@@ -98,7 +105,14 @@
     "ts-transformer-keys": "$ts-transformer-keys",
     "styled-components": "$styled-components",
     "swiper": "$swiper",
-    "hls.js": "$hls.js"
+    "hls.js": "$hls.js",
+    "@types/xlsx": "$@types/xlsx",
+    "react-dropzone": "$react-dropzone",
+    "sheetjs": "$sheetjs",
+    "xlsx": "$xlsx",
+    "@types/qs": "$@types/qs",
+    "axios": "$axios",
+    "qs": "$qs"
   },
   "vaadin": {
     "dependencies": {
@@ -159,6 +173,6 @@
       "workbox-core": "7.1.0",
       "workbox-precaching": "7.1.0"
     },
-    "hash": "3f4b737fe28a7084fa167aa345072fb75f3c0abbc93d5b8e033051d27c454a6f"
+    "hash": "e9f97e1ddbfdc22d66bf2d7a169bbfd422ab7a870dd792bdba14cdb8caf91e2a"
   }
 }
