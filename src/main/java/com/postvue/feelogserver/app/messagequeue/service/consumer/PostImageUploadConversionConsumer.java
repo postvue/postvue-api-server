@@ -153,7 +153,6 @@ public class PostImageUploadConversionConsumer {
 		} finally {
 			// 메시지 처리 성공 시 수동 확인
 			channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
-
 			// 세마포어 반환
 			semaphore.release();
 		}
