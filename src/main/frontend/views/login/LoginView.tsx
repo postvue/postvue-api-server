@@ -20,7 +20,7 @@ export default function LoginView() {
             // 로그인 성공 시 /admin 페이지로 이동
             navigate("/admin");
         } catch (err) {
-            console.log(err);
+            console.error(err);
             alert(err)
             setError("아이디 또는 비밀번호가 올바르지 않습니다.");
         }

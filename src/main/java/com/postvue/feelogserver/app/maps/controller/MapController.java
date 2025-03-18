@@ -14,6 +14,7 @@ import com.postvue.feelogserver.app.maps.dto.GetAddressReverseGeocodeRsp;
 import com.postvue.feelogserver.app.maps.dto.GetLocalSearchRsp;
 import com.postvue.feelogserver.app.maps.dto.GetMapSearchPostRsp;
 import com.postvue.feelogserver.app.maps.dto.GetMapSearchRecommRsp;
+import com.postvue.feelogserver.app.maps.service.AppleMapsService;
 import com.postvue.feelogserver.app.maps.service.MapService;
 import com.postvue.feelogserver.app.posts.dto.rsp.get.SnsPostRsp;
 import com.postvue.feelogserver.app.posts.service.PostsService;
@@ -30,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 public class MapController {
 	private final MapService mapService;
 	private final PostsService postsService;
+	private final AppleMapsService appleMapsService;
 
 	@GetMapping("/addresses/uniqueness")
 	public ServerGetOkRsp<GetAddressReverseGeocodeRsp> getAddressByGeo(

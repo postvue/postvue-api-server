@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import styled from "styled-components";
 import React from "react";
 import TableComponent from "Frontend/components/TableComponent";
@@ -23,63 +23,61 @@ export default function ExcelUploader() {
     }
 
     return (
-        <>
-            <div className="p-5">
-                {/* ✅ 파일 업로드 UI */}
-                {(tableData.length > 0 || uploadedImages.length > 0) && (
-                    <CancelWrap>
-                        <CancelButton onClick={onReset}>
-                            취소
-                        </CancelButton>
-                    </CancelWrap>
-                )}
+        <div className="p-5">
+            {/* ✅ 파일 업로드 UI */}
+            {(tableData.length > 0 || uploadedImages.length > 0) && (
+                <CancelWrap>
+                    <CancelButton onClick={onReset}>
+                        취소
+                    </CancelButton>
+                </CancelWrap>
+            )}
 
-                {tableData.length <= 0 && <UploadPostTableDropButton tableData={tableData} setTableData={setTableData} setHeaders={setHeaders} />}
+            {tableData.length <= 0 && <UploadPostTableDropButton tableData={tableData} setTableData={setTableData} setHeaders={setHeaders} />}
 
-                {(tableData.length > 0 && uploadedImages.length <= 0) && (
-                    <>
-                    <UploadPostImageDropButton tableData={tableData} setTableData={setTableData} setHeaders={setHeaders} setUploadedImages={setUploadedImages} />
-                    </>
-                )}
+            {(tableData.length > 0 && uploadedImages.length <= 0) && (
+                <>
+                <UploadPostImageDropButton tableData={tableData} setTableData={setTableData} setHeaders={setHeaders} setUploadedImages={setUploadedImages} />
+                </>
+            )}
 
 
-                {tableData.length > 0 && uploadedImages.length > 0 && (
-                    <UploadButtonWrap>
-                        <UploadButton onClick={() => setIsActiveConfirmPopup(true)}>
-                            {uploadedImages.length.toLocaleString()}개의 포스트를 업로드 하시겠습니까?
-                        </UploadButton>
-                    </UploadButtonWrap>
-                )}
+            {tableData.length > 0 && uploadedImages.length > 0 && (
+                <UploadButtonWrap>
+                    <UploadButton onClick={() => setIsActiveConfirmPopup(true)}>
+                        {tableData.filter((v)=> v.imagePath !== "").length.toLocaleString()}개의 포스트를 업로드 하시겠습니까?
+                    </UploadButton>
+                </UploadButtonWrap>
+            )}
 
-                {/* ✅ 엑셀 데이터 미리보기 테이블 */}
-                {tableData.length > 0 && (
-                    <TableComponent
-                        contentList={tableData} // ✅ 객체 배열 전달
-                        headers={headers} // ✅ 헤더 전달
-                        onRowClick={setSelectedRow} // ✅ 객체 데이터를 직접 전달
-                    />
-                )}
+            {/* ✅ 엑셀 데이터 미리보기 테이블 */}
+            {tableData.length > 0 && (
+                <TableComponent
+                    contentList={tableData} // ✅ 객체 배열 전달
+                    headers={headers} // ✅ 헤더 전달
+                    onRowClick={setSelectedRow} // ✅ 객체 데이터를 직접 전달
+                />
+            )}
 
-                {/* ✅ 상세보기 팝업 */}
-                {selectedRow && (
-                    <PostUploadDetailPopup
-                        tableData={tableData}
-                        selectedRow={selectedRow}
-                        onClose={() => setSelectedRow(null)}
-                    />
-                )}
+            {/* ✅ 상세보기 팝업 */}
+            {selectedRow && (
+                <PostUploadDetailPopup
+                    tableData={tableData}
+                    selectedRow={selectedRow}
+                    onClose={() => setSelectedRow(null)}
+                />
+            )}
 
-                {/* ✅ 업로드 확인 팝업 */}
-                {isActiveConfirmPopup && (
-                    <PostUploadConfirmPopup
-                        onClose={() => setIsActiveConfirmPopup(false)}
-                        onReset={onReset}
-                        tableData={tableData}
-                        uploadedImages={uploadedImages}
-                    />
-                )}
-            </div>
-        </>
+            {/* ✅ 업로드 확인 팝업 */}
+            {isActiveConfirmPopup && (
+                <PostUploadConfirmPopup
+                    onClose={() => setIsActiveConfirmPopup(false)}
+                    onReset={onReset}
+                    tableData={tableData}
+                    uploadedImages={uploadedImages}
+                />
+            )}
+        </div>
     );
 }
 
