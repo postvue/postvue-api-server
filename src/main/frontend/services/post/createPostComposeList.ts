@@ -7,8 +7,8 @@ export const createPostCompose = (formData: FormData): Promise<boolean> => {
     return formApi
         .post(`${ADMIN_POST_COMPOSE_LIST_API_PATH}`, formData)
         .then((res) => {
-            console.log(data)
             const data:boolean = res.data.data;
+            console.log(data)
             return data;
         })
         .catch((error) => {
