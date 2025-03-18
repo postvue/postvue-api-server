@@ -23,6 +23,7 @@ import com.postvue.feelogserver.global.constant.MediaConfigConst;
 import com.postvue.feelogserver.global.exception.BadRequestErrorException;
 import com.postvue.feelogserver.global.exception.UnauthorizedErrorException;
 import com.postvue.feelogserver.global.http.response.serverresponse.ServerPostCreatedRsp;
+import com.postvue.feelogserver.global.util.validation.StringValidUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -57,6 +58,12 @@ public class PostsAdminController {
 				if (snsUserRepository.findByUsername(adminSnsPostComposeCreateReq.getUsername()).isEmpty()){
 					throw new BadRequestErrorException("해당 계정은 없습니다.");
 				}
+				adminSnsPostComposeCreateReq.getTagList().stream().forEach((s -> {
+					if (StringValidUtil.isOnlySpecialCharacters(s)) {
+						System.out.println(s);
+						throw new BadRequestErrorException("태그는 특수 문자로만 되어 있을 수 없습니다.");
+					}
+				}));
 			}
 		);
 

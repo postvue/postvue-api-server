@@ -12,4 +12,8 @@ public final class StringValidUtil {
 	public static String nullIfEmpty(String value) {
 		return (value == null || value.isBlank()) ? null : value;
 	}
+
+	public static boolean isOnlySpecialCharacters(String str) {
+		return !str.isEmpty() && str.matches("[^\\p{L}\\p{N}]+");
+	}
 }
