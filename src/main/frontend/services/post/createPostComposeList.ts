@@ -3,7 +3,7 @@ import {ADMIN_POST_COMPOSE_LIST_API_PATH} from "Frontend/services/appApiPath";
 import axios from "axios";
 
 export const createPostCompose = (formData: FormData): Promise<boolean> => {
-    console.log(formDate);
+    console.log(formData);
     return formApi
         .post(`${ADMIN_POST_COMPOSE_LIST_API_PATH}`, formData)
         .then((res) => {
