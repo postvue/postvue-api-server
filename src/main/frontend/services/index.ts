@@ -50,7 +50,7 @@ export const privateApi = axios.create({
 export const formApi = axios.create({
     // baseURL: SERVER_API_PATH,
     headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data; charset=utf-8",
     },
     withCredentials: true,
 });
