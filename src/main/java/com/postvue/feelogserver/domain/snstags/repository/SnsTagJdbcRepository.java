@@ -22,7 +22,10 @@ public class SnsTagJdbcRepository {
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void saveAll(List<SnsTag> snsTags) {
-		String sql = "INSERT INTO sns_tags_tb (sns_tag_id, tag_name, tag_reps_batch_content, tag_reps_batch_content_type, created_at) VALUES (?, ?, ?, ?, ?)";
+		String sql = "INSERT INTO sns_tags_tb "
+			+ "(sns_tag_id, tag_name, tag_reps_batch_content, tag_reps_batch_content_type, created_at) "
+			+ "VALUES (?, ?, ?, ?, ?) "
+			+"ON CONFLICT (tag_name) DO NOTHING"; // 중복 태그 삽입 방지;
 
 		LocalDateTime localDateTime = LocalDateTime.now();
 		jdbcTemplate.batchUpdate(sql,
