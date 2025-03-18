@@ -72,9 +72,7 @@ const PostUploadConfirmPopup: React.FC<PostUploadConfirmPopupProps> = ({ onClose
 
             const snsPostComposeCreateBlob = new Blob(
                 [JSON.stringify(postData)],
-                {
-                    type: 'application/json',
-                },
+                { type: 'application/json; charset=utf-8' } // 🔥 UTF-8 명시
             );
 
             formData.append('snsPostComposeList', snsPostComposeCreateBlob);
