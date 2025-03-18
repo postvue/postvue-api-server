@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -1883,8 +1884,13 @@ public class PostsService {
 		// QUERY 2: SELECT, EXITING SNS TAG LIST
 		List<SnsTag> existingSnsTagEntityList = snsTagRepository.findAllByTagNameIn(tagList);
 
+		Set<String> existingTagNames = existingSnsTagEntityList.stream()
+			.map(SnsTag::getTagName)
+			.collect(Collectors.toSet());
+
 		List<String> newTagNameList = tagList.stream()
-			.filter(tagName -> !existingSnsTagEntityList.stream().map(SnsTag::getTagName).toList().contains(tagName))
+			.filter(tagName -> !existingTagNames.contains(tagName))
+			.distinct() // 혹시 모를 중복 제거
 			.toList();
 
 		Random random = new Random();
