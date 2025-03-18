@@ -182,6 +182,7 @@ public class AppleAuthService {
         }
     }
 
+
     // private-key.p8 로드 (EC 키 지원)
     private PrivateKey loadPrivateKey() throws Exception {
         // 환경 변수에서 가져온 Private Key의 개행 문자 정리

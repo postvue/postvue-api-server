@@ -33,6 +33,8 @@ openapi:
     appleTeamId: 7HT428P8J4
     appleFeelogApiKeyId: 9KL5F392Y2
     appleFeelogApiPrivateKey: ${OPENAPI_APPLE_FEELOG_API_PRIVATE_KEY}
+    appleMapApiKey: ${OPENAPI_APPLE_MAP_API_KEY}
+
 
   googledevelopers:
     oauthClientId: ${OPENAPI_GOOGLE_DEVELOPERS_OAUTH_CLIENT_ID}

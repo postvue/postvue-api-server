@@ -54,3 +54,4 @@ spring:
         - vaadin
         - config-local
         - common-local
+        - log

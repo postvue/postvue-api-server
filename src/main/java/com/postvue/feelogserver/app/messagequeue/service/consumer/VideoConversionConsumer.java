@@ -88,7 +88,6 @@ public class VideoConversionConsumer {
 			File outputDirFile = outputTempAbsoluteDirPath.toFile();
 
 			if (ffmpegProcessingService.getVideoDuration(videoFile) <= MediaConfigConst.MAX_VIDEO_DURATION) {
-
 				ffmpegProcessingService.convertToHLS(videoFile, outputDirFile, minioCloudService.m3u8FileName);
 				minioCloudService.uploadHLSToMinio(outputDirFile, minioCloudService.getBucketKeyContentUrl(
 					videoUploadConversionMessage.getVideoContent()));
@@ -120,7 +119,7 @@ public class VideoConversionConsumer {
 				tempDir.toFile().delete();
 
 				// 메시지 처리 성공 시 수동 확인
-				channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+				// channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
 			}
 			else{
 				// 파일 즉시 제거
@@ -151,14 +150,18 @@ public class VideoConversionConsumer {
 					null, HttpStatus.INTERNAL_SERVER_ERROR.value());
 				log.warn(errorTemplate);
 				consumerErrorInfo = errorTemplate;
-				message.getMessageProperties().getHeaders().put(RabbitMQConst.CONSUMER_ERROR_INFO, consumerErrorInfo);
+				// message.getMessageProperties().getHeaders().put(RabbitMQConst.CONSUMER_ERROR_INFO, consumerErrorInfo);
 			}
+			message.getMessageProperties().getHeaders().put(RabbitMQConst.CONSUMER_ERROR_INFO, consumerErrorInfo);
 
 			// channel.basicReject(message.getMessageProperties().getDeliveryTag(), false);
 			rabbitTemplate.send(RabbitMQConst.RABBIT_MQ_VIDEO_DLX_EXCHANGE,
 				message.getMessageProperties().getReceivedRoutingKey(), message);
-			channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+			// channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
 		} finally {
+			// 메시지 처리 성공 시 수동 확인
+			channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+
 			// 세마포어 반환
 			semaphore.release();
 		}

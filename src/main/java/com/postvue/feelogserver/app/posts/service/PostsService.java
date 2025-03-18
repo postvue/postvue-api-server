@@ -42,6 +42,7 @@ import com.postvue.feelogserver.app.externallib.ffmpeg.FfmpegProcessingService;
 import com.postvue.feelogserver.app.facade.service.PostProfileFacadeService;
 import com.postvue.feelogserver.app.h3.service.H3Service;
 import com.postvue.feelogserver.app.maps.dto.GetAddressGeocodeRsp;
+import com.postvue.feelogserver.app.maps.service.AppleMapsService;
 import com.postvue.feelogserver.app.maps.service.MapService;
 import com.postvue.feelogserver.app.messagequeue.service.producer.VideoConversationProducer;
 import com.postvue.feelogserver.app.notifications.service.NotificationService;
@@ -110,6 +111,7 @@ import com.postvue.feelogserver.domain.snsuserfavoritetermbookmarks.SnsUserFavor
 import com.postvue.feelogserver.domain.snsuserfavoritetermbookmarks.respository.SnsUserFavoriteTermBookmarkRepository;
 import com.postvue.feelogserver.domain.snsusers.SnsUser;
 import com.postvue.feelogserver.domain.snsusers.repository.SnsUserRepository;
+import com.postvue.feelogserver.global.api.apple.dto.AppleMapsGeocodeResponse;
 import com.postvue.feelogserver.global.constant.HashConst;
 import com.postvue.feelogserver.global.constant.MapConst;
 import com.postvue.feelogserver.global.constant.PageConfigConst;
@@ -158,6 +160,8 @@ public class PostsService {
 
 	private final PostProfileFacadeService postProfileFacadeService;
 	private final H3Service h3Service;
+
+	private final AppleMapsService appleMapsService;
 	private final GeometryFactory geometryFactory = new GeometryFactory();
 
 
@@ -1958,29 +1962,39 @@ public class PostsService {
 		});
 
 		if ( (latitude != null && longitude != null) || (isApiRequestAddressToGis && StringValidUtil.isNotBlank(address))) {
-			Float updateLatitude;
-			Float updateLongitude;
+			Float updateLatitude = null;
+			Float updateLongitude = null;
 
 			if ((latitude != null && longitude != null)){
 				updateLatitude = latitude;
 				updateLongitude = longitude;
 			}
 			else{
-				GetAddressGeocodeRsp getAddressGeocodeRsp = mapService.getAddressGeocode(address);
-				updateLatitude = getAddressGeocodeRsp.getLatitude();
-				updateLongitude = getAddressGeocodeRsp.getLongitude();
+				try {
+					GetAddressGeocodeRsp getAddressGeocodeRsp = mapService.getAddressGeocode(address);
+					updateLatitude = getAddressGeocodeRsp.getLatitude();
+					updateLongitude = getAddressGeocodeRsp.getLongitude();
+				}
+				catch (BadRequestErrorException e){
+					AppleMapsGeocodeResponse appleMapsGeocodeResponse =appleMapsService.getGeocode(address);
+					if (!appleMapsGeocodeResponse.getResults().isEmpty()){
+						updateLatitude = (float) appleMapsGeocodeResponse.getResults().get(0).getCoordinate().getLatitude();
+						updateLongitude = (float) appleMapsGeocodeResponse.getResults().get(0).getCoordinate().getLongitude();
+					}
+				}
 			}
 
-			snsPost.setAddress(address);
-			snsPost.setBuildName(buildName);
-			snsPost.setLatitude(updateLatitude);
-			snsPost.setLongitude(updateLongitude);
-			snsPost.setH3Index(h3Service.getLatLngToH3Cell(updateLatitude, updateLongitude));
+			if ((updateLatitude != null && updateLongitude != null)){
+				snsPost.setAddress(address);
+				snsPost.setBuildName(buildName);
+				snsPost.setLatitude(updateLatitude);
+				snsPost.setLongitude(updateLongitude);
+				snsPost.setH3Index(h3Service.getLatLngToH3Cell(updateLatitude, updateLongitude));
 
-			Point point = geometryFactory.createPoint(new Coordinate(updateLongitude, updateLatitude));
-			point.setSRID(MapConst.MAP_COORDINATE_SYSTEM); // WGS 84 좌표계 설정
-			snsPost.setGeom(point);
-
+				Point point = geometryFactory.createPoint(new Coordinate(updateLongitude, updateLatitude));
+				point.setSRID(MapConst.MAP_COORDINATE_SYSTEM); // WGS 84 좌표계 설정
+				snsPost.setGeom(point);
+			}
 		}
 
 		if (createdAt != null){

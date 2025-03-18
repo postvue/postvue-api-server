@@ -415,4 +415,9 @@ public class MapService {
 	double convertNaverCoordToGPS(int coord) {
 		return coord / 1e7;
 	}
+
+	public boolean isInSouthKorea(double latitude, double longitude) {
+		return (latitude >= 33.0 && latitude <= 43.0) &&
+			(longitude >= 124.0 && longitude <= 132.0);
+	}
 }

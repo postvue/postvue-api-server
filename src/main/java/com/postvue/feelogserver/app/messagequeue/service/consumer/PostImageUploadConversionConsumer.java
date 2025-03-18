@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
 
@@ -86,7 +87,7 @@ public class PostImageUploadConversionConsumer {
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
-			})).toList();
+			})).filter(Objects::nonNull).toList();
 
 			SnsPostComposeCreateReq snsPostComposeCreateReq = new SnsPostComposeCreateReq(
 				postImageUploadDto.getTagList(),
@@ -123,11 +124,7 @@ public class PostImageUploadConversionConsumer {
 
 			imageFileList.forEach(File::delete);
 
-			// 메시지 처리 성공 시 수동 확인
-			channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
-
 		} catch (Exception e) {
-
 			String errorMsg = "Error processing message : " + new String(message.getBody()) + " : " + e.getMessage();
 
 			Object consumerErrorInfoObj = message.getMessageProperties().getHeaders().get(RabbitMQConst.CONSUMER_ERROR_INFO);
@@ -147,13 +144,16 @@ public class PostImageUploadConversionConsumer {
 					null, HttpStatus.INTERNAL_SERVER_ERROR.value());
 				log.warn(errorTemplate);
 				consumerErrorInfo = errorTemplate;
-				message.getMessageProperties().getHeaders().put(RabbitMQConst.CONSUMER_ERROR_INFO, consumerErrorInfo);
+				// message.getMessageProperties().getHeaders().put(RabbitMQConst.CONSUMER_ERROR_INFO, consumerErrorInfo);
 			}
+			message.getMessageProperties().getHeaders().put(RabbitMQConst.CONSUMER_ERROR_INFO, consumerErrorInfo);
 
 			rabbitTemplate.send(RabbitMQConst.RABBIT_MQ_POST_IMAGE_UPLOAD_DLX_EXCHANGE,
 				message.getMessageProperties().getReceivedRoutingKey(), message);
-			channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
 		} finally {
+			// 메시지 처리 성공 시 수동 확인
+			channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+
 			// 세마포어 반환
 			semaphore.release();
 		}
