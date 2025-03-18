@@ -1,0 +1,27 @@
+
+export const LOGIN_PAGE_ROUTE_PATH = "/admin/login";
+export const ABOUT_PAGE_ROUTE_PATH = '/admin';
+export const ADJUSTMENT_PAGE_ROUTE_PATH = '/admin/service/adjustment';
+export const ERROR_MANAGE_PAGE_ROUTE_PATH = '/admin/service/error/managements';
+export const SNS_USER_PAGE_ROUTE_PATH = '/admin/snsusers';
+export const SNS_USER_FOLLOW_PAGE_ROUTE_PATH = '/admin/snsuserfollows';
+export const SNS_FOLLOW_STATISTIC_PAGE_ROUTE_PATH = '/admin/snsuserfollowstatistic';
+export const SNS_BLOCK_USER_PAGE_ROUTE_PATH = '/admin/snsblockusers';
+export const SNS_NOTIFICATION_PAGE_ROUTE_PATH = '/admin/snsnotifications';
+export const UPLOAD_POST_PAGE_ROUTE_PATH = '/admin/service/upload-post';
+export const SNS_POST_PAGE_ROUTE_PATH = '/admin/snsposts';
+export const SNS_POST_REACTION_PAGE_ROUTE_PATH = '/admin/snspostuserreactions';
+export const SNS_POST_COMMENT_REACTION_PAGE_ROUTE_PATH = '/admin/snspostcommentreactions';
+export const SNS_POST_COMMENT_LIKE_PAGE_ROUTE_PATH = '/admin/snspostcommentlikes';
+export const SNS_POST_REPORT_PAGE_ROUTE_PATH = '/admin/snspostreports';
+export const SNS_USER_REPORT_PAGE_ROUTE_PATH = '/admin/snsuserreports';
+export const SNS_SCRAP_PAGE_ROUTE_PATH = '/admin/snsscraps';
+export const SNS_SCRAP_BOARD_PAGE_ROUTE_PATH = '/admin/snsscrapboards';
+export const SNS_TAG_PAGE_ROUTE_PATH = '/admin/snstags';
+export const SNS_TAG_FOLLOW_PAGE_ROUTE_PATH = '/admin/snstagfollows';
+export const SNS_TAG_POST_PAGE_ROUTE_PATH = '/admin/snstagposts';
+export const SNS_USER_FAVORITE_TERM_BOOKMARK_PAGE_ROUTE_PATH = '/admin/snsuserfavoritetermbookmarks';
+export const SNS_USER_MESSAGE_REACTION_PAGE_ROUTE_PATH = '/admin/snsusermessagereactions';
+export const SNS_USER_MESSAGE_ROOM_MEMBER_PAGE_ROUTE_PATH = '/admin/snsusermessageroommembers';
+export const SNS_USER_MESSAGE_ROOM_PAGE_ROUTE_PATH = '/admin/snsusermessagerooms';
+export const SNS_USER_MESSAGE_PAGE_ROUTE_PATH = '/admin/snsusermessages';

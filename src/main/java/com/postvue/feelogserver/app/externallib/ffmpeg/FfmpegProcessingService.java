@@ -127,16 +127,20 @@ public class FfmpegProcessingService {
 			String outputM3u8 = new File(outputDirFile, m3u8FileName).getAbsolutePath();
 
 			// Build FFmpeg command
-			FFmpegOutputBuilder fFmpegOutputBuilder = new FFmpegBuilder()
-				.setInput(videoInputFile.getAbsolutePath())
-				.addOutput(outputM3u8)
+			FFmpegBuilder fFmpegBuilder = new FFmpegBuilder()
+				.setInput(videoInputFile.getAbsolutePath());
+
+			if (useCuda) {
+				fFmpegBuilder.addExtraArgs("-hwaccel", "cuda");
+			}
+
+			fFmpegBuilder.addOutput(outputM3u8)
 				.setAudioCodec("aac")
 				.addExtraArgs("-preset", preset)
 				.addExtraArgs("-ac", "2")
 				.addExtraArgs("-crf", "23")
 				.addExtraArgs("-pix_fmt", "yuv420p")
-				.addExtraArgs("-vf", "scale='if(gt(iw,ih),1280,-2):if(gt(iw,ih),-2,1280)'") //H.264의 경우, 짝수만 가능
-				// .addExtraArgs("-vf", "scale='if(gt(iw,ih),1280,-1):if(gt(iw,ih),-1,1280)'")
+				.addExtraArgs("-vf", "scale='if(gt(iw,ih),1280,-2):if(gt(iw,ih),-2,1280)'") // H.264의 경우, 짝수만 가능
 				.addExtraArgs("-colorspace", "bt709")
 				.addExtraArgs("-color_primaries", "bt709")
 				.addExtraArgs("-color_trc", "bt709")
@@ -148,19 +152,12 @@ public class FfmpegProcessingService {
 				.addExtraArgs("-hls_time", "4")
 				.addExtraArgs("-hls_list_size", "0")
 				.addExtraArgs("-hls_segment_filename", new File(outputDirFile, "segment_%03d.ts").getAbsolutePath()) // Segment naming pattern
-				.addExtraArgs("-hls_playlist_type", "vod");
-
-			// Add CUDA-specific settings based on profile
-			if (useCuda) {
-				fFmpegOutputBuilder
-					.addExtraArgs("-hwaccel", "cuda")
-					.setVideoCodec(videoCodec);
-			} else {
-				fFmpegOutputBuilder.setVideoCodec(videoCodec);
-			}
+				.addExtraArgs("-hls_playlist_type", "vod")
+				.setVideoCodec(videoCodec)
+				.done();
 
 			// Finalize the build
-			FFmpegBuilder fFmpegBuilder = fFmpegOutputBuilder.done();
+			// FFmpegBuilder fFmpegBuilder = fFmpegOutputBuilder.done();
 
 			FFmpegExecutor executor = new FFmpegExecutor(ffmpeg, ffprobe);
 			executor.createJob(fFmpegBuilder).run();

@@ -343,6 +343,7 @@ public class MapService {
 			.toList();
 	}
 
+	@Transactional
 	public List<GetMapSearchRecommRsp> getMapRecommSearch(String srchQry, Long snsUserId) {
 		NaverLocalSearchResponseDto naverLocalSearchResponseDto = naverApiClient.getLocalSearch(xNaverClientId,
 			xNaverClientSecret,

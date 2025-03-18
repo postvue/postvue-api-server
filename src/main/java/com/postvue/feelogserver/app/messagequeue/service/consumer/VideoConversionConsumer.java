@@ -32,6 +32,7 @@ import com.postvue.feelogserver.global.constant.MediaConfigConst;
 import com.postvue.feelogserver.global.constant.RabbitMQConst;
 import com.postvue.feelogserver.global.exception.BadRequestErrorException;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.LongString;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -133,7 +134,16 @@ public class VideoConversionConsumer {
 
 			String errorMsg = "Error processing message : " + new String(message.getBody()) + " : " + e.getMessage();
 
-			String consumerErrorInfo = (String) message.getMessageProperties().getHeaders().get(RabbitMQConst.CONSUMER_ERROR_INFO);
+			Object consumerErrorInfoObj = message.getMessageProperties().getHeaders().get(RabbitMQConst.CONSUMER_ERROR_INFO);
+			String consumerErrorInfo = null;
+
+			if (consumerErrorInfoObj instanceof String) {
+				consumerErrorInfo = (String) consumerErrorInfoObj;
+			} else if (consumerErrorInfoObj instanceof LongString) {
+				consumerErrorInfo = ((LongString) consumerErrorInfoObj).toString(); // ✅ LongString을 String으로 변환
+			} else if (consumerErrorInfoObj != null) {
+				consumerErrorInfo = consumerErrorInfoObj.toString(); // ✅ 기타 객체도 String으로 변환
+			}
 
 			StackTraceElement[] errorStacks = e.getStackTrace();
 			if (consumerErrorInfo == null) {

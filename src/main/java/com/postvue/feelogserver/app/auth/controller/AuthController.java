@@ -42,6 +42,7 @@ import com.postvue.feelogserver.global.api.naver.dto.rsp.NaverUserInfo;
 import com.postvue.feelogserver.global.constant.CookieConst;
 import com.postvue.feelogserver.global.exception.BadRequestErrorException;
 import com.postvue.feelogserver.global.exception.BaseException;
+import com.postvue.feelogserver.global.exception.UnauthorizedErrorException;
 import com.postvue.feelogserver.global.http.response.serverresponse.ServerDeleteRsp;
 import com.postvue.feelogserver.global.http.response.serverresponse.ServerGetOkRsp;
 import com.postvue.feelogserver.global.http.response.serverresponse.ServerPostCreatedRsp;
@@ -234,7 +235,7 @@ public class AuthController {
 		// CHECK3
 		response.addCookie(
 			CookieUtils.createCookie(CookieConst.SIGNUP_TYPE, "",
-				0, false)); // 가입 종류 쿠키 값 제거
+				0)); // 가입 종류 쿠키 값 제거
 
 		response.addCookie(
 			CookieUtils.createCookie(CookieConst.REGISTRATION_VERIFICATION_CODE, "",
@@ -283,8 +284,12 @@ public class AuthController {
 		return new ServerDeleteRsp<>("회원이 탈퇴 되었습니다.");
 	}
 
-	@GetMapping("/test")
-	public void testException() {
-		throw new BadRequestErrorException("테스트 예외");
+	@GetMapping("/check/me")
+	public ServerGetOkRsp<Boolean> authCheckMe(@AuthenticationPrincipal CustomUserDetails userDetails) {
+		if (userDetails == null){
+			throw new UnauthorizedErrorException("인증되지 않았습니다.");
+		}
+		Long snsUserId = Long.valueOf(userDetails.getUserId());
+		return new ServerGetOkRsp<>(authService.checkAuthMe(snsUserId));
 	}
 }

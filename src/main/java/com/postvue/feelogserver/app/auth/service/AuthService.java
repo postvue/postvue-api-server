@@ -5,15 +5,19 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpServerErrorException;
 
 import com.postvue.feelogserver.app.auth.dto.TokenResponse;
 import com.postvue.feelogserver.app.auth.dto.req.delete.AuthMemberWithdrawalReq;
 import com.postvue.feelogserver.app.auth.dto.req.post.EmailInfoReq;
 import com.postvue.feelogserver.app.auth.dto.req.post.SignupUserInfoReq;
 import com.postvue.feelogserver.app.email.service.EmailService;
+import com.postvue.feelogserver.app.openapis.req.DiscordWebhookRequest;
+import com.postvue.feelogserver.app.openapis.service.DiscordService;
 import com.postvue.feelogserver.app.profiles.service.ProfileFollowsService;
 import com.postvue.feelogserver.app.search.service.SearchService;
 import com.postvue.feelogserver.core.security.JwtTokenProvider;
@@ -37,9 +41,11 @@ import com.postvue.feelogserver.global.api.apple.dto.AppleRevokeRequestDto;
 import com.postvue.feelogserver.global.api.apple.dto.AppleTokenResponseDto;
 import com.postvue.feelogserver.global.constant.AccountConst;
 import com.postvue.feelogserver.global.constant.CookieConst;
+import com.postvue.feelogserver.global.constant.LogTemplateConst;
 import com.postvue.feelogserver.global.constant.SystemPhraseConst;
 import com.postvue.feelogserver.global.constant.SystemTimeConst;
 import com.postvue.feelogserver.global.exception.BadRequestErrorException;
+import com.postvue.feelogserver.global.exception.InternalServerErrorException;
 import com.postvue.feelogserver.global.exception.RefreshTokenNotFoundException;
 import com.postvue.feelogserver.global.exception.SnsUserIdNotFoundException;
 import com.postvue.feelogserver.global.exception.UnauthorizedErrorException;
@@ -47,8 +53,10 @@ import com.postvue.feelogserver.global.util.generator.CookieUtils;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class AuthService {
 	private final SnsUserRepository snsUserRepository;
@@ -61,6 +69,7 @@ public class AuthService {
 	private final SnsUserJdbcRepository snsUserJdbcRepository;
 	private final EmailService emailService;
 	private final AppleAuthService appleAuthService;
+	private final DiscordService discordService;
 
 	@Value("${serverUrl.verifyEmailUrl}")
 	private String serverVerifyEmailUrl;
@@ -111,7 +120,8 @@ public class AuthService {
 	// 소셜 플랫폼을 통한 가입
 	@Transactional
 	public SnsUser signup(SnsUserDto snsUserDto, SignupUserInfoReq signupUserInfoReq) {
-		return snsUserRepository.save(snsUserDto.toEntity(signupUserInfoReq));
+		// batch insert 전에, sns_user 정보가 db상에 존재해야 되기 때문에, flush
+		return snsUserRepository.saveAndFlush(snsUserDto.toEntity(signupUserInfoReq));
 	}
 
 	// 탈퇴 후 재 가입 메소드
@@ -187,44 +197,55 @@ public class AuthService {
 	@Transactional
 	public SnsUser processSignupByVerificationCode(String registrationVerificationCode,
 		SignupUserInfoReq signupUserInfoReq) {
+		try {
+			// 가입 증명 코드가 유효하지 않으면
+			jwtTokenProvider.validateToken(registrationVerificationCode);
 
-		// 가입 증명 코드가 유효하지 않으면
-		jwtTokenProvider.validateToken(registrationVerificationCode);
+			SnsUserDto userDtoData = jwtTokenProvider.getRegisterValidationCode(
+				jwtTokenProvider.getSubjectByToken(registrationVerificationCode));
+			List<SnsTag> snsTagList = snsTagRepository.findAllByIdIn(
+				signupUserInfoReq.getFavoriteTagList().stream().map(Long::valueOf).toList());
 
-		SnsUserDto userDtoData = jwtTokenProvider.getRegisterValidationCode(
-			jwtTokenProvider.getSubjectByToken(registrationVerificationCode));
-		List<SnsTag> snsTagList = snsTagRepository.findAllByIdIn(
-			signupUserInfoReq.getFavoriteTagList().stream().map(Long::valueOf).toList());
+			SnsUser snsUser = signup(userDtoData, signupUserInfoReq);
+			// batch insert 전에, sns_user 정보가 db상에 존재해야 되기 때문에, flush
+			// snsUserRepository.flush();
 
-		SnsUser snsUser = signup(userDtoData, signupUserInfoReq);
-
-		// batch insert 전에, sns_user 정보가 db상에 존재해야 되기 때문에, flush
-		snsUserRepository.flush();
-
-		List<SnsTagFollow> snsTagFollowList = snsTagList.stream().map(snsTag ->
-			SnsTagFollow.builder()
-				.snsTag(snsTag)
-				.tagName(snsTag.getTagName())
-				.snsUser(snsUser)
-				.build()).toList();
-		snsTagFollowJdbcRepository.saveAll(snsTagFollowList);
-
-		snsUserFavoriteTermBookmarkJdbcRepository.saveAllWithTag(
-			snsTagFollowList.stream().map(snsTagFollow -> {
-				SnsUserFavoriteTermBookmark snsUserFavoriteTermBookmark = SnsUserFavoriteTermBookmark.builder()
+			List<SnsTagFollow> snsTagFollowList = snsTagList.stream().map(snsTag ->
+				SnsTagFollow.builder()
+					.snsTag(snsTag)
+					.tagName(snsTag.getTagName())
 					.snsUser(snsUser)
-					.favoriteTermName(searchService.makeTagSearchTerm(snsTagFollow.getSnsTag().getTagName()))
-					.snsTagFollow(snsTagFollow)
-					.build();
+					.build()).toList();
+			snsTagFollowJdbcRepository.saveAll(snsTagFollowList);
 
-				snsUserFavoriteTermBookmark.setFavoriteTermContent(
-					snsTagFollow.getSnsTag().getTagRepsBatchContent());
-				snsUserFavoriteTermBookmark.setFavoriteTermContentType(
-					snsTagFollow.getSnsTag().getTagRepsBatchContentType());
-				return snsUserFavoriteTermBookmark;
-			}).toList());
+			snsUserFavoriteTermBookmarkJdbcRepository.saveAllWithTag(
+				snsTagFollowList.stream().map(snsTagFollow -> {
+					SnsUserFavoriteTermBookmark snsUserFavoriteTermBookmark = SnsUserFavoriteTermBookmark.builder()
+						.snsUser(snsUser)
+						.favoriteTermName(searchService.makeTagSearchTerm(snsTagFollow.getSnsTag().getTagName()))
+						.snsTagFollow(snsTagFollow)
+						.build();
 
-		return snsUser;
+					snsUserFavoriteTermBookmark.setFavoriteTermContent(
+						snsTagFollow.getSnsTag().getTagRepsBatchContent());
+					snsUserFavoriteTermBookmark.setFavoriteTermContentType(
+						snsTagFollow.getSnsTag().getTagRepsBatchContentType());
+					return snsUserFavoriteTermBookmark;
+				}).toList());
+
+			return snsUser;
+		}
+		catch (Exception e){
+			log.error(e.getMessage());
+			String errorMsg = LogTemplateConst.getErrorLogTemplate(
+				"SINGUP_ERROR", "유저 " + signupUserInfoReq.getUsername() +"님이 가입에 실패했습니다.",
+				e.getMessage(),this.getClass().getName(), Thread.currentThread().getStackTrace()[1].getMethodName(),
+				new Object[] {},
+				HttpStatus.INTERNAL_SERVER_ERROR.value());
+			DiscordWebhookRequest request = new DiscordWebhookRequest(errorMsg);
+			discordService.sendMessageToPostReportChannel(request);
+			throw new InternalServerErrorException(e.getMessage());
+		}
 	}
 
 	@Transactional
@@ -267,6 +288,13 @@ public class AuthService {
 		snsUserJdbcRepository.updateAllFullDelete(snsUserList);
 
 		return snsUserList;
+	}
+
+	public Boolean checkAuthMe (Long snsUserId){
+		snsUserRepository.findById(snsUserId).orElseThrow(
+			() -> new BadRequestErrorException("해당 계정은 없습니다.")
+		);
+		return true;
 	}
 
 	public Boolean signupEmail(EmailInfoReq emailInfoReq) {
@@ -315,7 +343,7 @@ public class AuthService {
 		// // 가입 종류
 		response.addCookie(
 			CookieUtils.createCookie(CookieConst.SIGNUP_TYPE, userDtoData.signUpType().toString(),
-				COOKIE_EXPIRED_TIME, false));
+				COOKIE_EXPIRED_TIME));
 		// // OAUTH 토큰
 		// response.addCookie(
 		// 	CookieUtils.createCookie(CookieConst.OAUTH_TOKEN, oauthToken,
@@ -335,7 +363,7 @@ public class AuthService {
 		// // 가입 종류
 		response.addCookie(
 			CookieUtils.createCookie(CookieConst.SIGNUP_TYPE, SignUpType.EMAIL.toString(),
-				COOKIE_EXPIRED_TIME, false));
+				COOKIE_EXPIRED_TIME));
 
 		response.addCookie(
 			CookieUtils.createCookie(CookieConst.REGISTRATION_VERIFICATION_CODE, validationCode,

@@ -67,4 +67,7 @@ public final class MediaConfigConst {
 	public static final Integer MAX_ASYNC_VIDEO_UPLOAD_NUM = 12;
 
 	public static final Integer MAX_VIDEO_DURATION = 180;
+
+	// 최대 동시 크롤링 이미지 업로드 수
+	public static final Integer MAX_ASYNC_POST_IMAGE_UPLOAD_NUM = 15;
 }
