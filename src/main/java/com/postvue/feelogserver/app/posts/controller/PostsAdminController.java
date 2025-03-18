@@ -59,6 +59,7 @@ public class PostsAdminController {
 					throw new BadRequestErrorException("해당 계정은 없습니다.");
 				}
 				adminSnsPostComposeCreateReq.getTagList().stream().forEach((s -> {
+					System.out.println("들어오는 데이터: " + s);
 					if (StringValidUtil.isOnlySpecialCharacters(s)) {
 						System.out.println(s);
 						throw new BadRequestErrorException("태그는 특수 문자로만 되어 있을 수 없습니다.");
