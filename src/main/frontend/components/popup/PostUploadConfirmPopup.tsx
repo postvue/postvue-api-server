@@ -5,16 +5,19 @@ import {createPostCompose} from "Frontend/services/post/createPostComposeList";
 import {isValidString} from "Frontend/global/util/ValidUtil";
 import {AdminSnsPostComposeCreateReq} from "Frontend/global/type/PostType";
 import {
-    FILE_NAME_PROPERTY, POST_ADDRESS_PROPERTY,
+    FILE_NAME_PROPERTY, MAX_POST_BODY_TEXT_LENGTH, MAX_POST_TITLE_LENGTH, POST_ADDRESS_PROPERTY,
     POST_BODY_TEXT_PROPERTY, POST_BUILD_NAME_PROPERTY, POST_LATITUDE_PROPERTY, POST_LONGITUDE_PROPERTY,
     POST_TAG_1_PROPERTY,
     POST_TAG_2_PROPERTY,
     POST_TAG_3_PROPERTY,
     POST_TAG_4_PROPERTY,
-    POST_TAG_5_PROPERTY, POST_TAG_6_PROPERTY, POST_TAG_7_PROPERTY,
+    POST_TAG_5_PROPERTY, POST_TAG_6_PROPERTY, POST_TAG_7_PROPERTY, POST_TARGET_PROPERTY,
     POST_TITLE_PROPERTY, POST_USERNAME_PROPERTY,
     PREFIX_POST_IMAGE_FOLDER
 } from "Frontend/const/PostConst";
+import {UPLOAD_IMG_MAX_HEIGHT, UPLOAD_IMG_MAX_WIDTH} from "Frontend/const/SystemAttrConst";
+import {resizeAndCompressImage, resizeImage} from "Frontend/global/util/ImageInputUtil";
+import {AxiosError} from "axios";
 
 interface ExcelRow {
     [key: string]: any;
@@ -51,10 +54,20 @@ const PostUploadConfirmPopup: React.FC<PostUploadConfirmPopupProps> = ({ onClose
                     buildName: value[POST_BUILD_NAME_PROPERTY] || undefined,
                     latitude: value[POST_LATITUDE_PROPERTY] || undefined,
                     longitude: value[POST_LONGITUDE_PROPERTY] || undefined,
-                    targetAudienceValue: 0, //전체
+                    targetAudienceValue: value[POST_TARGET_PROPERTY] || 0
                 };
                 return data;
             });
+
+            postData.forEach((v)=>{
+                if (v.title.length > MAX_POST_TITLE_LENGTH){
+                    throw Error(v.username + "님의 " + v.title + " 게시물 타이틀 길이는 " + MAX_POST_TITLE_LENGTH + " 이하 이어야 됩니다.")
+                }
+
+                if (v.bodyText.length > MAX_POST_BODY_TEXT_LENGTH){
+                    throw Error(v.username + "님의 " + v.title + " 게시물 본문 길이는 " + MAX_POST_BODY_TEXT_LENGTH + " 이하 이어야 됩니다.")
+                }
+            })
 
 
             const snsPostComposeCreateBlob = new Blob(
@@ -65,27 +78,39 @@ const PostUploadConfirmPopup: React.FC<PostUploadConfirmPopupProps> = ({ onClose
             );
 
             formData.append('snsPostComposeList', snsPostComposeCreateBlob);
-            filteredData.forEach((row) => {
+            for (const row of filteredData) {
                 const matchedFile:File|undefined = uploadedImages.find((file) => {
                     return file.name === row[FILE_NAME_PROPERTY].replace(PREFIX_POST_IMAGE_FOLDER,"");
                 });
 
                 if (matchedFile) {
-                    formData.append('files', matchedFile, matchedFile.name);
+                    await resizeImage(
+                        matchedFile,
+                        UPLOAD_IMG_MAX_WIDTH,
+                        UPLOAD_IMG_MAX_HEIGHT,
+                    ).then((value) => {
+                        formData.append('files', value, matchedFile.name);
+                        // formData.append('files', matchedFile, matchedFile.name);
+                    })
+                    .catch((e:AxiosError<string>)=>{
+                        if(!e.response)return;
+                        alert(e.response.data)
+                    })
                 }
-            });
+            }
 
             createPostCompose(formData).then((value)=>{
                 alert("포스트 업로드가 완료되었습니다!");
                 onReset();
                 onClose();
-            }).catch((error)=>{
-                alert("업로드 실패: " + error);
+            }).catch((error:AxiosError<{message:string}>)=>{
+                if(!error.response)return
+                alert("업로드 실패: " + error.response.data.message);
             })
 
         } catch (error) {
             console.error("업로드 중 오류 발생:", error);
-            alert("업로드 중 오류가 발생했습니다.");
+            alert("업로드 중 오류가 발생했습니다. " + error);
         }
     };
 

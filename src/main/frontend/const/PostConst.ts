@@ -11,6 +11,9 @@ export const POST_BODY_TEXT_PROPERTY  = "bodyText";
 export const POST_TAG_1_PROPERTY  = "tag1";
 export const POST_TAG_2_PROPERTY  = "tag2";
 
+export const MAX_POST_TITLE_LENGTH = 50;
+export const MAX_POST_BODY_TEXT_LENGTH = 700;
+
 export const POST_TAG_3_PROPERTY  = "tag3";
 export const POST_TAG_4_PROPERTY  = "tag4";
 export const POST_TAG_5_PROPERTY  = "tag5";

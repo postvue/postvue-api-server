@@ -11,7 +11,7 @@ server:
     max-http-form-post-size: 314572800 #톰캣 뿐만 아니라 모든 서블릿 컨터이너들은 처리할 수 있는 요청의 기본 크기 제한 설정, 300mb
 
 file:
-  imageSize: 2097152 # 2mb
+  imageSize: 31457280 # 3mb
   videoSize: 314572800 # 300mb
 
 

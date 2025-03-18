@@ -54,15 +54,11 @@ public class PostsAdminController {
 
 		snsPostComposeList.forEach(
 			adminSnsPostComposeCreateReq -> {
-				System.out.println(adminSnsPostComposeCreateReq.getImageFilePathList());
+				if (snsUserRepository.findByUsername(adminSnsPostComposeCreateReq.getUsername()).isEmpty()){
+					throw new BadRequestErrorException("해당 계정은 없습니다.");
+				}
 			}
 		);
-
-		files.forEach(multipartFile -> {
-			System.out.println(multipartFile.getOriginalFilename());
-		});
-
-		// return new ServerPostCreatedRsp<>(true);
 
 		return new ServerPostCreatedRsp<>(postsAdminService.postImageUploadList(snsPostComposeList, files));
 	}
