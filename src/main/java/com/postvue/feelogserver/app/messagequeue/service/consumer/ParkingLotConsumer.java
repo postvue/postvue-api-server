@@ -48,6 +48,11 @@ public class ParkingLotConsumer {
 				errorMsg = consumerErrorInfoObj.toString(); // ✅ 기타 객체도 String으로 변환
 			}
 
+			// ✅ errorMsg가 2000자 이상이면 잘라서 저장
+			if (errorMsg != null && errorMsg.length() > 2000) {
+				errorMsg = errorMsg.substring(0, 2000);
+			}
+
 			adminServiceErrorManagementRepository.save(AdminServiceErrorManagement.builder()
 				.serviceErrorType(RabbitMQErrorServiceInfo.SERVICE_ERROR_TYPE_NAME)
 				.propMsgString1(errorMsg)
