@@ -13,7 +13,7 @@ public final class PageConfigConst {
 	public static final Integer KAKAO_MAP_LOCAL_SEARCH_QUERY_PAGE_NUM = 15;
 
 	public static final Integer STUFF_FOR_ME_BY_TAG_PAGE_SIZE = 10;
-	public static final Integer NEAR_FOR_ME_BY_TAG_PAGE_SIZE = 20;
+	public static final Integer NEAR_FOR_ME_BY_TAG_PAGE_SIZE = 10;
 
 	public static final Integer MAP_POST_FOR_ME_SIZE = 15;
 	public static final String LAST_POST_ID = "9000000000000000000";

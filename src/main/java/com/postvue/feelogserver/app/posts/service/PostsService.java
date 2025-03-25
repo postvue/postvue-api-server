@@ -31,6 +31,7 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,6 +48,8 @@ import com.postvue.feelogserver.app.maps.service.AppleMapsService;
 import com.postvue.feelogserver.app.maps.service.MapService;
 import com.postvue.feelogserver.app.messagequeue.service.producer.VideoConversationProducer;
 import com.postvue.feelogserver.app.notifications.service.NotificationService;
+import com.postvue.feelogserver.app.openapis.req.DiscordWebhookRequest;
+import com.postvue.feelogserver.app.openapis.service.DiscordService;
 import com.postvue.feelogserver.app.posts.dto.common.Location;
 import com.postvue.feelogserver.app.posts.dto.common.PostContent;
 import com.postvue.feelogserver.app.posts.dto.req.create.SnsPostCmntCreateReq;
@@ -114,6 +117,7 @@ import com.postvue.feelogserver.domain.snsusers.SnsUser;
 import com.postvue.feelogserver.domain.snsusers.repository.SnsUserRepository;
 import com.postvue.feelogserver.global.api.apple.dto.AppleMapsGeocodeResponse;
 import com.postvue.feelogserver.global.constant.HashConst;
+import com.postvue.feelogserver.global.constant.LogTemplateConst;
 import com.postvue.feelogserver.global.constant.MapConst;
 import com.postvue.feelogserver.global.constant.PageConfigConst;
 import com.postvue.feelogserver.global.constant.PostConst;
@@ -158,6 +162,8 @@ public class PostsService {
 	private final VideoConversationProducer videoConversationProducer;
 	private final SnsBlockUserRepository snsBlockUserRepository;
 	private final SnsScrapRepository snsScrapRepository;
+
+	private final DiscordService discordService;
 
 	private final PostProfileFacadeService postProfileFacadeService;
 	private final H3Service h3Service;
@@ -264,7 +270,11 @@ public class PostsService {
 
 	@Transactional
 	public List<SnsPostRsp> findNearForMePosts(Long snsUserId, Integer page, Float latitude, Float longitude,
-		String nearFilter, LocalDateTime startDate, LocalDateTime endDate) {
+		String nearFilter, LocalDateTime startDate, LocalDateTime endDate, Integer distance) {
+		if (distance !=null && distance > MapConst.MAX_MAP_POST_DISTANCE_NUM){
+			throw new BadRequestErrorException(MapConst.MAX_MAP_POST_DISTANCE_NUM + "km 이상의 게시물은 가져올 수 없습니다.");
+		}
+
 		PostContentBusinessType postContentBusinessType = getPostContentBusinessType(
 			nearFilter);
 
@@ -275,14 +285,14 @@ public class PostsService {
 			if (nearFilter.equals(NearFilterType.NEAR_FILTER_ALL_TYPE)) {
 				List<SnsPostDao> snsPosts = snsPostRepository.selectNearForMe(snsUserId,
 					page * PageConfigConst.NEAR_FOR_ME_BY_TAG_PAGE_SIZE,
-					PageConfigConst.NEAR_FOR_ME_BY_TAG_PAGE_SIZE, latitude, longitude, h3Service.getNearbyH3Cells(latitude, longitude, MapConst.MAX_MAP_POST_DISTANCE_NUM),
+					PageConfigConst.NEAR_FOR_ME_BY_TAG_PAGE_SIZE, latitude, longitude, h3Service.getNearbyH3Cells(latitude, longitude, distance != null ? distance : MapConst.MAX_MAP_POST_DISTANCE_NUM),
 					LocalDateTime.now(), startDateTime, endDateTime);
 
 				return postProfileFacadeService.getPostGetRspList(snsPosts);
 			} else if (postContentBusinessType != null) {
 				List<SnsPostDao> snsPosts = snsPostRepository.selectNearForMeBy(snsUserId,
 					page * PageConfigConst.NEAR_FOR_ME_BY_TAG_PAGE_SIZE,
-					PageConfigConst.NEAR_FOR_ME_BY_TAG_PAGE_SIZE, latitude, longitude, h3Service.getNearbyH3Cells(latitude, longitude, MapConst.MAX_MAP_POST_DISTANCE_NUM),
+					PageConfigConst.NEAR_FOR_ME_BY_TAG_PAGE_SIZE, latitude, longitude, h3Service.getNearbyH3Cells(latitude, longitude, distance != null ? distance : MapConst.MAX_MAP_POST_DISTANCE_NUM),
 					postContentBusinessType.label(),
 					LocalDateTime.now(), startDateTime, endDateTime
 				);
@@ -1405,8 +1415,8 @@ public class PostsService {
 			throw new BadRequestErrorException("Json 객체 변환 과정에서 오류가 났습니다: " + e);
 		}
 		catch (Exception e){
-			log.error(e.getMessage());
-			throw new InternalServerErrorException("오류로 인해, 게시글 생성이 되지 않았습니다.");
+			discordService.sendErrorMsgTemplateToDiscordByException(e, isEdit ? "POST_CREATE_ERROR" : "POST_UPDATE_ERROR", "유저 id" + userId +"님이 " + "제목: " + title + " 본문: " + bodyText + " 포스트를 업로드 하는 데 실패 했습니다.");
+			throw new InternalServerErrorException("오류로 인해, 게시글 생성이 되지 않았습니다." + e.getMessage());
 		}
 
 		if (!multipartFileList.isEmpty()){
