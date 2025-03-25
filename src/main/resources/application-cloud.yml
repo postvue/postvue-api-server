@@ -9,7 +9,7 @@ cloud:
         bucketName: ${CLOUD_CLOUDFLARE_CONTENT_BUCKET_NAME}
         imageContentStoragePath: images/
         imagePostContentPath: posts/
-        imageCommentContentPath: posts/comments/
+        imageCommentContentPath: post-comments/
         imageProfilePath: profiles/
 
   minio:
