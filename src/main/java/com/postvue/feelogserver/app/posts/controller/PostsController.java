@@ -115,13 +115,14 @@ public class PostsController {
 		@RequestParam(name = "lat") Float latitude,
 		@RequestParam(name = "lon") Float longitude,
 		@RequestParam(name = "startDate", required = false) OffsetDateTime offsetStartDate,
-		@RequestParam(name = "endDate", required = false) OffsetDateTime offsetEndDate
+		@RequestParam(name = "endDate", required = false) OffsetDateTime offsetEndDate,
+		@RequestParam(name = "distance", required = false) Integer distance
 	) {
 		LocalDateTime startDate = offsetStartDate !=null ? offsetStartDate.toLocalDateTime() : null;
 		LocalDateTime endDate = offsetEndDate !=null ? offsetEndDate.toLocalDateTime() : null;
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
 		return new ServerGetOkRsp<>(postsService.findNearForMePosts(
-			snsUserId, page, latitude, longitude, filter, startDate, endDate
+			snsUserId, page, latitude, longitude, filter, startDate, endDate, distance
 		));
 	}
 
