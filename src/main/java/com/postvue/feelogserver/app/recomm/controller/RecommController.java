@@ -57,6 +57,6 @@ public class RecommController {
 	@GetMapping("/favorite/tags")
 	public ServerGetOkRsp<
 		List<GetRecommTagRsp>> getRecommFavoriteTagList(@RequestParam("page") Integer page) {
-		return new ServerGetOkRsp<>(recommService.findRecommFavoriteTagList(page));
+		return new ServerGetOkRsp<>(recommService.findRecommFavoriteTagListV2(page));
 	}
 }

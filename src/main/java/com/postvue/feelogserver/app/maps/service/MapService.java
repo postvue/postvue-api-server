@@ -360,6 +360,17 @@ public class MapService {
 
 		List<GetMapSearchRecommRsp> getMapSearchRecommRsps = new ArrayList<>();
 
+		getMapSearchRecommRsps.addAll(
+			getAllMapPostBySrchQry(srchQry, PageConfigConst.PAGE_INIT_NUM,
+				PageConfigConst.MAP_SEARCH_RECOMM_POST_PAGE_SIZE, snsUserId).stream()
+				.map((getMapSearchPostRsp ->
+					GetMapSearchRecommRsp.builder()
+						.hasLocation(false)
+						.isPlace(false)
+						.searchQueryName(getMapSearchPostRsp.getSearchQueryName())
+						.build())).toList()
+		);
+
 		getMapSearchRecommRsps.addAll(naverLocalSearchResponseDto.getItems().stream().map((item ->
 			GetMapSearchRecommRsp.builder()
 				.hasLocation(true)
@@ -382,17 +393,6 @@ public class MapService {
 						.latitude(kakaoPlaceDto.getY().floatValue())
 						.longitude(kakaoPlaceDto.getX().floatValue())
 						.build()).toList()
-		);
-
-		getMapSearchRecommRsps.addAll(
-			getAllMapPostBySrchQry(srchQry, PageConfigConst.PAGE_INIT_NUM,
-				PageConfigConst.MAP_SEARCH_RECOMM_POST_PAGE_SIZE, snsUserId).stream()
-				.map((getMapSearchPostRsp ->
-					GetMapSearchRecommRsp.builder()
-						.hasLocation(false)
-						.isPlace(false)
-						.searchQueryName(getMapSearchPostRsp.getSearchQueryName())
-						.build())).toList()
 		);
 
 		return getMapSearchRecommRsps;
