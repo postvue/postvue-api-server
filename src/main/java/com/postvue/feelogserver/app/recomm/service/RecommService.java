@@ -135,6 +135,60 @@ public class RecommService {
 
 		return snsRecommTagDaoList.subList(0, Math.min(PageConfigConst.PAGE_NUM_BY_TAG_RECOMM, snsRecommTagDaoList.size()))
 			.stream().map((snsRecommTagDao ->
+				GetRecommTagRsp.builder()
+					.tagId(snsRecommTagDao.getTagId().toString())
+					.tagName(snsRecommTagDao.getTagName())
+					.tagBkgdContent(snsRecommTagDao.getTagRepsBatchContent())
+					.tagBkgdContentType(snsRecommTagDao.getTagRepsBatchContentType())
+					.build()))
+			.toList();
+	}
+
+	@Transactional
+	public List<GetRecommTagRsp> findRecommTagListV2(Long userId) {
+		List<SnsRecommTagDaoImpl> snsRecommTagDaoList = new ArrayList<>();
+
+		List<Long> recommTagListByAdmin = adminServiceAdjustmentRepository.findAllByServiceType(
+				RecommTagServiceInfo.SERVICE_TYPE_NAME).stream().map(AdminServiceAdjustment::getPropLong1id)
+			.toList();
+
+		System.out.println("한텐:"+recommTagListByAdmin.size() + (!recommTagListByAdmin.isEmpty() ? recommTagListByAdmin.get(0) : "킹"));
+
+		if(!recommTagListByAdmin.isEmpty()){
+			snsRecommTagDaoList.addAll(snsTagRepository.findAllByIdIn(recommTagListByAdmin).stream().map(snsTag ->
+				SnsRecommTagDaoImpl
+					.builder()
+					.tagId(snsTag.getId())
+					.tagName(snsTag.getTagName())
+					.tagRepsBatchContent(snsTag.getTagRepsBatchContent())
+					.tagRepsBatchContentType(snsTag.getTagRepsBatchContentType().toString())
+					.build()
+			).toList());
+		}
+
+		// 조정 태그 리스트
+		Set<Long> tagIds = snsRecommTagDaoList.stream()
+			.map(SnsRecommTagDao::getTagId)
+			.collect(Collectors.toSet());
+
+		snsRecommTagDaoList.addAll((new ArrayList<>(
+			snsTagPostRepository.findRecommTagList(userId, LocalDateTime.now(),
+					PageConfigConst.PAGE_NUM_BY_POPULAR,
+					PageConfigConst.PAGE_NUM_BY_INTEREST).stream().map((snsRecommTagDao ->
+					SnsRecommTagDaoImpl
+						.builder()
+						.tagId(snsRecommTagDao.getTagId())
+						.tagName(snsRecommTagDao.getTagName())
+						.tagRepsBatchContent(snsRecommTagDao.getTagRepsBatchContent())
+						.tagRepsBatchContentType(snsRecommTagDao.getTagRepsBatchContentType())
+						.build()))
+				.filter(snsRecommTagDaoImpl -> !tagIds.contains(snsRecommTagDaoImpl.getTagId()))
+				.toList())
+			));
+
+
+		return snsRecommTagDaoList.subList(0, Math.min(PageConfigConst.PAGE_NUM_BY_TAG_RECOMM, snsRecommTagDaoList.size()))
+			.stream().map((snsRecommTagDao ->
 			GetRecommTagRsp.builder()
 				.tagId(snsRecommTagDao.getTagId().toString())
 				.tagName(snsRecommTagDao.getTagName())
@@ -142,6 +196,48 @@ public class RecommService {
 				.tagBkgdContentType(snsRecommTagDao.getTagRepsBatchContentType())
 				.build()))
 			.toList();
+	}
+
+	@Transactional
+	public List<GetRecommTagRsp> findRecommFavoriteTagListV2(Integer page) {
+		List<GetRecommTagRsp> recommTagRspList = new ArrayList<>();
+
+		List<Long> recommTagListByAdmin = adminServiceAdjustmentRepository.findAllByServiceType(
+				RecommFavoriteTagServiceInfo.SERVICE_TYPE_NAME).stream().map(AdminServiceAdjustment::getPropLong1id)
+			.toList();
+
+		if(!recommTagListByAdmin.isEmpty()){
+			recommTagRspList.addAll(snsTagRepository.findAllByIdIn(recommTagListByAdmin).stream().map(snsTag ->
+				GetRecommTagRsp
+					.builder()
+					.tagId(snsTag.getId().toString())
+					.tagName(snsTag.getTagName())
+					.tagBkgdContent(snsTag.getTagRepsBatchContent())
+					.tagBkgdContentType(snsTag.getTagRepsBatchContentType().toString())
+					.build()
+			).toList());
+		}
+
+		if (page <= 0){
+			return recommTagRspList;
+		}
+		else{
+			List<SnsRecommTagDao> snsRecommTagDaoList = snsTagPostRepository.findPopularTagListByPageable(
+				LocalDateTime.now(),
+				(page - 1) * PageConfigConst.POPULAR_TAG_PAGE_SIZE,
+				PageConfigConst.POPULAR_TAG_PAGE_SIZE);
+
+			return new ArrayList<>(snsRecommTagDaoList.stream()
+				.filter(getRecommTagRsp -> !recommTagListByAdmin.contains(getRecommTagRsp.getTagId()))
+				.map((snsRecommTagDao ->
+				GetRecommTagRsp.builder()
+					.tagName(snsRecommTagDao.getTagName())
+					.tagId(snsRecommTagDao.getTagId().toString())
+					.tagBkgdContent(snsRecommTagDao.getTagRepsBatchContent())
+					.tagBkgdContentType(snsRecommTagDao.getTagRepsBatchContentType())
+					.build()))
+				.toList());
+		}
 	}
 
 
