@@ -91,6 +91,56 @@ public class RecommService {
 	}
 
 	@Transactional
+	public List<GetRecommFollowRsp> findRecommFollowListV1(Long userId, Integer page) {
+		List<FollowRecommInfoDao> followRecommInfoDaos = snsUserFollowRepository.selectRecommendFollowPostListV1(
+			userId, page * PageConfigConst.PAGE_NUM_BY_FOLLOW_RECOMM,
+			PageConfigConst.PAGE_NUM_BY_FOLLOW_RECOMM);
+
+		// 조정 팔로우 리스트
+		Set<Long> ids = followRecommInfoDaos.stream()
+			.map(FollowRecommInfoDao::getSnsUserId)
+			.collect(Collectors.toSet());
+
+		// 이미 가져온 ID와 겹치지 않는 요소 필터링
+		List<Long> recommFollowListByAdmin = adminServiceAdjustmentRepository.findAllByServiceType(
+				RecommFollowServiceInfo.SERVICE_TYPE_NAME).stream().map(AdminServiceAdjustment::getPropLong1id)
+			.filter(id -> !ids.contains(id))
+			.toList();
+
+
+		if(!recommFollowListByAdmin.isEmpty()){
+			followRecommInfoDaos.addAll(snsUserFollowRepository.selectRecommendFollowListByAdmin(recommFollowListByAdmin, userId));
+		}
+
+		return followRecommInfoDaos.stream().filter(followRecommInfoDao -> !Objects.equals(
+			followRecommInfoDao.getSnsUserId(), userId)).map((followRecommInfoDao -> {
+			List<GetPostContent> getPostContents = followRecommInfoDao.getPostIdContents()
+				.stream()
+				.map((followPostIdContentsDao -> {
+					SnsPostContentDao snsPostContentDao = followPostIdContentsDao.getPostContents().get(0);
+
+					String content =  snsPostContentDao.getPostContentType() == PostContentType.VIDEO
+						? snsPostContentDao.getPreviewImg() : snsPostContentDao.getContent();
+					return GetPostContent.builder()
+						.postId(followPostIdContentsDao.getPostId().toString())
+						.content(Objects.requireNonNullElse(snsPostContentDao.getBucketUrl(),"") + content)
+						.postContentType(snsPostContentDao.getPostContentType())
+						.build();
+				}))
+				.toList();
+
+			return GetRecommFollowRsp.builder()
+				.followId(followRecommInfoDao.getSnsUserId().toString())
+				.username(followRecommInfoDao.getUsername())
+				.followerNum(followRecommInfoDao.getFollowerNum())
+				.followingNum(followRecommInfoDao.getFollowingNum())
+				.profilePath(followRecommInfoDao.getProfilePath())
+				.postPreviewImgUrlList(getPostContents)
+				.build();
+		})).toList();
+	}
+
+	@Transactional
 	public List<GetRecommTagRsp> findRecommTagList(Long userId) {
 		List<SnsRecommTagDaoImpl> snsRecommTagDaoList = new ArrayList<>(
 			snsTagPostRepository.findRecommTagList(userId, LocalDateTime.now(),
