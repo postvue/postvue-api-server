@@ -27,9 +27,14 @@ public class DiscordService {
 	@Value("${openapi.discord.webhook.serviceNotification.channelId}")
 	private String serviceNotificationChannelId;
 
-
 	@Value("${openapi.discord.webhook.serviceNotification.token}")
 	private String serviceNotificationToken;
+
+	@Value("${openapi.discord.webhook.serviceActivityLog.channelId}")
+	private String serviceActivityLogChannelId;
+
+	@Value("${openapi.discord.webhook.serviceActivityLog.token}")
+	private String serviceActivityLogToken;
 
 	public void sendMessageToPostReportChannel(DiscordWebhookRequest discordWebhookRequest){
 		discordWebhookClient.postMsgToDiscordChannel(
@@ -42,6 +47,13 @@ public class DiscordService {
 		discordWebhookClient.postMsgToDiscordChannel(
 			serviceNotificationChannelId,
 			serviceNotificationToken,
+			discordWebhookRequest);
+	}
+
+	public void sendMessageToActivityLogChannel(DiscordWebhookRequest discordWebhookRequest){
+		discordWebhookClient.postMsgToDiscordChannel(
+			serviceActivityLogChannelId,
+			serviceActivityLogToken,
 			discordWebhookRequest);
 	}
 
