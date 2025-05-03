@@ -172,6 +172,8 @@ public class PostsService {
 
 	private final DiscordService discordService;
 
+	private final DiscordService discordService;
+
 	private final PostProfileFacadeService postProfileFacadeService;
 	private final H3Service h3Service;
 
