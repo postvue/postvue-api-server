@@ -31,4 +31,16 @@ public interface KakaoLocalApiClient {
 		@RequestParam("page") float page,                           // 반경
 		@RequestParam("size") float size                            // 반경
 	);
+
+	@GetMapping("/v2/local/search/category.json")
+	KakaoSearchResponseDto getPlaceByCategory(
+		@RequestHeader(HttpHeaders.AUTHORIZATION) String restApi,
+		@RequestParam("category_group_code") String categoryGroupCode,          // 검색어
+		@RequestParam("x") float x,                                 			// 경도
+		@RequestParam("y") float y,                                 			// 위도
+		@RequestParam("radius") Integer radius,                           		// 반경
+		@RequestParam("page") Integer page,                           			// 순번
+		@RequestParam("size") Integer size,                           			// 개수
+		@RequestParam("sort") String sort                            			// 정렬
+	);
 }

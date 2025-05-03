@@ -76,6 +76,8 @@ import com.postvue.feelogserver.app.posts.dto.rsp.put.SnsPostLikePutRsp;
 import com.postvue.feelogserver.app.posts.vo.NearFilterType;
 import com.postvue.feelogserver.app.profiles.dto.rsp.get.GetProfilePostListRsp;
 import com.postvue.feelogserver.app.recomm.dto.req.SearchTypeEnum;
+import com.postvue.feelogserver.domain.adminserviceadjustments.AdminServiceAdjustment;
+import com.postvue.feelogserver.domain.adminserviceadjustments.repository.AdminServiceAdjustmentRepository;
 import com.postvue.feelogserver.domain.snsblockusers.repository.SnsBlockUserRepository;
 import com.postvue.feelogserver.domain.snspostcommentlikes.SnsPostCommentLike;
 import com.postvue.feelogserver.domain.snspostcommentlikes.repository.SnsPostCommentLikeRepository;
@@ -115,11 +117,14 @@ import com.postvue.feelogserver.domain.snsuserfavoritetermbookmarks.SnsUserFavor
 import com.postvue.feelogserver.domain.snsuserfavoritetermbookmarks.respository.SnsUserFavoriteTermBookmarkRepository;
 import com.postvue.feelogserver.domain.snsusers.SnsUser;
 import com.postvue.feelogserver.domain.snsusers.repository.SnsUserRepository;
+import com.postvue.feelogserver.global.admin.service.recommfollow.RecommFollowServiceInfo;
+import com.postvue.feelogserver.global.admin.service.uploadpost.AdminUploadPostServiceInfo;
 import com.postvue.feelogserver.global.api.apple.dto.AppleMapsGeocodeResponse;
 import com.postvue.feelogserver.global.constant.HashConst;
 import com.postvue.feelogserver.global.constant.LogTemplateConst;
 import com.postvue.feelogserver.global.constant.MapConst;
 import com.postvue.feelogserver.global.constant.PageConfigConst;
+import com.postvue.feelogserver.global.constant.PathConst;
 import com.postvue.feelogserver.global.constant.PostConst;
 import com.postvue.feelogserver.global.constant.PostReportConst;
 import com.postvue.feelogserver.global.constant.MediaConfigConst;
@@ -130,6 +135,7 @@ import com.postvue.feelogserver.global.exception.InternalServerErrorException;
 import com.postvue.feelogserver.global.exception.UnauthorizedErrorException;
 import com.postvue.feelogserver.global.util.converter.TagConverter;
 import com.postvue.feelogserver.global.util.generator.FileUtils;
+import com.postvue.feelogserver.global.util.generator.PathUtils;
 import com.postvue.feelogserver.global.util.response.ObjectConvertRspUtil;
 import com.postvue.feelogserver.global.util.validation.StringValidUtil;
 import com.postvue.feelogserver.global.util.validation.UploadFileValidationUtils;
@@ -162,6 +168,9 @@ public class PostsService {
 	private final VideoConversationProducer videoConversationProducer;
 	private final SnsBlockUserRepository snsBlockUserRepository;
 	private final SnsScrapRepository snsScrapRepository;
+	private final AdminServiceAdjustmentRepository adminServiceAdjustmentRepository;
+
+	private final DiscordService discordService;
 
 	private final DiscordService discordService;
 
@@ -183,6 +192,9 @@ public class PostsService {
 
 	@Value("${cloud.minio.service.videos.bucketPublicUrl}")
 	private String videoBucketPublicUrl;
+
+	@Value("#{'${serverUrl.domainAllowList}'.split(',')}")
+	private List<String> serverDomainAllowList;
 
 
 	@Transactional
@@ -1362,7 +1374,9 @@ public class PostsService {
 		// content url 생성 및 추가 추가
 		addContentUrls(multipartFileList, externalImgLinkList, snsPostContentList, existPostContentList);
 
-		SnsUser snsUser = SnsUser.builder().id(userId).build();
+		SnsUser snsUser = snsUserRepository.findById(userId).orElseThrow(
+			()-> new BadRequestErrorException("해당 계정은 없습니다.")
+		);
 
 		// 태그 생성
 		List<SnsTag> snsPostTagEntityList = createPostTagRelation(tagList, snsPostContentList);
@@ -1489,6 +1503,41 @@ public class PostsService {
 				throw new InternalServerErrorException("서버 오류로 업로드 실패", e);
 			}
 		}
+
+		// 포스트 업로드 시
+
+		if (!isEdit){
+			// 가입자가 포스트를 올리면 알림오도록
+			List<Long> adminUserListByAdmin = adminServiceAdjustmentRepository.findAllByServiceType(
+					AdminUploadPostServiceInfo.USER_POST_UPLOAD_ALARM_TYPE).stream().map(AdminServiceAdjustment::getPropLong1id)
+				.toList();
+
+			if (!adminUserListByAdmin.contains(_snsPost.getSnsUser().getId())) {
+				try {
+					System.out.println("알림 오이잉");
+					Map<String, String> params = Map.of("username",
+						_snsPost.getSnsUser().getUsername() != null ? _snsPost.getSnsUser().getUsername() : "",
+						"postId", _snsPost.getId() != null ? _snsPost.getId().toString() : "");
+
+					String composeMsg = _snsPost.getSnsUser().getUsername() + " 님이 포스트를 업로드 했습니다. 반응해주세요!! \n 링크: " + (
+						!serverDomainAllowList.isEmpty() ? serverDomainAllowList.get(0) + PathUtils.generatePath(
+							PathConst.POST_DETAIL_PATH, params) : "");
+					DiscordWebhookRequest request = new DiscordWebhookRequest(composeMsg);
+					discordService.sendMessageToActivityLogChannel(request);
+				} catch (Exception e) {
+					log.error(e.getMessage());
+					String errorMsg = LogTemplateConst.getErrorLogTemplate(
+						"DISCORD_ALARM_ERROR", "discord 알림 오류",
+						e.getMessage(), this.getClass().getName(),
+						Thread.currentThread().getStackTrace()[1].getMethodName(),
+						new Object[] {},
+						HttpStatus.INTERNAL_SERVER_ERROR.value());
+					DiscordWebhookRequest request = new DiscordWebhookRequest(errorMsg);
+					discordService.sendMessageToPostReportChannel(request);
+				}
+			}
+		}
+
 		return CompletableFuture.completedFuture(null);
 	}
 

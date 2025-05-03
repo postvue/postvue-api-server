@@ -390,7 +390,15 @@ public class ProfilesService {
 			PageConfigConst.PROFILE_SCRAP_PAGE_NUM);
 
 		return getScrapThumbnailListRsps(scrapListDaoList);
+	}
 
+	@Transactional
+	public List<ScrapThumbnailRsp> getScrapRecommList(Long userId, Integer page) {
+		List<ScrapThumbNailDao> scrapListDaoList = snsScrapRepository.selectScrapRecommBoardBySearchQuery(
+			userId,page * PageConfigConst.RECOMM_SCRAP_PAGE_NUM,
+			PageConfigConst.RECOMM_SCRAP_PAGE_NUM);
+
+		return getScrapThumbnailListRsps(scrapListDaoList);
 	}
 
 	private List<ScrapThumbnailRsp> getScrapThumbnailListRsps(List<ScrapThumbNailDao> scrapListDaoThumbNail) {
