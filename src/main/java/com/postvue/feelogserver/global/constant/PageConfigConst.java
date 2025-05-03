@@ -93,4 +93,6 @@ public final class PageConfigConst {
 	// 검색어 찜 목록
 	public static final Integer SEARCH_FAVORITE_TERM_PAGE_INIT_NUM = 0;
 	public static final Integer SEARCH_FAVORITE_TERM_PAGE_SIZE = 15;
+
+	public static final Integer RECOMM_SCRAP_PAGE_NUM = 10;
 }

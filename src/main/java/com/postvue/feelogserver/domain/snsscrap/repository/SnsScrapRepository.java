@@ -105,6 +105,53 @@ public interface SnsScrapRepository extends JpaRepository<SnsScrap, Long>, JpaSp
 		+ "WHERE "
 		+ "(asc_row_num = 1 OR desc_row_num <= 5)";
 
+	String SEARCH_SCRAP_RECOMM_BOARD_NATIVE_QUERY = "WITH  "
+		+ "SCRAP_BOARD_OFFSET AS ( "
+		+ "SELECT SNS_SB.sns_scrap_board_id, recently_posted_at, scrap_num "
+		+ "FROM sns_scrap_boards_tb AS SNS_SB  "
+		+ "INNER JOIN "
+		+ "(SELECT sns_scrap_board_id, MAX(created_at) as recently_posted_at  "
+		+ "FROM sns_scraps_tb AS SNS_S GROUP BY sns_scrap_board_id) AS RECENTLY_SCRAP  "
+		+ "ON RECENTLY_SCRAP.sns_scrap_board_id = SNS_SB.sns_scrap_board_id  "
+		+ "INNER JOIN "
+		+ "(SELECT SNS_S.sns_scrap_board_id, "
+		+ "COUNT(SNS_S.sns_scrap_board_id) AS scrap_num FROM sns_scraps_tb AS SNS_S "
+		+ "GROUP BY SNS_S.sns_scrap_board_id) AS SCRAP_NUM_TB "
+		+ "ON SCRAP_NUM_TB.sns_scrap_board_id = SNS_SB.sns_scrap_board_id "
+		+ "LEFT OUTER JOIN sns_block_users_tb AS SNS_BU "
+		+ "ON SNS_BU.sns_blocker_user_id = :snsUserId AND SNS_BU.sns_blocked_user_id = SNS_SB.sns_user_id  "
+		+ "OR SNS_BU.sns_blocker_user_id = SNS_SB.sns_user_id AND SNS_BU.sns_blocked_user_id = :snsUserId  "
+		+ "WHERE "
+		+ "SNS_SB.deleted_at IS NULL "
+		+ "AND SNS_BU.sns_blocker_user_id IS  NULL "
+		+ "AND"
+		+ "(SNS_SB.sns_user_id = :snsUserId "
+		+ "OR (SNS_SB.target_audience = " + "'" + ScrapTargetAudienceValue.PUBLIC_AUDIENCE_VALUE + "'" + " ) "
+		+ "OR (SNS_SB.target_audience = " + "'" + ScrapTargetAudienceValue.PROTECTED_AUDIENCE_VALUE + "'" + " AND :snsUserId IN (SELECT SNS_UF.follower_id FROM sns_user_follows_tb AS SNS_UF WHERE SNS_SB.sns_user_id = SNS_UF.following_id) )"
+		+ ")) "
+		+ "SELECT sns_scrap_board_id, scrap_name, recently_posted_at, scrap_num, sns_post_contents, is_me "
+		+ "FROM ( "
+		+ "SELECT SNS_SPL.sns_scrap_board_id, "
+		+ "CASE WHEN SNS_SPL.sns_user_id = :snsUserId THEN TRUE ELSE FALSE END as is_me, "
+		+ "SNS_SPL.scrap_name, SCRAP_BOARD_OFFSET.recently_posted_at AS recently_posted_at, SCRAP_BOARD_OFFSET.scrap_num AS scrap_num, COALESCE(SNS_P.sns_post_contents,'[]') AS sns_post_contents,  "
+		+ "ROW_NUMBER() OVER (PARTITION BY SNS_SPL.sns_scrap_board_id ORDER BY SNS_SP.created_at ASC) AS asc_row_num,  "
+		+ "ROW_NUMBER() OVER (PARTITION BY SNS_SPL.sns_scrap_board_id ORDER BY SNS_SP.created_at DESC) AS desc_row_num  "
+		+ "FROM sns_scrap_boards_tb AS SNS_SPL  "
+		+ "INNER JOIN SCRAP_BOARD_OFFSET ON SNS_SPL.sns_scrap_board_id = SCRAP_BOARD_OFFSET.sns_scrap_board_id  "
+		+ "LEFT JOIN sns_scraps_tb AS SNS_SP ON SNS_SPL.sns_scrap_board_id = SNS_SP.sns_scrap_board_id  "
+		+ "LEFT JOIN sns_posts_tb AS SNS_P ON SNS_SP.sns_post_id = SNS_P.sns_post_id "
+		+ "INNER JOIN sns_users_tb AS SNS_U ON SNS_P.sns_user_id = SNS_U.sns_user_id "
+		+ "LEFT OUTER JOIN sns_block_users_tb AS SNS_BU "
+		+ "ON SNS_BU.sns_blocker_user_id = :snsUserId AND SNS_BU.sns_blocked_user_id = SNS_P.sns_user_id  "
+		+ "OR SNS_BU.sns_blocker_user_id = SNS_P.sns_user_id AND SNS_BU.sns_blocked_user_id = :snsUserId  "
+		+ "WHERE SNS_BU.sns_blocker_user_id IS  NULL  "
+		+ "AND SNS_P.deleted_at IS NULL "
+		+ "AND SNS_U.deleted_at IS NULL "
+		+ ")AS SUB "
+		+ "WHERE "
+		+ "(asc_row_num = 1 OR desc_row_num <= 3)"
+		+ "ORDER BY GREATEST(-(log(EXTRACT(EPOCH FROM now() - recently_posted_at) / (3600 * 24)) * 5) + log(scrap_num) * 5, 0) DESC LIMIT :pageNum OFFSET :page";
+
 	@Query(value = SCRAP_BOARD_NATIVE_QUERY, nativeQuery = true)
 	List<ScrapThumbNailDao> selectScrapBoard(
 		@Param("snsUserId") Long snsUserId,
@@ -115,6 +162,12 @@ public interface SnsScrapRepository extends JpaRepository<SnsScrap, Long>, JpaSp
 	List<ScrapThumbNailDao> selectScrapBoardBySearchQuery(
 		@Param("snsUserId") Long snsUserId,
 		@Param("searchQuery") String searchQuery,
+		@Param("page") Integer page,
+		@Param("pageNum") Integer pageNum);
+
+	@Query(value = SEARCH_SCRAP_RECOMM_BOARD_NATIVE_QUERY, nativeQuery = true)
+	List<ScrapThumbNailDao> selectScrapRecommBoardBySearchQuery(
+		@Param("snsUserId") Long snsUserId,
 		@Param("page") Integer page,
 		@Param("pageNum") Integer pageNum);
 

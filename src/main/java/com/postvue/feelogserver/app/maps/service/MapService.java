@@ -1,6 +1,7 @@
 package com.postvue.feelogserver.app.maps.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -18,11 +19,13 @@ import com.postvue.feelogserver.app.maps.dto.GetAddressWithGis;
 import com.postvue.feelogserver.app.maps.dto.GetLocalSearchRsp;
 import com.postvue.feelogserver.app.maps.dto.GetMapSearchPostRsp;
 import com.postvue.feelogserver.app.maps.dto.GetMapSearchRecommRsp;
+import com.postvue.feelogserver.app.maps.dto.GetPlaceByCategoryRsp;
 import com.postvue.feelogserver.domain.snsposts.repository.SnsPostRepository;
 import com.postvue.feelogserver.global.api.juso.addresssearch.JusoAddressSearchApiClient;
 import com.postvue.feelogserver.global.api.juso.addresssearch.dto.Juso;
 import com.postvue.feelogserver.global.api.juso.addresssearch.dto.JusoAddressSearchApiRsp;
 import com.postvue.feelogserver.global.api.kakao.client.localapi.KakaoLocalApiClient;
+import com.postvue.feelogserver.global.api.kakao.dto.rsp.KakaoPlaceDto;
 import com.postvue.feelogserver.global.api.kakao.dto.rsp.KakaoSearchResponseDto;
 import com.postvue.feelogserver.global.api.naver.NaverApiClient;
 import com.postvue.feelogserver.global.api.naver.dto.rsp.NaverLocalSearchResponseDto;
@@ -246,6 +249,113 @@ public class MapService {
 			).toList());
 
 		return getAddressList;
+	}
+
+	public List<GetPlaceByCategoryRsp> getPlaceByCategory(
+		Float latitude,
+		Float longitude) {
+
+		String foodCategoryGroupCode = "FD6"; // @REFER: 나중에 상수로 관리, 음식점
+		Integer foodCategoryRadius = 420; // @REFER: 나중에 상수로 관리
+		Integer foodCategoryPage = 0;
+		String sortStr = "distance"; // @REFER: 나중에 상수로 관리,거리순
+
+		// 맨 앞 부분만 요청 되게
+		return getGetPlaceByCategoryRsps(latitude, longitude, foodCategoryPage, foodCategoryGroupCode,
+			foodCategoryRadius,sortStr);
+	}
+
+	public List<GetPlaceByCategoryRsp> getPlaceByCategory(
+		Float latitude,
+		Float longitude,
+		Integer page
+	) {
+
+		String foodCategoryGroupCode = "FD6"; // @REFER: 나중에 상수로 관리, 음식점
+		Integer foodCategoryRadius = 420; // @REFER: 나중에 상수로 관리
+		String sortStr = "distance"; // @REFER: 나중에 상수로 관리,거리순
+
+		// 맨 앞 부분만 요청 되게
+		return getGetPlaceByCategoryRsps(latitude, longitude, page, foodCategoryGroupCode, foodCategoryRadius, sortStr);
+	}
+
+	private List<GetPlaceByCategoryRsp> getGetPlaceByCategoryRsps(Float latitude, Float longitude, Integer page,
+		String foodCategoryGroupCode, Integer foodCategoryRadius,String sortStr) {
+
+		List<KakaoPlaceDto> kakaoPlaceDtoList = new ArrayList<>(List.of());
+		kakaoPlaceDtoList.addAll(kakaoLocalApiClient.getPlaceByCategory(
+			KakaoApiConst.kakaoAKHeader + kakaoRestApi,
+			foodCategoryGroupCode,
+			longitude,
+			latitude,
+			foodCategoryRadius,
+			PageConfigConst.PAGE_INIT_ONE_NUM + page * 2,
+			PageConfigConst.KAKAO_MAP_LOCAL_SEARCH_QUERY_PAGE_NUM,sortStr
+		).getDocuments());
+
+		kakaoPlaceDtoList.addAll(kakaoLocalApiClient.getPlaceByCategory(
+			KakaoApiConst.kakaoAKHeader + kakaoRestApi,
+			foodCategoryGroupCode,
+			longitude,
+			latitude,
+			foodCategoryRadius,
+			PageConfigConst.PAGE_INIT_ONE_NUM + 1 + page * 2,
+			PageConfigConst.KAKAO_MAP_LOCAL_SEARCH_QUERY_PAGE_NUM,sortStr
+		).getDocuments());
+
+		kakaoPlaceDtoList = kakaoPlaceDtoList.stream()
+			.filter(kakaoPlaceDto ->
+				!kakaoPlaceDto.getCategoryName().contains("치킨") &&
+					!kakaoPlaceDto.getCategoryName().contains("실내포장마차") &&
+					!kakaoPlaceDto.getCategoryName().contains("패밀리레스토랑") &&
+					!kakaoPlaceDto.getCategoryName().contains("간식") &&
+					!kakaoPlaceDto.getCategoryName().contains("양꼬치") &&
+					!kakaoPlaceDto.getCategoryName().contains("호프") &&
+					!kakaoPlaceDto.getCategoryName().contains("고기") &&
+					!kakaoPlaceDto.getCategoryName().contains("스테이크,립") &&
+					!kakaoPlaceDto.getCategoryName().contains("참치회")
+			)
+			.toList();
+
+		int toIndex = Math.min(kakaoPlaceDtoList.size(), 15);
+		kakaoPlaceDtoList = kakaoPlaceDtoList.subList(0,toIndex);
+
+		return kakaoPlaceDtoList.stream()
+			.map(kakaoPlaceDto ->
+				GetPlaceByCategoryRsp.builder()
+					.roadAddr(kakaoPlaceDto.getRoadAddressName())
+					.buildName(kakaoPlaceDto.getPlaceName())
+					.latitude(kakaoPlaceDto.getY().floatValue())
+					.longitude(kakaoPlaceDto.getX().floatValue())
+					.distance(Integer.parseInt(kakaoPlaceDto.getDistance()))
+					.category(parseCategory(kakaoPlaceDto.getCategoryName()))
+					.placeUrl(kakaoPlaceDto.getPlaceUrl())
+					.build()).toList();
+	}
+
+	private List<String> parseCategory(String category) {
+		String[] parts = category.split(">");
+		List<String> result = new ArrayList<>();
+
+		for (String part : parts) {
+			String trimmed = part.trim();
+
+
+			// 특정 키워드 치환
+			if (trimmed.equals("육류,고기")) {
+				trimmed = "고기";
+			}
+
+
+			result.add(trimmed);
+		}
+
+		// 5단계로 맞추기
+		while (result.size() < 5) {
+			result.add("");
+		}
+
+		return result;
 	}
 
 	public List<GetLocalSearchRsp> getSearchLocalWithGis(String srchQry, Float lat, Float lng) {

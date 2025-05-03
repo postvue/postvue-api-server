@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.postvue.feelogserver.app.posts.dto.rsp.get.SnsPostRsp;
 import com.postvue.feelogserver.app.posts.service.PostsService;
+import com.postvue.feelogserver.app.profiles.dto.rsp.common.ScrapThumbnailRsp;
+import com.postvue.feelogserver.app.profiles.service.ProfilesService;
 import com.postvue.feelogserver.app.recomm.dto.rsp.GetRecommFollowRsp;
 import com.postvue.feelogserver.app.recomm.dto.rsp.GetRecommTagRsp;
 import com.postvue.feelogserver.app.recomm.service.RecommService;
@@ -24,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RecommV1Controller {
 	private final RecommService recommService;
+	private final ProfilesService profilesService;
 
 	@GetMapping("/follows")
 	public ServerGetOkRsp<List<GetRecommFollowRsp>> getRecommFollowList(
@@ -32,5 +35,14 @@ public class RecommV1Controller {
 	) {
 		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
 		return new ServerGetOkRsp<>(recommService.findRecommFollowListV1(snsUserId, page));
+	}
+
+
+	@GetMapping("/scraps")
+	public ServerGetOkRsp<List<ScrapThumbnailRsp>> getRecommScrapList(
+			@AuthenticationPrincipal CustomUserDetails userDetails,
+			@RequestParam("page") Integer page) {
+		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
+		return new ServerGetOkRsp<>(profilesService.getScrapRecommList(snsUserId,page));
 	}
 }
