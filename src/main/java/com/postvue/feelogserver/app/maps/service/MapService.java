@@ -2,6 +2,7 @@ package com.postvue.feelogserver.app.maps.service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -303,22 +304,35 @@ public class MapService {
 			PageConfigConst.KAKAO_MAP_LOCAL_SEARCH_QUERY_PAGE_NUM,sortStr
 		).getDocuments());
 
+		// List<String> NOT_ALLOW_LIST = List.of("실내포장마차","간식","음식점","술집","양꼬치","호프","야식","고기","스테이크,립","참치회");
+		// kakaoPlaceDtoList = kakaoPlaceDtoList.stream()
+		// 	.filter(kakaoPlaceDto -> {
+		// 		String category = kakaoPlaceDto.getCategoryName();
+		// 		boolean isNotAllowed = NOT_ALLOW_LIST.stream().anyMatch(category::contains);
+		// 		return !isNotAllowed && parseCategory(category).size() >= 2;
+		// 	})
+		// 	.toList();
 		kakaoPlaceDtoList = kakaoPlaceDtoList.stream()
 			.filter(kakaoPlaceDto ->
-				!kakaoPlaceDto.getCategoryName().contains("치킨") &&
-					!kakaoPlaceDto.getCategoryName().contains("실내포장마차") &&
-					!kakaoPlaceDto.getCategoryName().contains("패밀리레스토랑") &&
-					!kakaoPlaceDto.getCategoryName().contains("간식") &&
-					!kakaoPlaceDto.getCategoryName().contains("양꼬치") &&
-					!kakaoPlaceDto.getCategoryName().contains("호프") &&
-					!kakaoPlaceDto.getCategoryName().contains("고기") &&
-					!kakaoPlaceDto.getCategoryName().contains("스테이크,립") &&
-					!kakaoPlaceDto.getCategoryName().contains("참치회")
+				// !kakaoPlaceDto.getCategoryName().contains("치킨") &&
+				!kakaoPlaceDto.getCategoryName().contains("실내포장마차") &&
+				// !kakaoPlaceDto.getCategoryName().contains("패밀리레스토랑") &&
+				!kakaoPlaceDto.getCategoryName().contains("간식") &&
+				!(kakaoPlaceDto.getCategoryName().equals("음식점")) &&
+				!kakaoPlaceDto.getCategoryName().contains("술집") &&
+				!kakaoPlaceDto.getCategoryName().contains("양꼬치") &&
+				!kakaoPlaceDto.getCategoryName().contains("호프") &&
+				!kakaoPlaceDto.getCategoryName().contains("야식") &&
+				!kakaoPlaceDto.getCategoryName().contains("고기") &&
+				!kakaoPlaceDto.getCategoryName().contains("스테이크,립") &&
+				!kakaoPlaceDto.getCategoryName().contains("참치회") &&
+				parseCategory(kakaoPlaceDto.getCategoryName()).size() >= 2
 			)
 			.toList();
 
-		int toIndex = Math.min(kakaoPlaceDtoList.size(), 15);
-		kakaoPlaceDtoList = kakaoPlaceDtoList.subList(0,toIndex);
+		List<KakaoPlaceDto> mutableList = new ArrayList<>(kakaoPlaceDtoList); // 복사본
+		Collections.shuffle(mutableList);
+		kakaoPlaceDtoList = kakaoPlaceDtoList.subList(0,Math.min(mutableList.size(), 15));
 
 		return kakaoPlaceDtoList.stream()
 			.map(kakaoPlaceDto ->
