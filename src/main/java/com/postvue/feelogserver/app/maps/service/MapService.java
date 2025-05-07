@@ -304,6 +304,18 @@ public class MapService {
 			PageConfigConst.KAKAO_MAP_LOCAL_SEARCH_QUERY_PAGE_NUM,sortStr
 		).getDocuments());
 
+		if (kakaoPlaceDtoList.size() < 5){
+			kakaoPlaceDtoList.addAll(kakaoLocalApiClient.getPlaceByCategory(
+				KakaoApiConst.kakaoAKHeader + kakaoRestApi,
+				foodCategoryGroupCode,
+				longitude,
+				latitude,
+				1000,
+				PageConfigConst.PAGE_INIT_ONE_NUM + 3 + page * 2,
+				PageConfigConst.KAKAO_MAP_LOCAL_SEARCH_QUERY_PAGE_NUM,sortStr
+			).getDocuments());
+		}
+
 		// List<String> NOT_ALLOW_LIST = List.of("실내포장마차","간식","음식점","술집","양꼬치","호프","야식","고기","스테이크,립","참치회");
 		// kakaoPlaceDtoList = kakaoPlaceDtoList.stream()
 		// 	.filter(kakaoPlaceDto -> {
