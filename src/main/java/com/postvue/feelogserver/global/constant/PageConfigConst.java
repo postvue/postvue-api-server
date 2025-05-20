@@ -95,4 +95,7 @@ public final class PageConfigConst {
 	public static final Integer SEARCH_FAVORITE_TERM_PAGE_SIZE = 15;
 
 	public static final Integer RECOMM_SCRAP_PAGE_NUM = 10;
+
+	// Short article
+	public static final Integer SHORT_ARTICLE_LIST_PAGE_SIZE = 10;
 }
