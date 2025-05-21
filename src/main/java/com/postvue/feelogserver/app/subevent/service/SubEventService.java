@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,6 +36,8 @@ import com.postvue.feelogserver.global.admin.service.recommfollow.RecommFollowSe
 import com.postvue.feelogserver.global.admin.service.recommtag.RecommTagServiceInfo;
 import com.postvue.feelogserver.global.admin.service.shortarticle.ShortArticleServiceInfo;
 import com.postvue.feelogserver.global.constant.PageConfigConst;
+import com.postvue.feelogserver.global.exception.BadRequestErrorException;
+import com.postvue.feelogserver.global.exception.InternalServerErrorException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -43,6 +46,32 @@ import lombok.RequiredArgsConstructor;
 public class SubEventService {
 	private final AdminServiceAdjustmentRepository adminServiceAdjustmentRepository;
 	private final ObjectMapper objectMapper;
+
+	@Transactional
+	public GetShortArticleRsp findShortArticleV1(Long shortId) {
+
+		// 이미 가져온 ID와 겹치지 않는 요소 필터링
+		Optional<AdminServiceAdjustment> optShortArticle = adminServiceAdjustmentRepository.findAllByServiceTypeAndPropLong1id(
+				ShortArticleServiceInfo.SERVICE_TYPE_NAME, shortId);
+
+		if (optShortArticle.isEmpty()) throw new BadRequestErrorException("해당 아티클은 없습니다.");
+
+		AdminServiceAdjustment shortArticle = optShortArticle.get();
+
+		try {
+			JsonNode jsonNode = objectMapper.readTree(shortArticle.getPropString1());
+			return GetShortArticleRsp.builder()
+				.id(jsonNode.get("id").asLong())
+				.articleName(jsonNode.get("article_name").asText())
+				.imageNum(jsonNode.get("image_num").asInt())
+				.build();
+
+		} catch (JsonProcessingException e) {
+			throw new InternalServerErrorException(e.getMessage());
+		}
+	}
+
+
 	@Transactional
 	public List<GetShortArticleRsp> findShortArticleListV1(Integer page) {
 
@@ -56,7 +85,6 @@ public class SubEventService {
 
 		return shortArticleListByAdmin.stream().map(s -> {
 			try {
-				System.out.println(s);
 				JsonNode jsonNode = objectMapper.readTree(s);
 				return GetShortArticleRsp.builder()
 					.id(jsonNode.get("id").asLong())

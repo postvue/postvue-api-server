@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,6 +22,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SubEventV1Controller {
 	private final SubEventService subEventService;
+
+	@GetMapping("/short-articles/{shortId}")
+	public ServerGetOkRsp<GetShortArticleRsp> getShortDetail(
+		@PathVariable("shortId") Long shortId
+	) {
+		return new ServerGetOkRsp<>(subEventService.findShortArticleV1(shortId));
+	}
 
 	@GetMapping("/short-articles")
 	public ServerGetOkRsp<List<GetShortArticleRsp>> getRecommFollowList(
