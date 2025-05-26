@@ -75,16 +75,16 @@ public class MapController {
 
 	@GetMapping("/search/local")
 	public ServerGetOkRsp<List<GetLocalSearchRsp>> getSearchLocal(
-		@AuthenticationPrincipal CustomUserDetails userDetails,
+		// @AuthenticationPrincipal CustomUserDetails userDetails,
 		@RequestParam(name = "srch_qry") String srchQry,
 		@RequestParam(name = "latitude") Float latitude,
 		@RequestParam(name = "longitude") Float longitude
 	) {
-		Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
-
-		if (snsUserId == null) {
-			throw new JwtTokenExpiredException(new Exception());
-		}
+		// Long snsUserId = (userDetails == null) ? null : Long.valueOf(userDetails.getUserId());
+		//
+		// if (snsUserId == null) {
+		// 	throw new JwtTokenExpiredException(new Exception());
+		// }
 		// return new ServerGetOkRsp<>(mapService.getSearchLocal(srchQry));
 		return new ServerGetOkRsp<>(mapService.getSearchLocalWithGis(srchQry,latitude, longitude));
 
